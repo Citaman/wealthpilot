@@ -12,6 +12,7 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
+import { ClientOnly } from "@/components/ui/client-only";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -268,6 +269,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
               <div className="mt-4 p-4 rounded-lg bg-muted/50 border">
                 <h4 className="font-semibold mb-2">{selectedPattern.merchant} - Last 6 Months</h4>
                 <div className="h-[120px]">
+                    <ClientOnly>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={selectedPattern.monthlyData}>
                       <XAxis
@@ -286,6 +288,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
+                    </ClientOnly>
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground mt-2">
                   <span>{selectedPattern.occurrences} total visits</span>

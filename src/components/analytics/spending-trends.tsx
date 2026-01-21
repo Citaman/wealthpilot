@@ -11,6 +11,7 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
+import { ClientOnly } from "@/components/ui/client-only";
 import { format, parseISO, startOfMonth, eachMonthOfInterval, isSameMonth } from "date-fns";
 import { TrendingUp, TrendingDown, Minus, Activity } from "lucide-react";
 import {
@@ -61,7 +62,7 @@ export function SpendingTrends({
         month: format(monthStart, "MMM"),
         amount,
         isCurrentMonth,
-        isBelowAvg: false, // Will be set below
+        isBelowAvg: false,
       };
     });
 
@@ -191,8 +192,9 @@ export function SpendingTrends({
       </CardHeader>
       <CardContent>
         <div className="h-[160px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={trendData.data} margin={{ top: 10, right: 0, left: -10, bottom: 0 }}>
+          <ClientOnly>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={trendData.data} margin={{ top: 10, right: 0, left: -10, bottom: 0 }}>
               <XAxis
                 dataKey="month"
                 tick={{ fontSize: 11 }}
@@ -232,8 +234,9 @@ export function SpendingTrends({
                   />
                 ))}
               </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+              </BarChart>
+            </ResponsiveContainer>
+          </ClientOnly>
         </div>
 
         {/* Compact Stats */}

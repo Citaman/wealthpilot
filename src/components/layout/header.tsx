@@ -8,6 +8,7 @@ import {
   Bell,
   Command,
   X,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,11 @@ const pageTitles: Record<string, string> = {
   "/categories": "Categories",
 };
 
-export function Header() {
+export function Header({
+  onOpenMobileNav,
+}: {
+  onOpenMobileNav?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -77,14 +82,26 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-card px-6">
-        <div>
-          <h1 className="text-xl font-semibold">
-            {pageTitles[pathname] || "WealthPilot"}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(), "EEEE, MMMM d, yyyy")}
-          </p>
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-card px-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            className="md:hidden"
+            onClick={() => onOpenMobileNav?.()}
+            aria-label="Open navigation"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+
+          <div>
+            <h1 className="text-xl font-semibold">
+              {pageTitles[pathname] || "WealthPilot"}
+            </h1>
+            <p className="hidden text-sm text-muted-foreground sm:block">
+              {format(new Date(), "EEEE, MMMM d, yyyy")}
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -99,6 +116,16 @@ export function Header() {
             <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               <Command className="h-3 w-3" />K
             </kbd>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+          >
+            <Search className="h-4 w-4" />
           </Button>
 
           {/* Notifications */}

@@ -14,6 +14,7 @@ import {
   ReferenceLine,
   Legend,
 } from "recharts";
+import { ClientOnly } from "@/components/ui/client-only";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -283,8 +284,9 @@ export function SpendingForecast({
       </CardHeader>
       <CardContent>
         <div className="h-[280px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={forecastData.data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <ClientOnly>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={forecastData.data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -349,8 +351,9 @@ export function SpendingForecast({
                 dot={{ fill: "#8b5cf6", strokeWidth: 0, r: 4 }}
                 connectNulls={false}
               />
-            </ComposedChart>
-          </ResponsiveContainer>
+              </ComposedChart>
+            </ResponsiveContainer>
+          </ClientOnly>
         </div>
 
         {/* Insights */}

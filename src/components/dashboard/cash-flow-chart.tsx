@@ -21,6 +21,7 @@ import {
 import { ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, CATEGORIES } from "@/lib/db";
+import { ClientOnly } from "@/components/ui/client-only";
 import {
   format,
   subMonths,
@@ -483,31 +484,32 @@ export function CashFlowChart() {
           </div>
         ) : (
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={chartData}
-                margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
-                barGap={0}
-                barCategoryGap="25%"
-              >
-                <defs>
-                  <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.4} />
-                  </linearGradient>
-                  <linearGradient id="expenseGradient" x1="0" y1="1" x2="0" y2="0">
-                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.4} />
-                  </linearGradient>
-                </defs>
+            <ClientOnly>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={chartData}
+                  margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
+                  barGap={0}
+                  barCategoryGap="25%"
+                >
+                  <defs>
+                    <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.4} />
+                    </linearGradient>
+                    <linearGradient id="expenseGradient" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                    </linearGradient>
+                  </defs>
 
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                  className="fill-muted-foreground"
-                />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    className="fill-muted-foreground"
+                  />
                 <YAxis
                   tick={{ fontSize: 11 }}
                   tickLine={false}
@@ -584,8 +586,9 @@ export function CashFlowChart() {
                     />
                   </>
                 )}
-              </ComposedChart>
-            </ResponsiveContainer>
+                </ComposedChart>
+              </ResponsiveContainer>
+            </ClientOnly>
           </div>
         )}
 

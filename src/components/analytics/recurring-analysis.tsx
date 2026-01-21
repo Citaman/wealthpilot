@@ -18,6 +18,7 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
+import { ClientOnly } from "@/components/ui/client-only";
 import { CATEGORIES, type Transaction } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
@@ -156,38 +157,37 @@ export function RecurringAnalysis({
 
             {/* Category Breakdown Chart */}
             <div className="h-[200px] mb-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={recurringStats.categoryData}
-                  layout="vertical"
-                  margin={{ top: 0, right: 10, left: 70, bottom: 0 }}
-                >
-                  <XAxis
-                    type="number"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => `€${(v / 1).toFixed(0)}`}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="category"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={70}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar
-                    dataKey="amount"
-                    radius={[0, 4, 4, 0]}
+              <ClientOnly>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={recurringStats.categoryData}
+                    layout="vertical"
+                    margin={{ top: 0, right: 10, left: 70, bottom: 0 }}
                   >
-                    {recurringStats.categoryData.map((entry, index) => (
-                      <Bar key={index} dataKey="amount" fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `€${(v / 1).toFixed(0)}`}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="category"
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={70}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="amount" radius={[0, 4, 4, 0]}>
+                      {recurringStats.categoryData.map((entry, index) => (
+                        <Bar key={index} dataKey="amount" fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </ClientOnly>
             </div>
 
             {/* Top Recurring Items */}

@@ -12,6 +12,7 @@ import {
   PieChart,
   Pie,
 } from "recharts";
+import { ClientOnly } from "@/components/ui/client-only";
 import { format, parseISO, subMonths, isSameMonth } from "date-fns";
 import { ArrowUpRight, ArrowDownRight, Minus, TrendingUp, TrendingDown, ChevronDown, LayoutGrid, PieChartIcon } from "lucide-react";
 import {
@@ -283,7 +284,8 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
             <div>
               <p className="text-sm font-medium mb-3">Top Categories</p>
               <div className="h-[140px]">
-                <ResponsiveContainer width="100%" height="100%">
+                  <ClientOnly>
+                    <ResponsiveContainer width="100%" height="100%">
                   <BarChart 
                     data={monthData.categories.slice(0, 5)} 
                     layout="vertical"
@@ -307,6 +309,7 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+                  </ClientOnly>
               </div>
             </div>
           </div>

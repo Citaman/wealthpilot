@@ -15,6 +15,7 @@ import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle } from "luc
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { ClientOnly } from "@/components/ui/client-only";
 
 interface BudgetVsActualProps {
   budgets: {
@@ -148,55 +149,57 @@ export function BudgetVsActual({
       </CardHeader>
       <CardContent>
         <div className="h-[200px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data}
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-              barGap={-20}
-            >
-              <XAxis
-                type="number"
-                tickFormatter={(v) => formatCurrency(v)}
-                tick={{ fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tick={{ fontSize: 12, fontWeight: 500 }}
-                axisLine={false}
-                tickLine={false}
-                width={55}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={false} />
-              {/* Budget bar (background) */}
-              <Bar
-                dataKey="budget"
-                radius={[0, 4, 4, 0]}
-                barSize={24}
-                fill="#e5e7eb"
+          <ClientOnly>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                barGap={-20}
               >
-                {data.map((entry, index) => (
-                  <Cell key={`budget-${index}`} fill={entry.budgetColor} opacity={0.4} />
-                ))}
-              </Bar>
-              {/* Actual bar (foreground) */}
-              <Bar
-                dataKey="actual"
-                radius={[0, 4, 4, 0]}
-                barSize={24}
-              >
-                {data.map((entry, index) => (
-                  <Cell 
-                    key={`actual-${index}`} 
-                    fill={entry.actual > entry.budget ? "#ef4444" : entry.color} 
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+                <XAxis
+                  type="number"
+                  tickFormatter={(v) => formatCurrency(v)}
+                  tick={{ fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fontSize: 12, fontWeight: 500 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={55}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={false} />
+                {/* Budget bar (background) */}
+                <Bar
+                  dataKey="budget"
+                  radius={[0, 4, 4, 0]}
+                  barSize={24}
+                  fill="#e5e7eb"
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`budget-${index}`} fill={entry.budgetColor} opacity={0.4} />
+                  ))}
+                </Bar>
+                {/* Actual bar (foreground) */}
+                <Bar
+                  dataKey="actual"
+                  radius={[0, 4, 4, 0]}
+                  barSize={24}
+                >
+                  {data.map((entry, index) => (
+                    <Cell
+                      key={`actual-${index}`}
+                      fill={entry.actual > entry.budget ? "#ef4444" : entry.color}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ClientOnly>
         </div>
 
         {/* Legend */}

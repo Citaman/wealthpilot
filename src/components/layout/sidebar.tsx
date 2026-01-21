@@ -72,8 +72,23 @@ const ACCOUNT_ICONS: Record<string, React.ElementType> = {
   cash: Wallet,
 };
 
-export function Sidebar() {
+export type SidebarMode = "desktop" | "mobile";
+
+export interface SidebarProps {
+  mode?: SidebarMode;
+  onNavigate?: () => void;
+}
+
+export function Sidebar(props: SidebarProps) {
+  return <SidebarNav {...props} />;
+}
+
+export function SidebarNav({
+  mode = "desktop",
+  onNavigate,
+}: SidebarProps) {
   const pathname = usePathname();
+  const isMobile = mode === "mobile";
   const [collapsed, setCollapsed] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const { accounts, selectedAccountId, selectedAccount, setSelectedAccountId, totalBalance } = useAccount();
@@ -107,18 +122,23 @@ export function Sidebar() {
     return IconComponent;
   };
 
+  useEffect(() => {
+    if (isMobile) setCollapsed(false);
+  }, [isMobile]);
+
   return (
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
           "flex h-screen flex-col border-r bg-card transition-all duration-300 overflow-hidden",
-          collapsed ? "w-[72px]" : "w-[260px]"
+          collapsed ? "w-[72px]" : "w-[260px]",
+          isMobile && "w-[280px]"
         )}
       >
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b px-4">
           {!collapsed && (
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3" onClick={() => onNavigate?.()}>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
               </div>
@@ -272,6 +292,7 @@ export function Sidebar() {
               item={item}
               isActive={pathname === item.href}
               collapsed={collapsed}
+              onNavigate={onNavigate}
             />
           ))}
 
@@ -286,6 +307,7 @@ export function Sidebar() {
               item={item}
               isActive={pathname === item.href}
               collapsed={collapsed}
+              onNavigate={onNavigate}
             />
           ))}
         </nav>
@@ -324,26 +346,28 @@ export function Sidebar() {
               </Tooltip>
             )}
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setCollapsed(!collapsed)}
-                  className="h-9 w-9"
-                >
-                  <ChevronLeft
-                    className={cn(
-                      "h-4 w-4 transition-transform",
-                      collapsed && "rotate-180"
-                    )}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {collapsed ? "Expand" : "Collapse"}
-              </TooltipContent>
-            </Tooltip>
+            {!isMobile && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setCollapsed(!collapsed)}
+                    className="h-9 w-9"
+                  >
+                    <ChevronLeft
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        collapsed && "rotate-180"
+                      )}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {collapsed ? "Expand" : "Collapse"}
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
       </aside>
@@ -355,14 +379,17 @@ function NavLink({
   item,
   isActive,
   collapsed,
+  onNavigate,
 }: {
   item: NavItem;
   isActive: boolean;
   collapsed: boolean;
+  onNavigate?: () => void;
 }) {
   const link = (
     <Link
       href={item.href}
+      onClick={() => onNavigate?.()}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         isActive

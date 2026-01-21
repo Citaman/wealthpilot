@@ -12,6 +12,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { ClientOnly } from "@/components/ui/client-only";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -185,39 +186,41 @@ export function CategoryTrends({ transactions, className }: CategoryTrendsProps)
           <div className="flex gap-4">
             {/* Chart */}
             <div className="flex-1 h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    className="fill-muted-foreground"
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={formatYAxis}
-                    className="fill-muted-foreground"
-                  />
-                  <Tooltip content={<CustomTooltip />} />
+              <ClientOnly>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      className="fill-muted-foreground"
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={formatYAxis}
+                      className="fill-muted-foreground"
+                    />
+                    <Tooltip content={<CustomTooltip />} />
 
-                  {categories.map((cat) => (
-                    visibleCategories.has(cat.category) && (
-                      <Line
-                        key={cat.category}
-                        type="monotone"
-                        dataKey={cat.category}
-                        stroke={cat.color}
-                        strokeWidth={2}
-                        dot={{ fill: cat.color, strokeWidth: 0, r: 3 }}
-                        activeDot={{ r: 5 }}
-                      />
-                    )
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
+                    {categories.map((cat) => (
+                      visibleCategories.has(cat.category) && (
+                        <Line
+                          key={cat.category}
+                          type="monotone"
+                          dataKey={cat.category}
+                          stroke={cat.color}
+                          strokeWidth={2}
+                          dot={{ fill: cat.color, strokeWidth: 0, r: 3 }}
+                          activeDot={{ r: 5 }}
+                        />
+                      )
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </ClientOnly>
             </div>
 
             {/* Category selector */}
