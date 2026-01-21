@@ -397,6 +397,49 @@ export async function restoreReplaceSnapshotV1(snapshot: BackupSnapshotV1) {
   );
 }
 
+export async function restoreMergeSnapshotV1(snapshot: BackupSnapshotV1) {
+  // Atomic transaction: Upsert (put) all records from backup.
+  // Existing records with same IDs will be overwritten (updated).
+  // Records in DB but NOT in backup will be PRESERVED.
+  const tables = [
+    db.accounts,
+    db.transactions,
+    db.budgets,
+    db.goals,
+    db.goalContributions,
+    db.categoryRules,
+    db.recurringTransactions,
+    db.detectedSalaries,
+    db.settings,
+    db.merchantRules,
+    db.importRules,
+    db.customCategories,
+    db.balanceCheckpoints,
+  ];
+
+  await (db as any).transaction(
+    "rw",
+    ...tables,
+    async () => {
+      const t = snapshot.tables;
+
+      if (t.accounts.length) await db.accounts.bulkPut(t.accounts as any[]);
+      if (t.transactions.length) await db.transactions.bulkPut(t.transactions as any[]);
+      if (t.budgets.length) await db.budgets.bulkPut(t.budgets as any[]);
+      if (t.goals.length) await db.goals.bulkPut(t.goals as any[]);
+      if (t.goalContributions.length) await db.goalContributions.bulkPut(t.goalContributions as any[]);
+      if (t.categoryRules.length) await db.categoryRules.bulkPut(t.categoryRules as any[]);
+      if (t.recurringTransactions.length) await db.recurringTransactions.bulkPut(t.recurringTransactions as any[]);
+      if (t.detectedSalaries.length) await db.detectedSalaries.bulkPut(t.detectedSalaries as any[]);
+      if (t.settings.length) await db.settings.bulkPut(t.settings as any[]);
+      if (t.merchantRules.length) await db.merchantRules.bulkPut(t.merchantRules as any[]);
+      if (t.importRules.length) await db.importRules.bulkPut(t.importRules as any[]);
+      if (t.customCategories.length) await db.customCategories.bulkPut(t.customCategories as any[]);
+      if (t.balanceCheckpoints.length) await db.balanceCheckpoints.bulkPut(t.balanceCheckpoints as any[]);
+    }
+  );
+}
+
 export async function setStringSetting(key: string, value: string) {
   const existing = await db.settings.where("key").equals(key).first();
   if (existing?.id) {

@@ -52,7 +52,6 @@ import {
   CategoryTypeOverrides,
 } from "@/components/budgets";
 import {
-  useSmartIncome,
   useCategoryTypeOverrides,
   useTransactionTypeOverrides,
   getCategoryBudgetType,
@@ -60,6 +59,7 @@ import {
   DEFAULT_CATEGORY_TYPES,
   BudgetType,
 } from "@/lib/budget-types";
+import { useSmartIncome } from "@/lib/financial-month";
 
 // Budget rule presets
 const BUDGET_PRESETS = [

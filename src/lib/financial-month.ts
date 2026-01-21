@@ -1,6 +1,7 @@
 // Financial Month System - Dynamic salary-based month boundaries
 import { db, Transaction, DetectedSalary, FinancialMonthSettings, DEFAULT_FINANCIAL_MONTH_SETTINGS } from './db';
-import { startOfMonth, endOfMonth, subDays, addDays, format, parseISO, isBefore, isAfter, isSameDay } from 'date-fns';
+import { startOfMonth, endOfMonth, subDays, addDays, format, parseISO, isBefore, isAfter, isSameDay, subMonths } from 'date-fns';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 // Salary detection patterns (built-in)
 const SALARY_PATTERNS = [
@@ -20,6 +21,97 @@ export interface FinancialMonth {
   startDate: Date;               // Same as salaryDate
   endDate: Date;                 // Day before next salaryDate or end of month
   salaryTransactionId?: number;  // Link to the transaction
+}
+
+export interface IncomeStatistics {
+  averageSalary: number;          // Average excluding outliers
+  medianSalary: number;           // Median salary
+  lastSalary: number;             // Most recent salary
+  salaryDay: number;              // Typical day of month salary arrives
+  outlierThreshold: number;       // Amount above which is considered outlier
+  confidence: "high" | "medium" | "low";  // Confidence in the calculation
+  salaryCount: number;            // Total number of salaries detected
+  outlierCount: number;           // Number of outliers (bonuses)
+  salaries: Transaction[];        // The salary transactions used
+}
+
+/**
+ * Calculate statistics from a list of salary transactions
+ * Merged from budget-types.ts
+ */
+export function calculateIncomeStatistics(salaryTransactions: Transaction[]): IncomeStatistics {
+  if (salaryTransactions.length === 0) {
+    return {
+      averageSalary: 0,
+      medianSalary: 0,
+      lastSalary: 0,
+      salaryDay: 25,
+      outlierThreshold: 0,
+      confidence: "low",
+      salaryCount: 0,
+      outlierCount: 0,
+      salaries: [],
+    };
+  }
+
+  // Sort by date descending (newest first)
+  const sortedSalaries = [...salaryTransactions].sort(
+    (a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()
+  );
+
+  // Get amounts for calculation
+  const amounts = sortedSalaries.map((t) => t.amount);
+
+  // Calculate median
+  const sortedAmounts = [...amounts].sort((a, b) => a - b);
+  const mid = Math.floor(sortedAmounts.length / 2);
+  const median = sortedAmounts.length % 2 !== 0
+    ? sortedAmounts[mid]
+    : (sortedAmounts[mid - 1] + sortedAmounts[mid]) / 2;
+
+  // Outlier threshold: 1.3x median (30% more likely has bonus)
+  const outlierThreshold = median * 1.3;
+
+  // Calculate average excluding outliers
+  const regularSalaries = amounts.filter((a) => a <= outlierThreshold);
+  const averageSalary = regularSalaries.length > 0
+    ? regularSalaries.reduce((sum, a) => sum + a, 0) / regularSalaries.length
+    : median;
+
+  // Detect typical salary day
+  const salaryDays = sortedSalaries.map((t) => parseISO(t.date).getDate());
+  const dayCount: Record<number, number> = {};
+  salaryDays.forEach((d) => {
+    dayCount[d] = (dayCount[d] || 0) + 1;
+  });
+  const typicalDayEntry = Object.entries(dayCount)
+    .sort(([, a], [, b]) => b - a)[0];
+  const salaryDay = typicalDayEntry ? parseInt(typicalDayEntry[0]) : 25;
+
+  // Determine confidence
+  let confidence: "high" | "medium" | "low";
+  if (regularSalaries.length >= 4) {
+    confidence = "high";
+  } else if (regularSalaries.length >= 2) {
+    confidence = "medium";
+  } else {
+    confidence = "low";
+  }
+
+  // Count outliers
+  const outlierCount = amounts.filter((a) => a > outlierThreshold).length;
+
+  return {
+    averageSalary: Math.round(averageSalary),
+    medianSalary: Math.round(median),
+    lastSalary: amounts[0] || 0,
+    salaryDay,
+    outlierThreshold: Math.round(outlierThreshold),
+    confidence,
+    salaryCount: sortedSalaries.length,
+    outlierCount,
+    salaries: sortedSalaries,
+  };
 }
 
 // Check if a transaction looks like a salary
@@ -285,4 +377,30 @@ export async function getTransactionsInFinancialMonth(
     .between(startStr, endStr, true, true)
     .filter(tx => tx.accountId === accountId)
     .sortBy('date');
+}
+
+/**
+ * Hook to get smart income data reactively
+ * Uses detecting logic from financial-month to ensure consistency
+ */
+export function useSmartIncome(lookbackMonths: number = 6) {
+  return useLiveQuery(async () => {
+    const now = new Date();
+    
+    const settings = await getFinancialMonthSettings();
+    const startDate = format(subMonths(now, lookbackMonths), "yyyy-MM-dd");
+    
+    // Get potential salary transactions (credits > min amount)
+    // We scan all accounts to get a global view of income, as the budget is often global
+    const candidates = await db.transactions
+      .where("date")
+      .aboveOrEqual(startDate)
+      .and((t) => t.direction === 'credit' && t.amount >= settings.minimumSalaryAmount)
+      .toArray();
+      
+    // Filter using the central logic
+    const salaries = candidates.filter(tx => isSalaryTransaction(tx, settings));
+    
+    return calculateIncomeStatistics(salaries);
+  }, [lookbackMonths]);
 }

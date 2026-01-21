@@ -153,6 +153,7 @@ export interface Goal {
   color: string;
   description?: string;
   isActive: boolean;
+  linkedAccountId?: number; // v0.13.0: Link goal to a real account
   createdAt: string;
   updatedAt: string;
 }
@@ -566,6 +567,23 @@ class WealthPilotDB extends Dexie {
           createdAt: now,
         });
       }
+    });
+
+    // Version 7: Add linkedAccountId to goals (v0.13.0)
+    this.version(7).stores({
+      transactions: '++id, date, valueDate, category, subcategory, merchant, merchantOriginal, accountId, [date+accountId], [category+date], *tags',
+      accounts: '++id, name, type, isActive',
+      budgets: '++id, category, year, [year+month], [category+year]',
+      goals: '++id, name, isActive, linkedAccountId',
+      goalContributions: '++id, goalId, date, [goalId+date]',
+      categoryRules: '++id, pattern, category, priority',
+      recurringTransactions: '++id, name, type, status, category, accountId, merchant',
+      detectedSalaries: '++id, transactionId, date, accountId, financialMonthId, [date+accountId]',
+      settings: '++id, key',
+      merchantRules: '++id, pattern, merchantName, category, isActive',
+      importRules: '++id, name, pattern, category, priority, isActive',
+      customCategories: '++id, name, isSystem',
+      balanceCheckpoints: '++id, accountId, date, isActive, [accountId+date]'
     });
   }
 }

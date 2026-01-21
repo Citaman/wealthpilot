@@ -76,8 +76,8 @@ export default function TransactionsPage() {
 
   // Date range
   const now = new Date();
-  const [dateRange] = useState({
-    start: subMonths(startOfMonth(now), 11),
+  const [dateRange, setDateRange] = useState({
+    start: subMonths(startOfMonth(now), 2),
     end: endOfMonth(now),
   });
 
@@ -525,6 +525,28 @@ export default function TransactionsPage() {
                   </SelectContent>
                 </Select>
               )}
+              
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  className="w-auto"
+                  value={format(dateRange.start, "yyyy-MM-dd")}
+                  onChange={(e) => {
+                    const date = e.target.value ? new Date(e.target.value) : subMonths(startOfMonth(new Date()), 2);
+                    setDateRange(prev => ({ ...prev, start: date }));
+                  }}
+                />
+                <span className="text-muted-foreground">-</span>
+                <Input
+                  type="date"
+                  className="w-auto"
+                  value={format(dateRange.end, "yyyy-MM-dd")}
+                  onChange={(e) => {
+                    const date = e.target.value ? new Date(e.target.value) : endOfMonth(new Date());
+                    setDateRange(prev => ({ ...prev, end: date }));
+                  }}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

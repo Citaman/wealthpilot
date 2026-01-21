@@ -31,9 +31,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGoalContributionActions, useGoalContributions, useGoals } from "@/hooks/use-data";
+import { useGoalContributionActions, useGoalContributions, useGoals, useAccounts } from "@/hooks/use-data";
 import { cn } from "@/lib/utils";
 import { formatCurrency0, getGoalHealth, getGoalIcon } from "@/components/goals/goal-utils";
 
@@ -52,10 +59,16 @@ export default function GoalDetailsPage() {
   const goalId = Number(params.id);
 
   const { goals, updateGoal, deleteGoal } = useGoals();
+  const { accounts } = useAccounts();
   const { contributions } = useGoalContributions(Number.isFinite(goalId) ? goalId : undefined);
   const { addContribution, deleteContribution } = useGoalContributionActions();
 
   const goal = useMemo(() => goals.find((g) => g.id === goalId) || null, [goals, goalId]);
+
+  const linkedAccount = useMemo(() => {
+    if (!goal?.linkedAccountId) return null;
+    return accounts.find(a => a.id === goal.linkedAccountId);
+  }, [goal, accounts]);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [amount, setAmount] = useState("");
@@ -72,6 +85,7 @@ export default function GoalDetailsPage() {
     currentAmount: "",
     deadline: "",
     color: GOAL_COLORS[0],
+    linkedAccountId: "none",
   });
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -81,6 +95,15 @@ export default function GoalDetailsPage() {
       return b.createdAt.localeCompare(a.createdAt);
     });
   }, [contributions]);
+
+  const now = new Date();
+
+  const net30 = useMemo(() => {
+    const cutoff = subDays(now, 30);
+    return sortedContributions
+      .filter((c) => parseISO(c.date) >= cutoff)
+      .reduce((sum, c) => sum + c.amount, 0);
+  }, [now, sortedContributions]);
 
   if (!Number.isFinite(goalId)) {
     return (
@@ -112,19 +135,12 @@ export default function GoalDetailsPage() {
     );
   }
 
-  const now = new Date();
   const progress = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
   const remaining = goal.targetAmount - goal.currentAmount;
 
   const health = getGoalHealth({ goal, contributions: sortedContributions, now });
   const GoalIcon = getGoalIcon(goal);
   const lastActivityDate = sortedContributions[0]?.date || null;
-  const net30 = useMemo(() => {
-    const cutoff = subDays(now, 30);
-    return sortedContributions
-      .filter((c) => parseISO(c.date) >= cutoff)
-      .reduce((sum, c) => sum + c.amount, 0);
-  }, [now, sortedContributions]);
 
   const openAdd = () => {
     setIsAddOpen(true);
@@ -142,6 +158,7 @@ export default function GoalDetailsPage() {
       currentAmount: goal.currentAmount.toString(),
       deadline: goal.deadline || "",
       color: goal.color,
+      linkedAccountId: goal.linkedAccountId ? goal.linkedAccountId.toString() : "none",
     });
     setIsEditOpen(true);
   };
@@ -177,6 +194,12 @@ export default function GoalDetailsPage() {
                           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                             <Calendar className="h-3.5 w-3.5" />
                             Deadline {format(parseISO(goal.deadline), "MMM d, yyyy")}
+                          </span>
+                        ) : null}
+                        {linkedAccount ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                            <Wallet className="h-3.5 w-3.5" />
+                            Linked to {linkedAccount.name}
                           </span>
                         ) : null}
                         {lastActivityDate ? (
@@ -538,6 +561,26 @@ export default function GoalDetailsPage() {
               />
             </div>
 
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Linked Account (Optional)</label>
+              <Select
+                value={editForm.linkedAccountId}
+                onValueChange={(value) => setEditForm((v) => ({ ...v, linkedAccountId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an account" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (Virtual Goal)</SelectItem>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id!.toString()}>
+                      {account.name} ({account.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Target amount</label>
@@ -631,6 +674,7 @@ export default function GoalDetailsPage() {
                     deadline: editForm.deadline || undefined,
                     color: editForm.color,
                     isActive: currentAmount < targetAmount,
+                    linkedAccountId: editForm.linkedAccountId === "none" ? undefined : parseInt(editForm.linkedAccountId),
                   });
                   setIsEditOpen(false);
                 } catch (err) {

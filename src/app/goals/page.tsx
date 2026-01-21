@@ -27,6 +27,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -48,6 +55,7 @@ import {
   useGoalContributionActions,
   useGoalContributions,
   useGoals,
+  useAccounts,
 } from "@/hooks/use-data";
 import { type Goal, type GoalContribution } from "@/lib/db";
 import { cn } from "@/lib/utils";
@@ -65,6 +73,7 @@ const GOAL_COLORS = [
 
 export default function GoalsPage() {
   const { goals, isLoading, addGoal, updateGoal, deleteGoal } = useGoals();
+  const { accounts } = useAccounts();
   const { contributions } = useGoalContributions();
   const { addContribution, deleteContribution } = useGoalContributionActions();
   const dashboard = useDashboard();
@@ -110,6 +119,7 @@ export default function GoalsPage() {
     currentAmount: "",
     deadline: "",
     color: GOAL_COLORS[0],
+    linkedAccountId: "none",
   });
 
   const resetForm = () => {
@@ -119,6 +129,7 @@ export default function GoalsPage() {
       currentAmount: "",
       deadline: "",
       color: GOAL_COLORS[Math.floor(Math.random() * GOAL_COLORS.length)],
+      linkedAccountId: "none",
     });
   };
 
@@ -135,6 +146,7 @@ export default function GoalsPage() {
       currentAmount: goal.currentAmount.toString(),
       deadline: goal.deadline || "",
       color: goal.color,
+      linkedAccountId: goal.linkedAccountId ? goal.linkedAccountId.toString() : "none",
     });
     setEditingGoal(goal);
     setIsAddDialogOpen(true);
@@ -151,6 +163,7 @@ export default function GoalsPage() {
       color: formData.color,
       icon: 'target',
       isActive: true,
+      linkedAccountId: formData.linkedAccountId === "none" ? undefined : parseInt(formData.linkedAccountId),
     };
 
     if (editingGoal) {
@@ -563,6 +576,28 @@ export default function GoalsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Linked Account (Optional)</label>
+                <Select
+                  value={formData.linkedAccountId}
+                  onValueChange={(value) => setFormData({ ...formData, linkedAccountId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (Virtual Goal)</SelectItem>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id!.toString()}>
+                        {account.name} ({account.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Link this goal to a real bank account to track its balance automatically.
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

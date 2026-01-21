@@ -2,7 +2,7 @@
 
 > A modern, privacy-first personal finance dashboard built with Next.js
 
-![Version](https://img.shields.io/badge/version-0.12.0-blue)
+![Version](https://img.shields.io/badge/version-0.13.0-blue)
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -20,6 +20,7 @@ WealthPilot is a comprehensive personal finance management application that help
 - **🔄 Subscription Tracking** - Monitor recurring expenses
 - **📅 Bill Calendar** - Never miss a payment
 - **🏦 Multi-Account Support** - Manage multiple bank accounts
+- **⚙️ Professional Settings** - Manage preferences, data, and backups with ease
 - **🔒 Privacy First** - All data stored locally in IndexedDB
 
 ---
@@ -74,11 +75,12 @@ wealthpilot/
 │   │   ├── calendar/           # Bill calendar
 │   │   ├── accounts/           # Account management
 │   │   ├── import/             # CSV import
-│   │   └── settings/           # App settings
+│   │   └── settings/           # App settings (Revamped v0.12.1)
 │   ├── components/             # React components
 │   │   ├── ui/                 # shadcn/ui components
+│   │   ├── settings/           # Modular settings components
 │   │   └── layout/             # Layout components
-│   ├── hooks/                  # Custom React hooks
+│   ├── hooks/                  # Custom React hooks (use-toast, use-data)
 │   ├── lib/                    # Utilities & database
 │   └── types/                  # TypeScript types
 ├── specs/                      # Feature specifications & architecture
@@ -110,49 +112,44 @@ wealthpilot/
 
 ## 📋 Current Status
 
-## 💾 Backups & Data Safety (v0.11.0)
+## 💾 Backups & Data Safety (Updated v0.12.1)
 
 WealthPilot stores data locally in your browser (IndexedDB). To avoid losing your finances when switching devices or browser profiles:
 
-- Use **Settings → Data & Backups → Export backup** regularly.
-- Keep backup files somewhere safe (cloud drive, external disk).
-- To restore, use **Import backup…** and confirm after the preview.
-- If you reset the app, you’ll be prompted to **export a backup first**.
+- Use **Settings → Data** to access backup options.
+- **Export Backup**: Download your full database as a JSON file.
+- **Restore Backup**: Import a previous backup. You can choose to:
+  - **Replace All**: Wipes current data and restores the backup (default).
+  - **Merge**: Adds backup data to your current data (advanced).
+- **Reset App**: Clear all local data to start fresh.
 
 Backup format details: `specs/features/data-backups.md`.
 
-### ✅ Implemented (v0.0.1)
+### ✅ Implemented Features
 
 - [x] Basic dashboard with balance overview
-- [x] Transaction list with filtering
+- [x] Transaction list with filtering and overrides
 - [x] CSV import (dual format support)
 - [x] Smart categorization (50+ merchant patterns)
-- [x] Budget planning page
-- [x] Savings goals tracking
-- [x] Subscription detection
-- [x] Bill calendar
-- [x] Basic analytics
+- [x] Budget planning page with smart income detection
+- [x] Savings goals tracking with history
+- [x] Subscription detection & bill calendar
+- [x] Advanced Analytics (Bento grid, forecasting)
+- [x] Multi-account support
+- [x] System Toast Notifications (v0.12.1)
 
-### 🔄 In Progress (v0.1.0)
-
-- [ ] Financial month system (salary-based)
-- [ ] Balance calculation (from transactions)
-- [ ] Duplicate detection for imports
-- [ ] Sticky sidebar
-- [ ] Dashboard chart redesign
-- [ ] Financial insights algorithm
-
-### 📅 Planned
+### 📅 Roadmap Highlights
 
 See [ROADMAP](./ROADMAP.md) for full version planning.
 
 | Version | Theme | Status |
 |---------|-------|--------|
-| v0.1.0 | Foundation & Core Architecture | ✅ Released |
-| v0.2.0 | Transaction Management & Editing | ✅ Released |
-| v0.3.0 | Analytics & Predictions | ✅ Released |
-| v0.4.0 | Subscriptions & Loans | ✅ Released |
-| v0.5.0 | Multi-Account Support | ✅ Released |
+| v0.10.0 | Goals Overhaul | ✅ Released |
+| v0.11.0 | Data Safety & Portability | ✅ Released |
+| v0.12.0 | Mobile, PWA, Accessibility | ✅ Released |
+| v0.12.1 | Professional Polish | ✅ Released |
+| v0.13.0 | Performance & Consistency | ✅ Released |
+| v0.15.0 | UI Foundation & System | 📋 Planned |
 | v1.0.0 | Production Ready | 🎯 Target |
 
 ---
