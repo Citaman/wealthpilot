@@ -2,7 +2,7 @@
 
 > A modern, privacy-first personal finance dashboard built with Next.js
 
-![Version](https://img.shields.io/badge/version-0.11.0-blue)
+![Version](https://img.shields.io/badge/version-0.12.0-blue)
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -28,7 +28,7 @@ WealthPilot is a comprehensive personal finance management application that help
 
 ### Prerequisites
 
-- Node.js 20.9+ 
+- Node.js 20.9+
 - npm or yarn
 
 ### Installation
@@ -173,6 +173,7 @@ WealthPilot v0.5.0 introduces full multi-account support to help you track all y
 #### Account Overview on Dashboard
 
 When viewing "All Accounts", the dashboard shows:
+
 - **Total Balance**: Combined balance across all accounts
 - **Account Grid**: Quick view of all accounts with balances
 - **Click to Filter**: Click any account to switch to viewing just that account
@@ -190,6 +191,7 @@ When importing transactions, you must select which account they belong to:
 #### Account-Filtered Views
 
 All views respect the selected account:
+
 - **Transactions**: Only shows transactions for the selected account
 - **Analytics**: Charts and stats filtered by account
 - **Subscriptions**: Filter by account (coming soon)
@@ -223,7 +225,7 @@ WealthPilot v0.4.0 introduces comprehensive subscription and recurring transacti
 #### Features
 
 - **Auto-Detection**: Automatically detects recurring transactions from your imported bank data
-- **Type Categories**: 
+- **Type Categories**:
   - 📺 **Subscriptions** - Netflix, Spotify, gym memberships
   - 🧾 **Bills** - Rent, utilities, insurance
   - 🏦 **Loans** - Mortgages, car loans with progress tracking
@@ -286,6 +288,7 @@ To change a subscription's type (e.g., subscription → income):
 #### Bill Calendar (Dynamic Updates)
 
 The Bill Calendar now uses **live queries** and automatically updates when you:
+
 - Add, edit, or delete subscriptions
 - Exclude items from recurring
 - Change subscription types
@@ -300,11 +303,13 @@ No manual refresh needed - changes appear instantly on the calendar.
 ### Supported Formats
 
 **Format A: Bank Export (Société Générale)**
+
 ```csv
 Date de l'opération;Libellé;Détail de l'écriture;Montant de l'opération;Devise
 ```
 
 **Format B: Historical (LLM-generated)**
+
 ```csv
 date,value_date,direction,amount,balance_after,category,...
 ```

@@ -81,6 +81,7 @@ flowchart TB
 **Problem (SOLVED)**: The app used `useState` + `useEffect` + manual `loadData()` in `use-data.ts` hooks instead of `useLiveQuery` from Dexie.
 
 **Solution IMPLEMENTED**: All hooks now use `useLiveQuery` for reactive data:
+
 - `useDashboard()` - Reactive ✅
 - `useTransactions()` - Reactive ✅  
 - `useBudgets()` - Reactive ✅
@@ -95,6 +96,7 @@ flowchart TB
 **Problem (SOLVED)**: Balance showed 0 on app load even with existing data.
 
 **Solution IMPLEMENTED**:
+
 - Auto-recalculate all balances when app loads (in `AccountProvider`)
 - Added balance checkpoints feature (known balance at date)
 - Fixed recalculate button to not use `alert()` and `window.reload()`
@@ -146,6 +148,7 @@ flowchart TB
 | 4 | Calculate from checkpoint | ✅ DONE | Works backward from known balance |
 
 **New Features**:
+
 - **Settings > Account Balance > Known Balance Points**: Add dates where you know your exact balance (from bank statements)
 - **Auto-recalculate**: On app startup, all account balances are recalculated from transactions
 - **Better UX**: Recalculate button shows spinner and success message, no page reload
@@ -172,6 +175,7 @@ flowchart TB
 | 12 | 5 Summary Stats | ✅ DONE | Income, Expenses, Net Savings, Avg Monthly, vs Last Month |
 
 **New Components Created**:
+
 - `spending-calendar.tsx` - Full month view with click-to-see transactions
 - `personal-insights.tsx` - Carousel with 8 smart insights, priority badges
 - `recurring-expenses.tsx` - Non-subscription pattern detection with frequency chart
@@ -182,6 +186,7 @@ flowchart TB
 - `spending-velocity.tsx` - Real-time pace indicator with daily budget tracking
 
 **Verification Checklist**:
+
 - [x] Personal insights show high/medium/low priority badges ✅
 - [x] Calendar shows spending amounts in cells (not dots) ✅
 - [x] What-if slider adjusts forecast projections ✅
@@ -206,6 +211,7 @@ flowchart TB
 | 7 | Improved layout | ✅ DONE | 3-column grid for trends, better spacing |
 
 **Component Changes**:
+
 - `balance-timeline.tsx` - REWRITTEN
   - Line chart with daily data points
   - Period selector: 1W, 1M, 3M, 6M, 1Y, All
@@ -229,6 +235,7 @@ flowchart TB
   - Removed confusing side-by-side horizontal bars
 
 **Removed Files**:
+
 - `predictions.tsx` - Replaced by SpendingForecast with what-if
 - `daily-heatmap.tsx` - Replaced by SpendingCalendar
 - `recurring-analysis.tsx` - Replaced by RecurringExpenses
@@ -248,6 +255,7 @@ flowchart TB
 | 5 | Dashboard Layout Update | ✅ DONE | Integrated all new widgets into 3-column layout |
 
 **New Components Created**:
+
 - `quick-stats.tsx` - 4-metric row at top of dashboard
   - Savings Rate (with color coding: green 20%+, amber 10-20%, red <10%)
   - Spending Pace (daily average with progress bar vs expected)
@@ -275,6 +283,7 @@ flowchart TB
   - Link to goals page
 
 **Dashboard Layout**:
+
 - Quick Stats row at top (full width)
 - 3-column grid:
   - Left: Income, Budget Control, Upcoming Bills
@@ -283,6 +292,7 @@ flowchart TB
 - Cash Flow Chart (full width at bottom)
 
 **Verification Checklist**:
+
 - [x] Quick Stats shows accurate savings rate ✅
 - [x] Upcoming Bills predicts correctly from patterns ✅
 - [x] All widgets self-contained (fetch own data) ✅
@@ -306,6 +316,7 @@ flowchart TB
 | 5 | Clean up confusing UI elements | ✅ DONE | Settings in collapsible, cleaner layout |
 
 **New Components Created**:
+
 - `budget-vs-actual.tsx` - Horizontal bar chart
   - Shows Needs/Wants/Savings budget vs actual spending
   - Bars turn red when over budget
@@ -331,6 +342,7 @@ flowchart TB
   - Category icon and color
 
 **Page Layout Changes**:
+
 - Header with collapsible Settings button
 - Budget settings hidden by default (cleaner view)
 - 2-column grid: Budget vs Actual + Budget Pace
@@ -339,6 +351,7 @@ flowchart TB
 - Each category type shows summary with percentage used
 
 **Verification Checklist**:
+
 - [x] User can set budget per category ✅
 - [x] Actual spending from transactions shows correctly ✅
 - [x] Visual makes budget status obvious ✅
@@ -353,6 +366,7 @@ flowchart TB
 **Theme**: Improve income calculation and allow manual needs/wants/savings classification
 
 **Problems Addressed**:
+
 1. Monthly income was using latest income, not average salary (bonuses skewed the calculation)
 2. Income detection used calendar month (Jan 1) instead of salary-based month (e.g., salary on Dec 25 should count for January budget)
 3. No way to manually override the default needs/wants/savings type for categories or individual transactions
@@ -367,6 +381,7 @@ flowchart TB
 | 6 | Budget Page Integration | ✅ DONE | Smart income with tooltip showing calculation details |
 
 **New Files Created**:
+
 - `src/lib/budget-types.ts` - Core utilities for smart income and type overrides
   - `calculateSmartIncome()` - Analyzes last N months of income transactions
   - `getCategoryBudgetType()` - Returns effective type with override support
@@ -394,6 +409,7 @@ flowchart TB
   - Tooltip showing whether using custom or default type
 
 **Smart Income Features**:
+
 - Uses median salary to detect typical income
 - Flags outliers (>1.3x median) as bonuses
 - Calculates average excluding outliers
@@ -402,12 +418,14 @@ flowchart TB
 - Shows in budget settings with tooltip explaining calculation
 
 **Type Override System**:
+
 - Priority: Transaction override > Category override > Default
 - Stored in settings as JSON (categoryTypeOverrides, transactionTypeOverrides)
 - Reactive updates using useLiveQuery
 - Works with all budget calculations
 
 **Budget Page Changes**:
+
 - Uses `useSmartIncome()` for income calculation
 - Uses `getCategoryBudgetType()` for type determination
 - Added `CategoryTypeOverrides` component in settings
@@ -415,6 +433,7 @@ flowchart TB
 - Warning when bonus months excluded from calculation
 
 **Verification Checklist**:
+
 - [x] Smart income calculates average excluding bonuses ✅
 - [x] Outliers correctly identified (>1.3x median) ✅
 - [x] Category type overrides save and persist ✅
@@ -437,6 +456,7 @@ flowchart TB
 | 4 | Add “Exclude from budgets/analytics” shortcut | ✅ DONE | Quick toggle in rows + edit dialog checkbox |
 
 **Verification Checklist**:
+
 - [x] Override a transaction → budget totals update immediately
 - [x] Reset override → falls back to category override / default
 - [x] Excluded tx never counts in budgets/analytics
@@ -459,6 +479,7 @@ flowchart TB
 | 8 | Goal details view | ✅ DONE | Dedicated per-goal page: summary, history, forecast |
 
 **Verification Checklist**:
+
 - [x] Can add contribution and see it immediately
 - [x] Contributions are persisted as history events (not only `currentAmount`)
 - [x] Progress stays consistent with history (currentAmount is updated atomically with events)
@@ -474,6 +495,7 @@ flowchart TB
 **Spec**: `specs/features/data-backups.md`
 
 **Product Goals (challenge + sharpen)**:
+
 - **Zero-surprises safety**: no destructive operation without an explicit, reversible flow.
 - **Portability**: a user can move to a new device/browser profile and keep everything.
 - **Confidence**: the app should *prove* the backup is valid (preview + health checks).
@@ -494,6 +516,7 @@ flowchart TB
 | 10 | Docs: where data lives + how to back up | 📋 TODO | Explain IndexedDB + browser profiles, private browsing, clearing site data, recommended backup frequency, restore steps |
 
 **Verification Checklist**:
+
 - [ ] User can export and re-import on a fresh profile and the app works with identical totals
 - [ ] Restore preview shows what will change before committing
 - [ ] Replace restore auto-creates a pre-restore backup
@@ -508,6 +531,7 @@ flowchart TB
 **Theme**: Make WealthPilot feel professional on every device (mobile-first), with a trustworthy baseline for accessibility and installability.
 
 **Product Goals (challenge + sharpen)**:
+
 - **Mobile is not a “nice to have”**: every core page must be usable one-handed on a phone (scroll, tap targets, dialogs, tables).
 - **Accessible by default**: keyboard navigation and focus states work everywhere; color is never the only signal.
 - **Professional UX parity**: Settings and system flows should match **Dashboard/Analytics** (clear hierarchy, calm cards, predictable patterns, no browser `alert()` UX).
@@ -518,14 +542,16 @@ flowchart TB
 | 1 | Settings UX parity pass | 📋 TODO | Convert Settings to Analytics-style header + tabs; group sections; bento cards where appropriate; remove scary/dense blocks |
 | 2 | Replace `alert()` UX with in-app messaging | 📋 TODO | Use inline callouts/toasts for success/error; ensure messages are visible even when switching tabs |
 | 3 | Persist key preferences | 📋 TODO | Store budget alert threshold, backup gzip toggle, and similar in DB settings (not only in-memory) |
-| 4 | Mobile responsiveness audit (core pages) | 📋 TODO | Dashboard/Analytics/Budgets/Transactions/Settings: spacing, overflow, tables, charts, dialogs; validate common breakpoints |
-| 5 | Touch + gesture ergonomics | 📋 TODO | Minimum 44px tap targets; sticky table headers where needed; sensible mobile defaults for dense widgets |
-| 6 | PWA installable | 📋 TODO | Manifest + icons + offline caching policy + install prompt copy |
-| 7 | Offline UX baseline | 📋 TODO | Clear offline indicator; avoid failing actions silently; ensure navigation/pages still render from IndexedDB |
-| 8 | Accessibility baseline | 📋 TODO | Keyboard nav, focus rings, aria labels, semantic headings, color contrast, reduced-motion support |
-| 9 | Reduce “chart size = -1” prerender warnings | 📋 TODO | Guard chart rendering until container has size; avoid layout thrash |
+| 4 | Mobile app shell + drawer navigation | ✅ DONE | Responsive sidebar (desktop) + mobile drawer + header menu button; shared layout applies across core pages |
+| 5 | Mobile responsiveness audit (core pages) | 📋 TODO | Dashboard/Analytics/Budgets/Transactions/Settings: spacing, overflow, tables, charts, dialogs; validate common breakpoints |
+| 6 | Touch + gesture ergonomics | 📋 TODO | Minimum 44px tap targets; sticky table headers where needed; sensible mobile defaults for dense widgets |
+| 7 | PWA installable | ✅ DONE | Manifest route + icons + service worker + offline fallback page + production-only registration |
+| 8 | Offline UX baseline | 📋 TODO | Clear offline indicator; avoid failing actions silently; ensure navigation/pages still render from IndexedDB |
+| 9 | Accessibility baseline | 📋 TODO | Keyboard nav, focus rings, aria labels, semantic headings, color contrast, reduced-motion support |
+| 10 | Reduce “chart size = -1” prerender warnings | ✅ DONE | Defer charts until mounted (client-only guard) to avoid early container measurement issues |
 
 **Verification Checklist**:
+
 - [ ] All core pages are usable on 375px width without horizontal scrolling
 - [ ] Settings matches Dashboard/Analytics visual patterns (header, tabs, cards)
 - [ ] No browser `alert()` used for user-facing flows in Settings
@@ -572,6 +598,7 @@ flowchart TB
 | 6 | Notifications center | 📋 TODO | Real notifications model + UX (not mock data) |
 
 **Verification Checklist**:
+
 - [ ] Design tokens applied across shell + buttons + cards
 - [ ] One table/filter system used by Transactions and at least one other page
 - [ ] Dark mode persisted and controlled in one place
@@ -595,6 +622,7 @@ flowchart TB
 | 6 | Accounts revamp | 📋 TODO | Account health, balances, checkpoints UX, transfer clarity |
 
 **Verification Checklist**:
+
 - [ ] Every core page uses v0.15 system components
 - [ ] Empty/loading/error states exist for all core pages
 - [ ] Main action per page reachable in ≤2 clicks
@@ -617,6 +645,7 @@ flowchart TB
 | 6 | Micro-interactions & motion | 📋 TODO | Subtle motion; reduced-motion support; better perceived performance |
 
 **Verification Checklist**:
+
 - [ ] Responsive QA: 390px / 768px / 1024px / 1440px
 - [ ] AA contrast check passes for text + badges + charts
 - [ ] Keyboard-only usability for core flows
@@ -657,6 +686,7 @@ flowchart TB
 ## Current State Summary
 
 ### What ACTUALLY Works ✅
+
 - Reactive data flow via `useLiveQuery` (most pages update without refresh)
 - Multi-account support + transfer detection linking
 - CSV import pipeline (format detection, parsing, rules, dedup)
@@ -665,6 +695,7 @@ flowchart TB
 - Balance recalculation + checkpoints (foundation for correct balances)
 
 ### What Still Needs Work (Pre-v1) ⚠️
+
 - Goals: real contribution mechanism + history (v0.10.0)
 - Transaction type override UX: wire into transactions screens (v0.9.6)
 - Data safety: export/import backup + reset flow (v0.11.0)
@@ -673,6 +704,7 @@ flowchart TB
 - Consistency: unify income/financial month logic (v0.13.0)
 
 ### Nice-to-Have (Pre-v1) 🌟
+
 - Goals: deleting a goal should also delete its contribution history (avoid orphan rows)
 - Transactions: support deep-linking to a goal-focused view (e.g. `/transactions?goalId=123`) to power “Fund this goal” flows
 

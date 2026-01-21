@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AccountProvider } from "@/contexts/account-context";
@@ -14,12 +14,15 @@ export const metadata: Metadata = {
   description: "Track your spending, budget wisely, and achieve your financial goals with WealthPilot.",
   keywords: ["finance", "budget", "spending tracker", "personal finance", "savings goals"],
   manifest: "/manifest.webmanifest",
-  themeColor: "#0ea5e9",
   appleWebApp: {
     capable: true,
     title: "WealthPilot",
     statusBarStyle: "default",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0ea5e9",
 };
 
 export default function RootLayout({
