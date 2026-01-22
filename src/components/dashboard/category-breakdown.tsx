@@ -12,7 +12,7 @@ import { ClientOnly } from "@/components/ui/client-only";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { CATEGORIES } from "@/lib/db";
 import type { CategoryStats } from "@/lib/analytics";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { Money } from "@/components/ui/money";
 
 interface CategoryBreakdownProps {
   data: CategoryStats[];
@@ -30,15 +30,6 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
 
@@ -55,7 +46,7 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
           <span className="font-medium">{item.name}</span>
         </div>
         <div className="text-sm text-muted-foreground">
-          <PrivacyBlur>{formatCurrency(item.value)}</PrivacyBlur> ({percentage}%)
+          <Money amount={item.value} /> ({percentage}%)
         </div>
       </div>
     );

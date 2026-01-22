@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Money } from "@/components/ui/money";
 
 interface ExpenseCategory {
   name: string;
@@ -24,15 +25,6 @@ export function ExpenseDonut({
   change,
   changeLabel = "vs last month",
 }: ExpenseDonutProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const isHigher = change !== undefined && change > 0;
 
   // Calculate donut segments
@@ -118,7 +110,7 @@ export function ExpenseDonut({
           </svg>
           {/* Center content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-lg font-bold">{formatCurrency(totalExpenses)}</p>
+            <p className="text-lg font-bold"><Money amount={totalExpenses} /></p>
             {change !== undefined && (
               <div
                 className={cn(
@@ -149,7 +141,7 @@ export function ExpenseDonut({
                 <span className="text-muted-foreground truncate">{segment.name}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-medium">{formatCurrency(segment.amount)}</span>
+                <span className="font-medium"><Money amount={segment.amount} /></span>
                 <span className="text-muted-foreground text-xs w-10 text-right">
                   {segment.percentage.toFixed(0)}%
                 </span>

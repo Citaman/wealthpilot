@@ -23,10 +23,12 @@ import { useAccount } from "@/contexts/account-context";
 import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/lib/db";
 import Link from "next/link";
+import { useMoney } from "@/hooks/use-money";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { accounts, selectedAccountId, totalBalance, setSelectedAccountId } = useAccount();
+  const { convertFromAccount } = useMoney();
   const {
     isLoading,
     hasData,
@@ -56,7 +58,7 @@ export default function DashboardPage() {
       .filter((t) => t.direction === "credit")
       .forEach((t) => {
         const source = t.category === "Income" ? "Salary" : t.category;
-        sources[source] = (sources[source] || 0) + t.amount;
+        sources[source] = (sources[source] || 0) + convertFromAccount(t.amount, t.accountId);
       });
 
     return [
@@ -67,7 +69,7 @@ export default function DashboardPage() {
         .reduce((sum, [, v]) => sum + v, 0), 
         icon: "other" as const, color: "#8b5cf6" },
     ].filter((s) => s.amount > 0);
-  }, [monthTransactions]);
+  }, [monthTransactions, convertFromAccount]);
 
   // Calculate expense categories for donut
   const expenseCategories = useMemo(() => {
@@ -76,7 +78,7 @@ export default function DashboardPage() {
     monthTransactions
       .filter((t) => t.direction === "debit")
       .forEach((t) => {
-        cats[t.category] = (cats[t.category] || 0) + Math.abs(t.amount);
+        cats[t.category] = (cats[t.category] || 0) + Math.abs(convertFromAccount(t.amount, t.accountId));
       });
 
     return Object.entries(cats)
@@ -86,7 +88,7 @@ export default function DashboardPage() {
         amount,
         color: CATEGORIES[name]?.color || "#6b7280",
       }));
-  }, [monthTransactions]);
+  }, [monthTransactions, convertFromAccount]);
 
   // Calculate monthly budget
   const monthlyBudget = useMemo(() => {

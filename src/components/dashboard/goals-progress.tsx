@@ -3,10 +3,10 @@
 import { Target, Plus, ArrowRight, Sparkles } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import type { Goal } from "@/lib/db";
 import Link from "next/link";
+import { Money } from "@/components/ui/money";
 
 interface GoalsProgressProps {
   goals: Goal[];
@@ -14,15 +14,6 @@ interface GoalsProgressProps {
 }
 
 export function GoalsProgress({ goals, onAddClick }: GoalsProgressProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const activeGoals = goals
     .filter((g) => g.isActive)
     .sort((a, b) => {
@@ -96,13 +87,13 @@ export function GoalsProgress({ goals, onAddClick }: GoalsProgressProps) {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        <PrivacyBlur>{formatCurrency(goal.currentAmount)}</PrivacyBlur> of <PrivacyBlur>{formatCurrency(goal.targetAmount)}</PrivacyBlur>
+                        <Money amount={goal.currentAmount} /> of <Money amount={goal.targetAmount} />
                       </p>
                     </div>
                     {!isComplete && (
                       <div className="text-right shrink-0">
                         <p className="text-xs text-muted-foreground">
-                          <PrivacyBlur>{formatCurrency(goal.targetAmount - goal.currentAmount)}</PrivacyBlur>
+                          <Money amount={goal.targetAmount - goal.currentAmount} />
                         </p>
                         <p className="text-[10px] text-muted-foreground">left</p>
                       </div>
@@ -118,7 +109,7 @@ export function GoalsProgress({ goals, onAddClick }: GoalsProgressProps) {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Total saved</span>
                   <span className="font-semibold">
-                    <PrivacyBlur>{formatCurrency(totalSaved)}</PrivacyBlur>
+                    <Money amount={totalSaved} />
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">

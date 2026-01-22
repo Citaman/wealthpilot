@@ -5,9 +5,10 @@ import { ArrowUpRight, ArrowDownRight, MoreHorizontal, ArrowRight } from "lucide
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES, type Transaction } from "@/lib/db";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -20,16 +21,8 @@ export function RecentTransactions({
   limit = 5,
   showViewAll = true 
 }: RecentTransactionsProps) {
+  const { getAccountCurrency } = useMoney();
   const displayTransactions = transactions.slice(0, limit);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
 
   const getCategoryIcon = (category: string) => {
     const cat = CATEGORIES[category];
@@ -116,10 +109,13 @@ export function RecentTransactions({
                         isCredit ? "text-emerald-600" : "text-foreground"
                       )}
                     >
-                      <PrivacyBlur>
-                        {isCredit ? "+" : "-"}
-                        {formatCurrency(Math.abs(tx.amount))}
-                      </PrivacyBlur>
+                      {isCredit ? "+" : "-"}
+                      <Money
+                        amount={Math.abs(tx.amount)}
+                        currency={getAccountCurrency(tx.accountId)}
+                        minimumFractionDigits={2}
+                        maximumFractionDigits={2}
+                      />
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {tx.category}
@@ -134,4 +130,3 @@ export function RecentTransactions({
     </Card>
   );
 }
-

@@ -22,7 +22,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-r
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, CATEGORIES } from "@/lib/db";
 import { ClientOnly } from "@/components/ui/client-only";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { Money } from "@/components/ui/money";
 import {
   format,
   subMonths,
@@ -42,6 +42,7 @@ import {
   eachWeekOfInterval,
   eachDayOfInterval,
 } from "date-fns";
+import { useMoney } from "@/hooks/use-money";
 
 // Period options
 type PeriodType = "6M" | "1Y" | "YTD" | "3M" | "weekly" | "daily";
@@ -93,6 +94,7 @@ export function CashFlowChart() {
   const [period, setPeriod] = useState<PeriodType>("3M");
   const [showCategories, setShowCategories] = useState(false);
   const [offset, setOffset] = useState(0); // For navigation (0 = current, 1 = previous period, etc.)
+  const { convertFromAccount, formatCompactCurrency } = useMoney();
 
   // Calculate date range based on period and offset
   const dateRange = useMemo(() => {
@@ -244,7 +246,7 @@ export function CashFlowChart() {
       if (!bucket) return;
 
       if (tx.direction === "credit") {
-        const amount = Math.abs(tx.amount);
+        const amount = Math.abs(convertFromAccount(tx.amount, tx.accountId));
         bucket.totalIncome += amount;
 
         if (tx.category === "Income" || tx.merchant?.toLowerCase().includes("salaire")) {
@@ -255,7 +257,7 @@ export function CashFlowChart() {
           bucket.incomeOther += amount;
         }
       } else {
-        const amount = Math.abs(tx.amount);
+        const amount = Math.abs(convertFromAccount(tx.amount, tx.accountId));
         bucket.totalExpenses += amount;
         if (bucket.expensesByCategory[tx.category] !== undefined) {
           bucket.expensesByCategory[tx.category] += amount;
@@ -301,25 +303,9 @@ export function CashFlowChart() {
       ),
       maxValue: max,
     };
-  }, [transactions, period, dateRange]);
+  }, [transactions, period, dateRange, convertFromAccount]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(Math.abs(value));
-  };
-
-  const formatYAxis = (value: number) => {
-    if (value === 0) return "€0";
-    const absValue = Math.abs(value);
-    if (absValue >= 1000) {
-      return `€${(absValue / 1000).toFixed(0)}K`;
-    }
-    return `€${Math.round(absValue)}`;
-  };
+  const formatYAxis = (value: number) => formatCompactCurrency(value);
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: ChartDataPoint }> }) => {
@@ -359,7 +345,7 @@ export function CashFlowChart() {
               <span className="font-medium">In</span>
             </div>
             <span className="font-bold text-blue-500">
-              <PrivacyBlur>{formatCurrency(totalIncome)}</PrivacyBlur>
+              <Money amount={totalIncome} />
             </span>
           </div>
           {showCategories && incomeBreakdown.length > 0 && (
@@ -367,7 +353,7 @@ export function CashFlowChart() {
               {incomeBreakdown.map((item) => (
                 <div key={item.name} className="flex justify-between text-xs opacity-70">
                   <span>{item.name}</span>
-                  <span><PrivacyBlur>{formatCurrency(item.value)}</PrivacyBlur></span>
+                  <span><Money amount={item.value} /></span>
                 </div>
               ))}
             </div>
@@ -381,7 +367,7 @@ export function CashFlowChart() {
               <span className="font-medium">Out</span>
             </div>
             <span className="font-bold text-violet-500">
-              <PrivacyBlur>{formatCurrency(totalExpenses)}</PrivacyBlur>
+              <Money amount={totalExpenses} />
             </span>
           </div>
           {showCategories && expenseBreakdown.length > 0 && (
@@ -389,7 +375,7 @@ export function CashFlowChart() {
               {expenseBreakdown.map((item) => (
                 <div key={item.name} className="flex justify-between text-xs opacity-70">
                   <span>{item.name}</span>
-                  <span><PrivacyBlur>{formatCurrency(item.value)}</PrivacyBlur></span>
+                  <span><Money amount={item.value} /></span>
                 </div>
               ))}
             </div>
@@ -399,7 +385,7 @@ export function CashFlowChart() {
         <div className="pt-2 border-t border-border flex items-center justify-between">
           <span className="font-medium">Net</span>
           <span className={`font-bold ${net >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-            <PrivacyBlur>{net >= 0 ? "+" : "-"}{formatCurrency(Math.abs(net))}</PrivacyBlur>
+            {net >= 0 ? "+" : "-"}<Money amount={Math.abs(net)} />
           </span>
         </div>
       </div>

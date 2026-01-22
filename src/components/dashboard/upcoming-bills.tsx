@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CATEGORIES, db, type Transaction } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface UpcomingBillsProps {
   className?: string;
@@ -26,6 +27,7 @@ interface PredictedBill {
 }
 
 export function UpcomingBills({ className }: UpcomingBillsProps) {
+  const { convertFromAccount } = useMoney();
   // Fetch last 6 months of transactions for recurring pattern detection
   const now = new Date();
   const sixMonthsAgo = subMonths(now, 6);
@@ -71,7 +73,7 @@ export function UpcomingBills({ className }: UpcomingBillsProps) {
       const dayVariance = days.reduce((sum, d) => sum + Math.abs(d - avgDay), 0) / days.length;
 
       // Check amount consistency
-      const amounts = sorted.map((t) => Math.abs(t.amount));
+      const amounts = sorted.map((t) => Math.abs(convertFromAccount(t.amount, t.accountId)));
       const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
       const amountVariance = amounts.reduce((sum, a) => sum + Math.abs(a - avgAmount), 0) / amounts.length;
       const isConsistentAmount = amountVariance / avgAmount < 0.1; // Less than 10% variance
@@ -113,16 +115,7 @@ export function UpcomingBills({ className }: UpcomingBillsProps) {
     });
 
     return predictions.sort((a, b) => a.daysUntil - b.daysUntil).slice(0, 5);
-  }, [transactions, now]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, now, convertFromAccount]);
 
   // Loading state
   if (!upcomingBills) {
@@ -164,7 +157,7 @@ export function UpcomingBills({ className }: UpcomingBillsProps) {
           </CardTitle>
           {upcomingBills.length > 0 && (
             <Badge variant="secondary" className="font-normal">
-              <PrivacyBlur>{formatCurrency(totalUpcoming)}</PrivacyBlur> due
+              <Money amount={totalUpcoming} /> due
             </Badge>
           )}
         </div>
@@ -200,7 +193,7 @@ export function UpcomingBills({ className }: UpcomingBillsProps) {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="font-semibold">
-                    <PrivacyBlur>{formatCurrency(bill.amount)}</PrivacyBlur>
+                    <Money amount={bill.amount} />
                   </p>
                   <p className={cn(
                     "text-xs",

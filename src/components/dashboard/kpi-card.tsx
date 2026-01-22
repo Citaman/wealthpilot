@@ -2,9 +2,8 @@
 
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
-import { useCurrency } from "@/contexts";
 import { cn } from "@/lib/utils";
+import { Money } from "@/components/ui/money";
 
 interface KpiCardProps {
   title: string;
@@ -29,11 +28,9 @@ export function KpiCard({
   trend,
   currencyCode,
 }: KpiCardProps) {
-  const { format: formatCurrency } = useCurrency();
-
   const formatValue = (val: string | number) => {
     if (typeof val === "number") {
-      return formatCurrency(val, currencyCode);
+      return <Money amount={val} currency={currencyCode} />;
     }
     return val;
   };
@@ -61,7 +58,7 @@ export function KpiCard({
           <div className="space-y-2">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-3xl font-bold tracking-tight">
-              <PrivacyBlur>{formatValue(value)}</PrivacyBlur>
+              {formatValue(value)}
             </p>
             {(change !== undefined || subtitle) && (
               <div className="flex items-center gap-2">

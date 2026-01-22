@@ -12,8 +12,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
+import { Money } from "@/components/ui/money";
 
 interface IncomeSource {
   name: string;
@@ -50,15 +50,6 @@ export function IncomeCard({
   sources = defaultSources,
   onAddIncome,
 }: IncomeCardProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const maxAmount = Math.max(...sources.map((s) => s.amount), 1);
   const isPositiveChange = change !== undefined && change > 0;
 
@@ -91,7 +82,7 @@ export function IncomeCard({
               Monthly Recap
             </p>
             <p className="text-3xl font-bold text-emerald-600">
-              <PrivacyBlur>{formatCurrency(totalIncome)}</PrivacyBlur>
+              <Money amount={totalIncome} />
             </p>
           </div>
           {change !== undefined && (
@@ -138,7 +129,7 @@ export function IncomeCard({
                       <span className="text-muted-foreground">{source.name}</span>
                     </div>
                     <span className="font-medium">
-                      <PrivacyBlur>{formatCurrency(source.amount)}</PrivacyBlur>
+                      <Money amount={source.amount} />
                     </span>
                   </div>
                   <Progress

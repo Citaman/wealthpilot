@@ -9,14 +9,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import Link from "next/link";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface MonthlySummaryProps {
   className?: string;
 }
 
 export function MonthlySummary({ className }: MonthlySummaryProps) {
+  const { convertFromAccount } = useMoney();
   // Fetch current and last month transactions
   const now = new Date();
   const twoMonthsAgo = subMonths(now, 1);
@@ -41,10 +43,10 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
     const thisMonthTx = transactions.filter((t) => t.date.startsWith(thisMonth));
     const income = thisMonthTx
       .filter((t) => t.direction === "credit")
-      .reduce((s, t) => s + t.amount, 0);
+      .reduce((s, t) => s + convertFromAccount(t.amount, t.accountId), 0);
     const expenses = thisMonthTx
       .filter((t) => t.direction === "debit")
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
+      .reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
     const net = income - expenses;
     const txCount = thisMonthTx.length;
 
@@ -52,10 +54,10 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
     const lastMonthTx = transactions.filter((t) => t.date.startsWith(lastMonth));
     const lastIncome = lastMonthTx
       .filter((t) => t.direction === "credit")
-      .reduce((s, t) => s + t.amount, 0);
+      .reduce((s, t) => s + convertFromAccount(t.amount, t.accountId), 0);
     const lastExpenses = lastMonthTx
       .filter((t) => t.direction === "debit")
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
+      .reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
 
     // Changes
     const incomeChange = lastIncome > 0 ? ((income - lastIncome) / lastIncome) * 100 : 0;
@@ -66,7 +68,10 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
     thisMonthTx
       .filter((t) => t.direction === "debit")
       .forEach((t) => {
-        categoryTotals.set(t.category, (categoryTotals.get(t.category) || 0) + Math.abs(t.amount));
+        categoryTotals.set(
+          t.category,
+          (categoryTotals.get(t.category) || 0) + Math.abs(convertFromAccount(t.amount, t.accountId))
+        );
       });
     
     let topCategory = { name: "None", amount: 0 };
@@ -89,16 +94,7 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
       daysInMonth,
       daysRemaining: daysInMonth - dayOfMonth,
     };
-  }, [transactions, now]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, now, convertFromAccount]);
 
   const ChangeIndicator = ({ value, inverse = false }: { value: number; inverse?: boolean }) => {
     const isPositive = inverse ? value < 0 : value > 0;
@@ -162,14 +158,14 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
           <div className="text-center p-2 rounded-lg bg-emerald-500/10">
             <p className="text-xs text-muted-foreground mb-0.5">Income</p>
             <p className="text-sm font-bold text-emerald-500">
-              <PrivacyBlur>{formatCurrency(summary.income)}</PrivacyBlur>
+              <Money amount={summary.income} />
             </p>
             <ChangeIndicator value={summary.incomeChange} />
           </div>
           <div className="text-center p-2 rounded-lg bg-red-500/10">
             <p className="text-xs text-muted-foreground mb-0.5">Expenses</p>
             <p className="text-sm font-bold text-red-500">
-              <PrivacyBlur>{formatCurrency(summary.expenses)}</PrivacyBlur>
+              <Money amount={summary.expenses} />
             </p>
             <ChangeIndicator value={summary.expenseChange} inverse />
           </div>
@@ -182,7 +178,7 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
               "text-sm font-bold",
               summary.net >= 0 ? "text-blue-500" : "text-amber-500"
             )}>
-              <PrivacyBlur>{formatCurrency(summary.net)}</PrivacyBlur>
+              <Money amount={summary.net} />
             </p>
             <span className="text-xs text-muted-foreground">
               {summary.txCount} tx
@@ -198,7 +194,7 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
               <p className="text-sm font-medium">{summary.topCategory.name}</p>
             </div>
             <p className="text-sm font-bold">
-              <PrivacyBlur>{formatCurrency(summary.topCategory.amount)}</PrivacyBlur>
+              <Money amount={summary.topCategory.amount} />
             </p>
           </div>
         )}

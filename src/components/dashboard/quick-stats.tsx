@@ -9,13 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface QuickStatsProps {
   className?: string;
 }
 
 export function QuickStats({ className }: QuickStatsProps) {
+  const { convertFromAccount } = useMoney();
   // Fetch transactions for current and last month
   const now = new Date();
   const twoMonthsAgo = startOfMonth(subMonths(now, 1));
@@ -41,10 +43,10 @@ export function QuickStats({ className }: QuickStatsProps) {
     const thisMonthTxns = transactions.filter(t => t.date.startsWith(thisMonth));
     const totalIncome = thisMonthTxns
       .filter(t => t.direction === "credit")
-      .reduce((s, t) => s + t.amount, 0);
+      .reduce((s, t) => s + convertFromAccount(t.amount, t.accountId), 0);
     const totalExpenses = thisMonthTxns
       .filter(t => t.direction === "debit")
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
+      .reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
 
     // Savings rate
     const savingsRate = totalIncome > 0 
@@ -54,7 +56,7 @@ export function QuickStats({ className }: QuickStatsProps) {
     // Last month's expenses for comparison
     const lastMonthTotal = transactions
       .filter((t) => t.direction === "debit" && t.date.startsWith(lastMonth))
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
+      .reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
 
     const expectedSpending = lastMonthTotal || totalExpenses * (daysInMonth / dayOfMonth);
     const spendingProgress = expectedSpending > 0 
@@ -86,16 +88,7 @@ export function QuickStats({ className }: QuickStatsProps) {
       daysInMonth,
       remainingDays,
     };
-  }, [transactions, now]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, now, convertFromAccount]);
 
   const velocityConfig = {
     under: { color: "text-emerald-500", bg: "bg-emerald-500", label: "Under budget" },
@@ -162,7 +155,7 @@ export function QuickStats({ className }: QuickStatsProps) {
                 "text-2xl font-bold",
                 velocityConfig[stats.velocityStatus].color
               )}>
-                <PrivacyBlur>{formatCurrency(stats.dailyAvg)}</PrivacyBlur>
+                <Money amount={stats.dailyAvg} />
               </span>
               <span className="text-xs text-muted-foreground">/day</span>
             </div>
@@ -215,12 +208,12 @@ export function QuickStats({ className }: QuickStatsProps) {
                 "text-2xl font-bold",
                 stats.projectedTotal > stats.lastMonthTotal ? "text-red-500" : "text-emerald-500"
               )}>
-                <PrivacyBlur>{formatCurrency(stats.projectedTotal)}</PrivacyBlur>
+                <Money amount={stats.projectedTotal} />
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
               {stats.lastMonthTotal > 0 && (
-                <>vs <PrivacyBlur>{formatCurrency(stats.lastMonthTotal)}</PrivacyBlur> last month</>
+                <>vs <Money amount={stats.lastMonthTotal} /> last month</>
               )}
             </p>
           </div>

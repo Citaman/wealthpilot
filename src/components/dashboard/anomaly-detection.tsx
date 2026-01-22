@@ -6,10 +6,11 @@ import { AlertCircle, ArrowRight, TrendingUp } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { detectAnomalies } from "@/lib/analytics";
 import type { Transaction } from "@/lib/db";
 import Link from "next/link";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface AnomalyDetectionProps {
   transactions: Transaction[];
@@ -17,27 +18,27 @@ interface AnomalyDetectionProps {
 }
 
 export function AnomalyDetection({ transactions, className }: AnomalyDetectionProps) {
+  const { convertFromAccount } = useMoney();
+
+  const baseTransactions = useMemo(() => {
+    return transactions.map((tx) => ({
+      ...tx,
+      amount: convertFromAccount(tx.amount, tx.accountId),
+    }));
+  }, [transactions, convertFromAccount]);
+
   const anomalies = useMemo(() => {
-    if (transactions.length < 10) return [];
+    if (baseTransactions.length < 10) return [];
 
     const now = new Date();
     const thisMonth = format(now, "yyyy-MM");
-    const currentMonthTx = transactions.filter((t) => t.date.startsWith(thisMonth));
-    const historyTx = transactions.filter((t) => !t.date.startsWith(thisMonth));
+    const currentMonthTx = baseTransactions.filter((t) => t.date.startsWith(thisMonth));
+    const historyTx = baseTransactions.filter((t) => !t.date.startsWith(thisMonth));
 
     return detectAnomalies(currentMonthTx, historyTx);
-  }, [transactions]);
+  }, [baseTransactions]);
 
   if (anomalies.length === 0) return null;
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   return (
     <Card className={className}>
@@ -69,7 +70,7 @@ export function AnomalyDetection({ transactions, className }: AnomalyDetectionPr
             </div>
             <div className="text-right shrink-0 ml-4">
               <p className="font-bold text-sm text-amber-600">
-                <PrivacyBlur>{formatCurrency(Math.abs(anomaly.transaction.amount))}</PrivacyBlur>
+                <Money amount={Math.abs(anomaly.transaction.amount)} />
               </p>
               <div className="flex items-center justify-end gap-1 text-[10px] font-medium text-amber-600">
                 <TrendingUp className="h-3 w-3" />

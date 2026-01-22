@@ -3,9 +3,9 @@
 import { AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { Money } from "@/components/ui/money";
 
 interface BudgetControlProps {
   budgetLimit: number;
@@ -18,15 +18,6 @@ export function BudgetControl({
   spent,
   onViewDetails,
 }: BudgetControlProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const remaining = budgetLimit - spent;
   const percentage = budgetLimit > 0 ? (spent / budgetLimit) * 100 : 0;
   const isOverBudget = remaining < 0;
@@ -118,7 +109,7 @@ export function BudgetControl({
           <div className="text-center">
             <p className="text-sm text-muted-foreground">Monthly Limit</p>
             <p className="text-lg font-semibold">
-              <PrivacyBlur>{formatCurrency(budgetLimit)}</PrivacyBlur>
+              <Money amount={budgetLimit} />
             </p>
           </div>
           <div className="text-center">
@@ -131,7 +122,7 @@ export function BudgetControl({
                 isOverBudget ? "text-red-600" : "text-emerald-600"
               )}
             >
-              <PrivacyBlur>{formatCurrency(Math.abs(remaining))}</PrivacyBlur>
+              <Money amount={Math.abs(remaining)} />
             </p>
           </div>
         </div>
