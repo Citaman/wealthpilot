@@ -406,7 +406,7 @@ export function useCommandSearch(query: string) {
           title: tx.merchant,
           subtitle: `${tx.date} • ${tx.category}${account?.name ? ` • ${account.name}` : ""}`,
           amount: tx.amount,
-          href: "/transactions",
+          href: tx.id ? `/transactions?editId=${tx.id}` : "/transactions",
           accountId: tx.accountId,
           score,
         });
