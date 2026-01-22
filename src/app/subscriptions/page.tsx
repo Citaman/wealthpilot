@@ -42,6 +42,7 @@ import {
   type RecurringType,
   type RecurringStatus,
 } from "@/lib/db";
+import { getPrimaryAccount } from "@/lib/accounts";
 import { 
   detectRecurringTransactions, 
   mergeRecurringItems,
@@ -187,7 +188,7 @@ export default function SubscriptionsPage() {
     setIsDetecting(true);
     setSyncResult(null);
     try {
-      const account = await db.accounts.where("isActive").equals(1 as number).first();
+      const account = await getPrimaryAccount();
       if (!account?.id) {
         console.error("No active account found");
         return;
@@ -229,7 +230,7 @@ export default function SubscriptionsPage() {
   // Save (add or update) a recurring item
   const handleSave = async (data: Partial<RecurringTransaction>) => {
     const now = new Date().toISOString();
-    const account = await db.accounts.where("isActive").equals(1 as number).first();
+    const account = await getPrimaryAccount();
 
     if (editingItem?.id) {
       // Update existing

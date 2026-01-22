@@ -14,22 +14,7 @@
   - Create a `<PrivacyBlur>` component or a utility class `privacy-blur` that conditionally applies a CSS filter.
   - Wrap all sensitive numbers in the app with this component/class.
 
-## 2. App Lock (PIN Protection)
-**Why:** As a PWA/Local-first app, anyone with access to the unlocked device can open the browser and see everything. An app-level PIN adds a crucial layer of defense against casual snooping.
-
-**Feature:**
-- **Setup:** User sets a 4-6 digit PIN.
-- **Lock Screen:** A dedicated, clean overlay that blocks the entire UI until the correct PIN is entered.
-- **Triggers:**
-  - **App Launch:** If PIN is enabled.
-  - **Inactivity:** Auto-lock after X minutes (configurable: 1m, 5m, 15m, 30m, Never).
-  - **Background:** Option to lock immediately when the app goes to the background (blur event).
-- **Security:**
-  - PIN stored as a salted hash (SHA-256) in `localStorage` (sufficient for client-side privacy).
-  - *Not* a replacement for device encryption, but a deterrent for "borrowed phone" scenarios.
-- **Recovery:** Since data is local, "Forgot PIN" means "Clear Data & Reset". This is a security feature, not a bug. It prevents unauthorized access.
-
-## 3. Encrypted Backups (AES-GCM)
+## 2. Encrypted Backups (AES-GCM)
 **Why:** Current backups are plain JSON. If a user stores them in Google Drive/Dropbox, they are readable by the cloud provider or anyone with access.
 
 **Feature:**
@@ -49,24 +34,21 @@
   - Export: Toggle "Encrypt Backup" -> Prompt for Passphrase -> Generate `.enc` file.
   - Import: Detect `.enc` file -> Prompt for Passphrase -> Decrypt -> Validate -> Restore.
 
-## 4. Privacy Audit & Cleanup
+## 3. Privacy Audit & Cleanup
 **Why:** Ensure professional standards.
 - **Console Logs:** Remove all `console.log` of sensitive data (transactions, account details).
 - **Error Reporting:** Ensure no PII is leaking in error boundaries (if we had remote logging, which we don't yet, but good practice).
 - **Metadata:** Ensure exported files don't contain unnecessary system paths or identifiers.
 
 ## UX References
-- **Lock Screen:** Clean, numeric keypad, biometric icon (future proofing), minimalist logo. Matches "Dashboard" aesthetic (clean, modern).
 - **Privacy Toggle:** Subtle but accessible in the header.
 
 ## Technical Architecture
 
 ### Contexts
-- `SecurityContext`: Manages `isLocked`, `unlock(pin)`, `setPin(pin)`, `lock()`.
 - `PrivacyContext`: Manages `isPrivacyEnabled`.
 
 ### Components
-- `AppLockOverlay`: Rendered at the root `layout.tsx`, conditionally shown if `isLocked`.
 - `SensitiveValue`: Component `<SensitiveValue value={100} />` that handles formatting and blurring.
 
 ### Libraries

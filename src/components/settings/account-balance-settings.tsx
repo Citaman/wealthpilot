@@ -12,7 +12,8 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { useState, useEffect, useCallback } from "react";
-import { db, BalanceCheckpoint } from "@/lib/db";
+import { type BalanceCheckpoint } from "@/lib/db";
+import { getPrimaryAccount } from "@/lib/accounts";
 import { setInitialBalance, addBalanceCheckpoint, getBalanceCheckpoints, deleteBalanceCheckpoint, recalculateAllBalances } from "@/lib/balance";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -39,7 +40,7 @@ export function AccountBalanceSettings() {
   const [recalculateSuccess, setRecalculateSuccess] = useState(false);
 
   const loadAccountSettings = useCallback(async () => {
-    const account = await db.accounts.where("isActive").equals(1 as number).first();
+    const account = await getPrimaryAccount();
     if (account) {
       setInitialBalanceState(account.initialBalance?.toString() || "0");
       setInitialBalanceDate(account.initialBalanceDate || new Date().toISOString().split("T")[0]);
@@ -59,7 +60,7 @@ export function AccountBalanceSettings() {
   const handleSaveInitialBalance = async () => {
     setSavingBalance(true);
     try {
-      const account = await db.accounts.where("isActive").equals(1 as number).first();
+      const account = await getPrimaryAccount();
       if (account && account.id) {
         await setInitialBalance(account.id, parseFloat(initialBalance) || 0, initialBalanceDate);
         toast({
@@ -83,7 +84,7 @@ export function AccountBalanceSettings() {
   const handleAddCheckpoint = async () => {
     setAddingCheckpoint(true);
     try {
-      const account = await db.accounts.where("isActive").equals(1 as number).first();
+      const account = await getPrimaryAccount();
       if (account && account.id) {
         await addBalanceCheckpoint(
           account.id,
@@ -118,7 +119,7 @@ export function AccountBalanceSettings() {
 
   const handleDeleteCheckpoint = async (checkpointId: number) => {
     try {
-      const account = await db.accounts.where("isActive").equals(1 as number).first();
+      const account = await getPrimaryAccount();
       if (account && account.id) {
         await deleteBalanceCheckpoint(checkpointId, account.id);
         const cps = await getBalanceCheckpoints(account.id);

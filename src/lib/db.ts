@@ -661,58 +661,72 @@ export const DEFAULT_FINANCIAL_MONTH_SETTINGS: FinancialMonthSettings = {
   salaryMerchants: [],
 };
 
+let initializePromise: Promise<void> | null = null;
+
 // Initialize default data
 export async function initializeDatabase() {
-  const accountCount = await db.accounts.count();
-  
-  if (accountCount === 0) {
-    // Create default account with balance tracking
-    const now = new Date().toISOString();
-    const today = now.split('T')[0];
-    await db.accounts.add({
-      name: 'Société Générale',
-      type: 'checking',
-      balance: 0,
-      currency: 'EUR',
-      institution: 'Société Générale',
-      color: '#e11d48',
-      isActive: true,
-      initialBalance: 0,
-      initialBalanceDate: today,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
+  if (initializePromise) return initializePromise;
 
-  const goalsCount = await db.goals.count();
-  
-  if (goalsCount === 0) {
-    // Create default goals
-    const now = new Date().toISOString();
-    for (const goal of DEFAULT_GOALS) {
-      await db.goals.add({
-        ...goal,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-  }
+  initializePromise = (async () => {
+    await db.transaction("rw", db.accounts, db.goals, db.settings, async () => {
+      const accountCount = await db.accounts.count();
 
-  // Set default budget rule
-  const budgetRule = await db.settings.where('key').equals('budgetRule').first();
-  if (!budgetRule) {
-    await db.settings.add({
-      key: 'budgetRule',
-      value: '50-30-20'
-    });
-  }
+      if (accountCount === 0) {
+        // Create default account with balance tracking
+        const now = new Date().toISOString();
+        const today = now.split('T')[0];
+        await db.accounts.add({
+          name: 'Société Générale',
+          type: 'checking',
+          balance: 0,
+          currency: 'EUR',
+          institution: 'Société Générale',
+          color: '#e11d48',
+          isActive: true,
+          initialBalance: 0,
+          initialBalanceDate: today,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
 
-  // Set default financial month settings
-  const fmSettings = await db.settings.where('key').equals('financialMonthSettings').first();
-  if (!fmSettings) {
-    await db.settings.add({
-      key: 'financialMonthSettings',
-      value: JSON.stringify(DEFAULT_FINANCIAL_MONTH_SETTINGS)
+      const goalsCount = await db.goals.count();
+
+      if (goalsCount === 0) {
+        // Create default goals
+        const now = new Date().toISOString();
+        for (const goal of DEFAULT_GOALS) {
+          await db.goals.add({
+            ...goal,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+      }
+
+      // Set default budget rule
+      const budgetRule = await db.settings.where('key').equals('budgetRule').first();
+      if (!budgetRule) {
+        await db.settings.add({
+          key: 'budgetRule',
+          value: '50-30-20'
+        });
+      }
+
+      // Set default financial month settings
+      const fmSettings = await db.settings.where('key').equals('financialMonthSettings').first();
+      if (!fmSettings) {
+        await db.settings.add({
+          key: 'financialMonthSettings',
+          value: JSON.stringify(DEFAULT_FINANCIAL_MONTH_SETTINGS)
+        });
+      }
     });
+  })();
+
+  try {
+    await initializePromise;
+  } finally {
+    initializePromise = null;
   }
 }

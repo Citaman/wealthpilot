@@ -43,6 +43,7 @@ import { linkTransactionToRecurring } from "@/lib/csv-parser";
 import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import { useAccount } from "@/contexts/account-context";
+import { getPrimaryAccount } from "@/lib/accounts";
 
 type SortField = "date" | "amount" | "merchant" | "category";
 type SortDirection = "asc" | "desc";
@@ -220,7 +221,7 @@ export default function TransactionsPage() {
 
   const handleSaveRecurring = async (data: Partial<RecurringTransaction>) => {
     const now = new Date().toISOString();
-    const account = await db.accounts.where("isActive").equals(1 as number).first();
+    const account = await getPrimaryAccount();
 
     await db.recurringTransactions.add({
       ...data,

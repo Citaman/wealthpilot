@@ -11,7 +11,6 @@ import {
   Account,
   MerchantRule,
   ImportRule,
-  initializeDatabase,
 } from "@/lib/db";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { recalculateBalances } from "@/lib/balance";
@@ -526,10 +525,7 @@ export function useBudgets() {
 // =============================================================================
 
 export function useAccounts() {
-  const accounts = useLiveQuery(async () => {
-    await initializeDatabase();
-    return db.accounts.toArray();
-  });
+  const accounts = useLiveQuery(() => db.accounts.toArray());
 
   const createAccount = useCallback(async (accountData: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>): Promise<number> => {
     const now = new Date().toISOString();

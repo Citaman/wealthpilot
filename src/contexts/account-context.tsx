@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type Account } from "@/lib/db";
+import { db, type Account, initializeDatabase } from "@/lib/db";
 import { recalculateAllBalances } from "@/lib/balance";
 import { useCurrency } from "./currency-context";
 
@@ -57,6 +57,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    initializeDatabase().catch((err) => {
+      console.error("[WealthPilot] Failed to initialize database:", err);
+    });
+  }, []);
+
   // Auto-recalculate balances on app load (once)
   useEffect(() => {
     const autoRecalculate = async () => {
@@ -82,30 +88,6 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("selectedAccountId", String(id));
   }, []);
 
-  // Ensure default account exists
-  useEffect(() => {
-    const ensureDefaultAccount = async () => {
-      if (!accounts || accounts.length > 0) return;
-      
-      // Create default account if none exist
-      const now = new Date().toISOString();
-      await db.accounts.add({
-        name: "Main Account",
-        type: "checking",
-        balance: 0,
-        currency: "EUR",
-        institution: "",
-        color: "#3b82f6",
-        isActive: true,
-        initialBalance: 0,
-        initialBalanceDate: now,
-        createdAt: now,
-        updatedAt: now,
-      });
-    };
-
-    ensureDefaultAccount();
-  }, [accounts]);
 
   const refreshAccounts = useCallback(async () => {
     // With useLiveQuery, this is automatic, but keep for API compatibility

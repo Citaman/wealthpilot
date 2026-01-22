@@ -1,7 +1,7 @@
 # WealthPilot - Product Roadmap
 
 **Last Audit Date**: January 21, 2026
-**Last Update**: v0.13.0 Performance, Testing & Consistency ✅ (shipped)
+**Last Update**: v0.14.5 Pro Intelligence & Security ✅ (shipped)
 
 ---
 
@@ -121,6 +121,7 @@ flowchart TB
 | v0.12.0 | ✅ Released | Mobile, PWA, Accessibility | Mobile shell + PWA baseline + chart mount-guard |
 | v0.12.1 | ✅ Released | Professional Polish | Settings revamp + System integrity + Toasts |
 | v0.13.0 | ✅ Released | Performance & Consistency | Income engine + Goal linking + Testing |
+| v0.14.5 | ✅ DONE | Pro Intelligence & Security | CFO layer + encrypted backups + bulk workbench |
 
 ---
 
@@ -153,7 +154,7 @@ flowchart TB
 
 ---
 
-### v0.14.5 - Pro Intelligence & Security (In Progress)
+### v0.14.5 - Pro Intelligence & Security ✅ COMPLETED
 
 **Theme**: "100x Engineer" standards - Proactive intelligence + Bank-grade security.
 
@@ -161,14 +162,24 @@ flowchart TB
 
 | # | Task | Status | Details |
 |---|------|--------|---------|
-| 1 | Global Privacy Audit & Fix | 📋 TODO | Ensure `PrivacyBlur` covers ALL currency values across every page/component |
-| 2 | Advanced CFO Layer | 📋 TODO | Health Score v2, Cash Flow Anomaly Detection, Multi-month Predictions |
-| 3 | App Lock (PIN) | 📋 TODO | Lock screen with PIN protection + auto-lock on inactivity |
-| 4 | Encrypted Backups | 📋 TODO | AES-GCM encryption for exports with user passphrase |
-| 5 | Power-User Command Palette | 📋 TODO | Natural language search ("Amazon last month") + bulk actions |
-| 6 | Bulk Transaction Workbench | 📋 TODO | Dedicated UI for fast categorizing/cleaning large datasets |
-| 7 | Multi-Currency Engine | 📋 TODO | Support for accounts in different currencies with local FX caching |
-| 8 | Reliability Hardening | 📋 TODO | Stress testing (10k+ tx) + Schema Migration framework |
+| 1 | Advanced CFO Core | ✅ DONE | Health Score v2 metrics + anomaly detection surfaced on Dashboard |
+| 2 | Encrypted Backups | ✅ DONE | PBKDF2 + AES-GCM encryption for export/restore |
+| 3 | Bulk Transaction Workbench | ✅ DONE | Bulk update dialog for mass categorization/cleanup |
+| 4 | Reliability Hardening | ✅ DONE | 10k stress test tooling + schema versioning upgrades |
+
+---
+
+### v0.14.6 - Security & Intelligence Integration (Planned)
+
+**Theme**: Close the gaps from v0.14.5 and tighten end-to-end privacy, security, and currency fidelity.
+
+| # | Task | Status | Details |
+|---|------|--------|---------|
+| 1 | Global Privacy Audit & Fix | 📋 TODO | Centralize money rendering + apply `PrivacyBlur` to all currency values (incl. tooltips) |
+| 2 | Power-User Command Palette | 📋 TODO | Natural language search + keyboard shortcuts for core flows |
+| 3 | Multi-Currency UI Integration | 📋 TODO | Use base currency formatter/conversion across all summaries + charts |
+| 4 | Predictions UI Integration | 📋 TODO | Surface predictions card + 3-month outlook in Analytics |
+| 5 | Health Score v2 Polish | 📋 TODO | Add peer benchmark context (e.g., 50/30/20) + explanatory tooltips |
 
 ---
 
@@ -305,7 +316,7 @@ flowchart TB
 
 1. **v0.15.0** - UI foundation & system (design language + tables + states + search)
 2. **v0.16.0** - Core pages UI revamp
-3. **v0.14.0** - Security & privacy hardening
+3. **v0.14.6** - Security & intelligence integration
 4. **v0.17.0** - Premium polish
 5. **v1.0.0** - Production-ready release criteria
 
