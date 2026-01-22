@@ -178,24 +178,21 @@ export default function ImportPage() {
   return (
     <AppLayout>
       <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Import Data</h1>
-          <p className="text-muted-foreground">
-            Upload your bank transaction CSV file to get started
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Upload your bank transaction CSV file to get started.
+        </p>
 
         {/* Import Mode Toggle */}
-        <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+        <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-card/90 p-4">
           <span className="text-sm font-medium">Import Mode:</span>
           <div className="flex gap-2">
             <button
               onClick={() => setImportMode("smart")}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2",
+                "flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition-colors",
                 importMode === "smart"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-background hover:bg-muted"
+                  : "bg-background/80 hover:bg-accent/70"
               )}
             >
               <Sparkles className="h-4 w-4" />
@@ -204,10 +201,10 @@ export default function ImportPage() {
             <button
               onClick={() => setImportMode("basic")}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                "rounded-2xl px-4 py-2 text-sm font-semibold transition-colors",
                 importMode === "basic"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-background hover:bg-muted"
+                  : "bg-background/80 hover:bg-accent/70"
               )}
             >
               Basic Import
@@ -246,7 +243,7 @@ export default function ImportPage() {
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors",
                     isComplete
-                      ? "bg-emerald-500 text-white"
+                      ? "bg-success text-success-foreground"
                       : isActive
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground"
@@ -269,7 +266,7 @@ export default function ImportPage() {
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400">
+          <div className="flex items-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-destructive">
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
             <p>{error}</p>
             <Button
@@ -409,19 +406,19 @@ export default function ImportPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-3 mb-6">
-                  <div className="rounded-lg bg-muted/50 p-4">
+                  <div className="rounded-2xl bg-muted/50 p-4">
                     <p className="text-sm text-muted-foreground">Total Found</p>
                     <p className="text-2xl font-bold">{parseResult.totalRows}</p>
                   </div>
-                  <div className="rounded-lg bg-emerald-500/10 p-4">
-                    <p className="text-sm text-emerald-700 dark:text-emerald-400">New Transactions</p>
-                    <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                  <div className="rounded-2xl bg-success/10 p-4">
+                    <p className="text-sm text-success">New Transactions</p>
+                    <p className="text-2xl font-bold text-success">
                       {parseResult.newCount}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-amber-500/10 p-4">
-                    <p className="text-sm text-amber-700 dark:text-amber-400">Duplicates Skipped</p>
-                    <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                  <div className="rounded-2xl bg-warning/10 p-4">
+                    <p className="text-sm text-warning">Duplicates Skipped</p>
+                    <p className="text-2xl font-bold text-warning">
                       {parseResult.duplicateCount}
                     </p>
                   </div>
@@ -492,7 +489,7 @@ export default function ImportPage() {
                           <td
                             className={cn(
                               "py-3 px-4 text-right font-medium whitespace-nowrap",
-                              tx.direction === "credit" ? "text-emerald-600" : ""
+                              tx.direction === "credit" ? "text-success" : ""
                             )}
                           >
                             {tx.direction === "credit" ? "+" : "-"}
@@ -506,7 +503,7 @@ export default function ImportPage() {
                             {tx.isDuplicate ? (
                               <span className="text-amber-600 text-xs">Duplicate</span>
                             ) : (
-                              <span className="text-emerald-600 text-xs">New</span>
+                              <span className="text-success text-xs">New</span>
                             )}
                           </td>
                         </tr>
@@ -547,8 +544,8 @@ export default function ImportPage() {
           <Card>
             <CardContent className="py-12">
               <div className="flex flex-col items-center text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 mb-4">
-                  <CheckCircle className="h-8 w-8 text-emerald-500" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10 mb-4">
+                  <CheckCircle className="h-8 w-8 text-success" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Import Complete</h3>
                 <p className="text-sm text-muted-foreground mb-6">

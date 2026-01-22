@@ -311,7 +311,7 @@ export default function GoalsPage() {
                   <Sparkles className="h-3.5 w-3.5" />
                   Plan, track, and stay on pace
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight">Financial Goals</h1>
+                <h2 className="text-2xl font-semibold tracking-tight">Financial Goals</h2>
                 <p className="text-muted-foreground">
                   A clean place to manage goals, contributions, and forecasts — with quick links into budgets and analytics.
                 </p>

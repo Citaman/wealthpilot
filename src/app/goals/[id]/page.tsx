@@ -187,7 +187,7 @@ export default function GoalDetailsPage() {
                       <GoalIcon className="h-4.5 w-4.5" style={{ color: goal.color }} />
                     </span>
                     <div className="min-w-0">
-                      <h1 className="truncate text-2xl font-bold tracking-tight">{goal.name}</h1>
+                      <h2 className="truncate text-xl font-semibold tracking-tight">{goal.name}</h2>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         <Badge className={cn("border", health.badgeClassName)}>{health.label}</Badge>
                         <span className="text-xs text-muted-foreground">{health.hint}</span>

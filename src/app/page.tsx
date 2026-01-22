@@ -18,6 +18,7 @@ import { MonthlySummary } from "@/components/dashboard/monthly-summary";
 import { AnomalyDetection } from "@/components/dashboard/anomaly-detection";
 import { Button } from "@/components/ui/button";
 import { DashboardSkeleton } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useDashboard, useTransactions, useBudgets } from "@/hooks/use-data";
 import { useAccount } from "@/contexts/account-context";
 import { useRouter } from "next/navigation";
@@ -108,30 +109,17 @@ export default function DashboardPage() {
     return (
       <AppLayout>
         <div className="flex min-h-[80vh] flex-col items-center justify-center">
-          <div className="mx-auto max-w-md text-center">
-            <div className="mb-6 flex justify-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-                <Upload className="h-10 w-10 text-primary" />
-              </div>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight mb-2">
-              Welcome to WealthPilot
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              Get started by importing your bank transaction data. Upload a CSV file
-              to see your financial overview, track spending, and plan your budget.
-            </p>
-            <Button
-              size="lg"
-              className="gap-2"
-              onClick={() => router.push("/import")}
-            >
-              Import Transactions
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Your data stays on your device. Nothing is uploaded to any server.
-            </p>
+          <EmptyState
+            title="Welcome to WealthPilot"
+            description="Import a CSV to unlock your dashboard, track spending, and plan your budget. Your data stays on this device."
+            primaryAction={{
+              label: "Import transactions",
+              onClick: () => router.push("/import"),
+            }}
+            icon={<Upload className="h-6 w-6 text-primary" />}
+          />
+          <div className="mt-4 text-xs text-muted-foreground">
+            Nothing is uploaded to any server.
           </div>
         </div>
       </AppLayout>

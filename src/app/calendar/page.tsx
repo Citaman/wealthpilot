@@ -302,14 +302,10 @@ export default function CalendarPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Bill Calendar</h1>
-            <p className="text-muted-foreground">
-              Track upcoming bills and recurring payments
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Track upcoming bills and recurring payments
+          </p>
           {isLoading && (
             <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
           )}
@@ -320,8 +316,8 @@ export default function CalendarPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10">
-                  <CalendarIcon className="h-5 w-5 text-blue-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-info/10">
+                  <CalendarIcon className="h-5 w-5 text-info" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">This Month</p>
@@ -333,12 +329,12 @@ export default function CalendarPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10">
-                  <CheckCircle className="h-5 w-5 text-emerald-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
+                  <CheckCircle className="h-5 w-5 text-success" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Paid</p>
-                  <p className="text-xl font-bold text-emerald-600"><Money amount={paidTotal} /></p>
+                  <p className="text-xl font-semibold text-success"><Money amount={paidTotal} /></p>
                 </div>
               </div>
             </CardContent>
@@ -346,12 +342,12 @@ export default function CalendarPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10">
-                  <Clock className="h-5 w-5 text-amber-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/10">
+                  <Clock className="h-5 w-5 text-warning" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Upcoming</p>
-                  <p className="text-xl font-bold text-amber-600">
+                  <p className="text-xl font-semibold text-warning">
                     <Money amount={monthTotal - paidTotal} />
                   </p>
                 </div>
@@ -363,18 +359,18 @@ export default function CalendarPage() {
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-full",
-                  overdueBills.length > 0 ? "bg-red-500/10" : "bg-muted"
+                  overdueBills.length > 0 ? "bg-destructive/10" : "bg-muted"
                 )}>
                   <AlertCircle className={cn(
                     "h-5 w-5",
-                    overdueBills.length > 0 ? "text-red-500" : "text-muted-foreground"
+                    overdueBills.length > 0 ? "text-destructive" : "text-muted-foreground"
                   )} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Overdue</p>
                   <p className={cn(
-                    "text-xl font-bold",
-                    overdueBills.length > 0 ? "text-red-600" : ""
+                    "text-xl font-semibold",
+                    overdueBills.length > 0 ? "text-destructive" : ""
                   )}>
                     {overdueBills.length}
                   </p>
@@ -466,9 +462,9 @@ export default function CalendarPage() {
                               key={bill.id}
                               className={cn(
                                 "text-xs px-1.5 py-0.5 rounded truncate",
-                                bill.type === "paid" && "bg-emerald-500/10 text-emerald-700",
-                                bill.type === "upcoming" && "bg-blue-500/10 text-blue-700",
-                                bill.type === "overdue" && "bg-red-500/10 text-red-700"
+                                bill.type === "paid" && "bg-success/10 text-success",
+                                bill.type === "upcoming" && "bg-info/10 text-info",
+                                bill.type === "overdue" && "bg-destructive/10 text-destructive"
                               )}
                             >
                               {bill.name}
@@ -489,15 +485,15 @@ export default function CalendarPage() {
               {/* Legend */}
               <div className="flex items-center gap-4 mt-4 pt-4 border-t text-xs">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-emerald-500/10 border border-emerald-500/30" />
+                  <div className="w-3 h-3 rounded bg-success/10 border border-success/30" />
                   <span>Paid</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-blue-500/10 border border-blue-500/30" />
+                  <div className="w-3 h-3 rounded bg-info/10 border border-info/30" />
                   <span>Upcoming</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-red-500/10 border border-red-500/30" />
+                  <div className="w-3 h-3 rounded bg-destructive/10 border border-destructive/30" />
                   <span>Overdue</span>
                 </div>
               </div>
@@ -564,9 +560,9 @@ export default function CalendarPage() {
             </Card>
 
             {overdueBills.length > 0 && (
-              <Card className="border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20">
+              <Card className="border-destructive/30 bg-destructive/5">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2 text-red-700 dark:text-red-400">
+                  <CardTitle className="text-lg flex items-center gap-2 text-destructive">
                     <AlertCircle className="h-5 w-5" />
                     Overdue Bills
                   </CardTitle>
@@ -576,15 +572,15 @@ export default function CalendarPage() {
                     {overdueBills.map((bill) => (
                       <div
                         key={bill.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-card border"
+                        className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/80 p-3"
                       >
                         <div>
-                          <p className="font-medium text-sm">{bill.name}</p>
+                          <p className="text-sm font-medium">{bill.name}</p>
                           <p className="text-xs text-muted-foreground">
                             Due {format(bill.date, "MMM d")}
                           </p>
                         </div>
-                        <p className="font-semibold text-red-600">
+                        <p className="font-semibold text-destructive">
                           <Money amount={bill.amount} />
                         </p>
                       </div>
@@ -612,10 +608,10 @@ export default function CalendarPage() {
                 <div
                   key={bill.id}
                   className={cn(
-                    "flex items-center justify-between p-4 rounded-lg border",
-                    bill.type === "paid" && "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900",
-                    bill.type === "upcoming" && "bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-900",
-                    bill.type === "overdue" && "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900"
+                    "flex items-center justify-between rounded-2xl border p-4",
+                    bill.type === "paid" && "bg-success/5 border-success/20",
+                    bill.type === "upcoming" && "bg-info/5 border-info/20",
+                    bill.type === "overdue" && "bg-destructive/5 border-destructive/20"
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -651,10 +647,10 @@ export default function CalendarPage() {
                     <p className="font-bold text-lg"><Money amount={bill.amount} /></p>
                     <span
                       className={cn(
-                        "text-xs px-2 py-0.5 rounded-full",
-                        bill.type === "paid" && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
-                        bill.type === "upcoming" && "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-                        bill.type === "overdue" && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                        "rounded-full px-2 py-0.5 text-xs",
+                        bill.type === "paid" && "bg-success/15 text-success",
+                        bill.type === "upcoming" && "bg-info/15 text-info",
+                        bill.type === "overdue" && "bg-destructive/15 text-destructive"
                       )}
                     >
                       {bill.type === "paid" ? "Paid" : bill.type === "upcoming" ? "Upcoming" : "Overdue"}

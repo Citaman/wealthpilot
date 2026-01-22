@@ -16,13 +16,13 @@ import { format } from "date-fns";
 import { AppLayout } from "@/components/layout/app-layout";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
-  CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { DataTable } from "@/components/ui/data-table";
 import {
   Select,
   SelectContent,
@@ -66,6 +66,7 @@ export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
@@ -185,6 +186,16 @@ export default function AccountsPage() {
     return tx ? convertFromAccount(tx.balanceAfter || 0, tx.accountId) : 0;
   }, [transactions, convertFromAccount]);
 
+  const filteredAccounts = useMemo(() => {
+    if (!search) return accounts;
+    const query = search.toLowerCase();
+    return accounts.filter((account) =>
+      [account.name, account.type, account.institution]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(query))
+    );
+  }, [accounts, search]);
+
   const getAccountIcon = (type: string) => {
     const accountType = ACCOUNT_TYPES.find((t) => t.value === type);
     if (accountType) {
@@ -194,65 +205,127 @@ export default function AccountsPage() {
     return <Wallet className="h-5 w-5" />;
   };
 
+  const tableColumns = [
+    { key: "account", label: "Account", className: "min-w-[240px]" },
+    { key: "type", label: "Type", className: "text-sm" },
+    { key: "updated", label: "Updated", className: "text-right w-32", align: "right" as const },
+    { key: "balance", label: "Balance", className: "text-right w-32", align: "right" as const },
+    { key: "actions", label: "", className: "text-right w-20" },
+  ];
+
+  const gridTemplate = "minmax(240px,2fr) 140px 140px 140px 100px";
+
+  const renderRow = (account: Account) => {
+    const accountTypeInfo = ACCOUNT_TYPES.find((t) => t.value === account.type);
+    return [
+      <div key="account" className="flex items-center gap-3">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-xl"
+          style={{
+            backgroundColor: `${account.color}15`,
+            color: account.color,
+          }}
+        >
+          {getAccountIcon(account.type)}
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{account.name}</span>
+            <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+              {accountTypeInfo?.label || account.type}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {account.institution || "Personal account"}
+          </p>
+        </div>
+      </div>,
+      <div key="type" className="text-sm text-muted-foreground capitalize">
+        {account.type}
+      </div>,
+      <div key="updated" className="text-right text-sm text-muted-foreground">
+        {format(new Date(account.updatedAt), "MMM d, yyyy")}
+      </div>,
+      <div
+        key="balance"
+        className={cn(
+          "text-right font-semibold tabular-nums",
+          account.balance < 0 && "text-destructive"
+        )}
+      >
+        <Money amount={account.balance} currency={account.currency} />
+      </div>,
+      <div
+        key="actions"
+        className="flex items-center justify-end gap-1 opacity-0 transition group-hover:opacity-100"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => handleOpenEdit(account)}
+        >
+          <Edit2 className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+          onClick={() => setDeleteConfirm(account.id!)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>,
+    ];
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
-            <p className="text-muted-foreground">
-              Manage your financial accounts
-            </p>
-          </div>
-          <Button onClick={handleOpenAdd}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Account
-          </Button>
-        </div>
-
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="bg-emerald-500/5 border-emerald-500/20">
+          <Card className="bg-success/5 border-success/20">
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10">
+                  <TrendingUp className="h-5 w-5 text-success" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Assets</p>
-                  <p className="text-xl font-bold text-emerald-600">
+                  <p className="text-xl font-semibold text-success tabular-nums">
                     <Money amount={totals.assets || latestBalance} />
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-red-500/5 border-red-500/20">
+          <Card className="bg-destructive/5 border-destructive/20">
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
-                  <TrendingDown className="h-5 w-5 text-red-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
+                  <TrendingDown className="h-5 w-5 text-destructive" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Liabilities</p>
-                  <p className="text-xl font-bold text-red-600">
+                  <p className="text-xl font-semibold text-destructive tabular-nums">
                     <Money amount={totals.liabilities} />
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-blue-500/5 border-blue-500/20">
+          <Card className="bg-info/5 border-info/20">
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                  <Wallet className="h-5 w-5 text-blue-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10">
+                  <Wallet className="h-5 w-5 text-info" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Net Worth</p>
                   <p className={cn(
-                    "text-xl font-bold",
-                    (totals.netWorth || latestBalance) >= 0 ? "text-blue-600" : "text-red-600"
+                    "text-xl font-semibold tabular-nums",
+                    (totals.netWorth || latestBalance) >= 0 ? "text-info" : "text-destructive"
                   )}>
                     <Money amount={totals.netWorth || latestBalance} />
                   </p>
@@ -262,114 +335,65 @@ export default function AccountsPage() {
           </Card>
         </div>
 
+        <FilterBar
+          search={search}
+          onSearchChange={setSearch}
+          placeholder="Search accounts..."
+          actions={
+            <Button onClick={handleOpenAdd}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Account
+            </Button>
+          }
+        />
+
         {/* Accounts List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Accounts</CardTitle>
-            <CardDescription>
-              {accounts.length > 0
-                ? `${accounts.length} account${accounts.length !== 1 ? "s" : ""} tracked`
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold">Your Accounts</h2>
+            <p className="text-sm text-muted-foreground">
+              {filteredAccounts.length > 0
+                ? `${filteredAccounts.length} account${filteredAccounts.length !== 1 ? "s" : ""} tracked`
                 : "Add your accounts to track balances across institutions"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
-                ))}
-              </div>
-            ) : accounts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-                  <Wallet className="h-8 w-8 text-muted-foreground" />
+            </p>
+          </div>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 rounded-2xl bg-muted/60 animate-pulse" />
+              ))}
+            </div>
+          ) : filteredAccounts.length === 0 ? (
+            <div className="space-y-4">
+              <EmptyState
+                title="No accounts yet"
+                description="Add your bank accounts, credit cards, and investment accounts to get a complete view of your finances."
+                primaryAction={{ label: "Add your first account", onClick: handleOpenAdd }}
+                icon={<Wallet className="h-6 w-6 text-primary" />}
+              />
+              {latestBalance !== 0 && (
+                <div className="rounded-2xl border border-border/70 bg-card/90 p-4 text-sm text-muted-foreground">
+                  Based on recent transactions, your current balance is approximately{" "}
+                  <span className="font-semibold text-foreground">
+                    <Money amount={latestBalance} />
+                  </span>
+                  .
                 </div>
-                <h3 className="text-lg font-medium mb-1">No accounts yet</h3>
-                <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                  Add your bank accounts, credit cards, and investment accounts to get a complete view of your finances.
-                </p>
-                <Button onClick={handleOpenAdd}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Account
-                </Button>
-
-                {latestBalance !== 0 && (
-                  <div className="mt-6 p-4 rounded-lg bg-muted/50">
-                    <p className="text-sm text-muted-foreground">
-                      Based on your transactions, your current balance is approximately:
-                    </p>
-                    <p className="text-xl font-bold mt-1"><Money amount={latestBalance} /></p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {accounts.map((account) => {
-                  const accountTypeInfo = ACCOUNT_TYPES.find((t) => t.value === account.type);
-
-                  return (
-                    <div
-                      key={account.id}
-                      className="flex items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                    >
-                      <div
-                        className="flex h-12 w-12 items-center justify-center rounded-lg"
-                        style={{
-                          backgroundColor: `${account.color}15`,
-                          color: account.color,
-                        }}
-                      >
-                        {getAccountIcon(account.type)}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted capitalize">
-                            {accountTypeInfo?.label || account.type}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Last updated: {format(new Date(account.updatedAt), "MMM d, yyyy")}
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <p
-                          className={cn(
-                            "text-xl font-bold",
-                            account.balance < 0 ? "text-red-600" : ""
-                          )}
-                        >
-                          <Money amount={account.balance} currency={account.currency} />
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleOpenEdit(account)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
-                          onClick={() => setDeleteConfirm(account.id!)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </div>
+          ) : (
+            <DataTable
+              columns={tableColumns}
+              rows={filteredAccounts}
+              rowKey={(row) => row.id!}
+              renderRow={renderRow}
+              gridTemplate={gridTemplate}
+              onRowClick={handleOpenEdit}
+              rowClassName={() => "group transition-colors hover:bg-muted/40"}
+              emptyState={null}
+            />
+          )}
+        </div>
       </div>
 
       {/* Add/Edit Account Dialog */}

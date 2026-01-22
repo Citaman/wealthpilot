@@ -230,14 +230,10 @@ export default function BudgetsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Budget Planner</h1>
-            <p className="text-muted-foreground">
-              {format(now, "MMMM yyyy")} • Track and manage your spending
-            </p>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {format(now, "MMMM yyyy")} • Track and manage your spending
+          </p>
           <Button
             variant="outline"
             onClick={() => setShowSettings(!showSettings)}
@@ -315,7 +311,7 @@ export default function BudgetsPage() {
                         </TooltipProvider>
                       )}
                       {smartIncome && smartIncome.outlierCount > 0 && !monthlyIncome && (
-                        <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
+                        <div className="flex items-center gap-1 text-xs text-warning mt-1">
                           <AlertCircle className="h-3 w-3" />
                           <span>
                             {smartIncome.outlierCount} bonus month(s) excluded from calculation
@@ -369,7 +365,7 @@ export default function BudgetsPage() {
                           </div>
                         ))}
                         {allocations.needs + allocations.wants + allocations.savings !== 100 && (
-                          <p className="text-xs text-amber-600">
+                          <p className="text-xs text-warning">
                             Total should equal 100% (currently{" "}
                             {allocations.needs + allocations.wants + allocations.savings}%)
                           </p>
@@ -386,9 +382,9 @@ export default function BudgetsPage() {
                       </h4>
                       <div className="space-y-3">
                         {[
-                          { type: "needs" as const, label: "Needs", color: "bg-blue-500" },
-                          { type: "wants" as const, label: "Wants", color: "bg-purple-500" },
-                          { type: "savings" as const, label: "Savings", color: "bg-emerald-500" },
+                          { type: "needs" as const, label: "Needs", color: "bg-info" },
+                          { type: "wants" as const, label: "Wants", color: "bg-warning" },
+                          { type: "savings" as const, label: "Savings", color: "bg-success" },
                         ].map(({ type, label, color }) => (
                           <div key={type} className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -439,9 +435,9 @@ export default function BudgetsPage() {
         <div className="space-y-6">
           {(["needs", "wants", "savings"] as const).map((type) => {
             const typeConfig = {
-              needs: { label: "Needs", color: "blue", description: "Essential expenses" },
-              wants: { label: "Wants", color: "purple", description: "Discretionary spending" },
-              savings: { label: "Savings", color: "emerald", description: "Future goals" },
+              needs: { label: "Needs", bgClass: "bg-info/10", textClass: "text-info", description: "Essential expenses" },
+              wants: { label: "Wants", bgClass: "bg-warning/10", textClass: "text-warning", description: "Discretionary spending" },
+              savings: { label: "Savings", bgClass: "bg-success/10", textClass: "text-success", description: "Future goals" },
             };
             const config = typeConfig[type];
 
@@ -463,9 +459,9 @@ export default function BudgetsPage() {
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "h-10 w-10 rounded-lg flex items-center justify-center",
-                        `bg-${config.color}-500/10`
+                        config.bgClass
                       )}>
-                        <PieChart className={cn("h-5 w-5", `text-${config.color}-500`)} />
+                        <PieChart className={cn("h-5 w-5", config.textClass)} />
                       </div>
                       <div>
                         <CardTitle className="text-lg">{config.label}</CardTitle>
@@ -479,7 +475,7 @@ export default function BudgetsPage() {
                       <Badge 
                         variant={typePercent > 100 ? "destructive" : typePercent > 80 ? "secondary" : "default"}
                         className={cn(
-                          typePercent <= 80 && "bg-emerald-500"
+                          typePercent <= 80 && "bg-success text-success-foreground"
                         )}
                       >
                         {typePercent.toFixed(0)}% used

@@ -147,26 +147,22 @@ export default function CategoriesPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
-            <p className="text-muted-foreground">
-              Manage your spending categories and view breakdown
-            </p>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Manage your spending categories and view breakdown
+          </p>
           <Button onClick={() => setShowAddDialog(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
+            <PlusCircle className="mr-2 h-4 w-4" />
             Add Category
           </Button>
         </div>
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2">
-          <Card className="bg-emerald-500/5 border-emerald-500/20">
+          <Card className="bg-success/5 border-success/20">
             <CardContent className="py-4">
               <p className="text-sm text-muted-foreground">Total Income (12 months)</p>
-              <p className="text-2xl font-bold text-emerald-600">
+              <p className="text-2xl font-semibold text-success">
                 +<Money amount={totals.income} minimumFractionDigits={2} maximumFractionDigits={2} />
               </p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -174,10 +170,10 @@ export default function CategoriesPage() {
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-red-500/5 border-red-500/20">
+          <Card className="bg-destructive/5 border-destructive/20">
             <CardContent className="py-4">
               <p className="text-sm text-muted-foreground">Total Expenses (12 months)</p>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-2xl font-semibold text-destructive">
                 -<Money amount={totals.expenses} minimumFractionDigits={2} maximumFractionDigits={2} />
               </p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -235,7 +231,7 @@ export default function CategoriesPage() {
                           className={cn(
                             "flex items-center justify-center w-10 h-10 rounded-lg",
                             isIncome
-                              ? "bg-emerald-500/10 text-emerald-600"
+                              ? "bg-success/10 text-success"
                               : "bg-primary/10 text-primary"
                           )}
                         >
@@ -254,7 +250,7 @@ export default function CategoriesPage() {
                               <div
                                 className={cn(
                                   "h-full rounded-full transition-all",
-                                  isIncome ? "bg-emerald-500" : "bg-primary"
+                                  isIncome ? "bg-success" : "bg-primary"
                                 )}
                                 style={{ width: `${percentage}%` }}
                               />
@@ -267,7 +263,7 @@ export default function CategoriesPage() {
                         <p
                           className={cn(
                             "font-semibold",
-                            isIncome ? "text-emerald-600" : "text-foreground"
+                            isIncome ? "text-success" : "text-foreground"
                           )}
                         >
                           {isIncome ? "+" : "-"}

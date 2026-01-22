@@ -153,15 +153,10 @@ export default function AnalyticsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-            <p className="text-muted-foreground">
-              Deep insights into your financial patterns
-            </p>
-          </div>
-
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            Deep insights into your financial patterns
+          </p>
           <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
             <TabsList>
               <TabsTrigger value="1m">1M</TabsTrigger>
@@ -178,8 +173,8 @@ export default function AnalyticsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                  <ArrowUpRight className="h-5 w-5 text-emerald-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                  <ArrowUpRight className="h-5 w-5 text-success" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Income</p>
@@ -191,8 +186,8 @@ export default function AnalyticsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
-                  <ArrowDownRight className="h-5 w-5 text-red-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+                  <ArrowDownRight className="h-5 w-5 text-destructive" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Expenses</p>
@@ -206,18 +201,18 @@ export default function AnalyticsPage() {
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-lg",
-                  stats.netSavings >= 0 ? "bg-emerald-500/10" : "bg-red-500/10"
+                  stats.netSavings >= 0 ? "bg-success/10" : "bg-destructive/10"
                 )}>
                   <PiggyBank className={cn(
                     "h-5 w-5",
-                    stats.netSavings >= 0 ? "text-emerald-600" : "text-red-600"
+                    stats.netSavings >= 0 ? "text-success" : "text-destructive"
                   )} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Net Savings</p>
                   <p className={cn(
                     "text-xl font-bold",
-                    stats.netSavings >= 0 ? "text-emerald-600" : "text-red-600"
+                    stats.netSavings >= 0 ? "text-success" : "text-destructive"
                   )}><Money amount={stats.netSavings} /></p>
                 </div>
               </div>
@@ -226,8 +221,8 @@ export default function AnalyticsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                  <BarChart3 className="h-5 w-5 text-blue-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
+                  <BarChart3 className="h-5 w-5 text-info" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Avg. Monthly</p>
@@ -242,13 +237,13 @@ export default function AnalyticsPage() {
                 <div
                   className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-lg",
-                    stats.momChange <= 0 ? "bg-emerald-500/10" : "bg-red-500/10"
+                    stats.momChange <= 0 ? "bg-success/10" : "bg-destructive/10"
                   )}
                 >
                   {stats.momChange <= 0 ? (
-                    <TrendingDown className="h-5 w-5 text-emerald-600" />
+                    <TrendingDown className="h-5 w-5 text-success" />
                   ) : (
-                    <TrendingUp className="h-5 w-5 text-red-600" />
+                    <TrendingUp className="h-5 w-5 text-destructive" />
                   )}
                 </div>
                 <div>
@@ -256,7 +251,7 @@ export default function AnalyticsPage() {
                   <p
                     className={cn(
                       "text-xl font-bold",
-                      stats.momChange <= 0 ? "text-emerald-600" : "text-red-600"
+                      stats.momChange <= 0 ? "text-success" : "text-destructive"
                     )}
                   >
                     {stats.momChange > 0 ? "+" : ""}{stats.momChange.toFixed(1)}%

@@ -53,6 +53,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useMoney } from "@/hooks/use-money";
 import { Money } from "@/components/ui/money";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type TabValue = "subscriptions" | "bills" | "loans" | "income" | "ended";
 
@@ -396,7 +397,7 @@ export default function SubscriptionsPage() {
   };
 
   // Empty state component
-  const EmptyState = ({ type }: { type: TabValue }) => {
+  const SubscriptionsEmptyState = ({ type }: { type: TabValue }) => {
     const messages: Record<TabValue, { title: string; desc: string }> = {
       subscriptions: {
         title: "No subscriptions found",
@@ -421,44 +422,38 @@ export default function SubscriptionsPage() {
     };
 
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-          {getTabIcon(type)}
-        </div>
-        <h3 className="text-lg font-medium mb-1">{messages[type].title}</h3>
-        <p className="text-sm text-muted-foreground mb-4 max-w-md">
-          {messages[type].desc}
-        </p>
-        {type !== "ended" && (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDetect} disabled={isDetecting}>
-              <RefreshCw className={cn("mr-2 h-4 w-4", isDetecting && "animate-spin")} />
-              Auto-Detect
-            </Button>
-            <Button onClick={() => openAddDialog(type === "subscriptions" ? "subscription" : type as RecurringType)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Manually
-            </Button>
-          </div>
-        )}
-      </div>
+      <EmptyState
+        title={messages[type].title}
+        description={messages[type].desc}
+        primaryAction={
+          type === "ended"
+            ? undefined
+            : {
+                label: "Add manually",
+                onClick: () => openAddDialog(type === "subscriptions" ? "subscription" : type as RecurringType),
+              }
+        }
+        secondaryAction={
+          type === "ended"
+            ? undefined
+            : {
+                label: isDetecting ? "Detecting..." : "Auto-detect",
+                onClick: handleDetect,
+              }
+        }
+        icon={getTabIcon(type)}
+      />
     );
   };
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Subscriptions & Recurring
-            </h1>
-            <p className="text-muted-foreground">
-              Track subscriptions, bills, loans, and recurring income
-            </p>
-          </div>
-          <div className="flex gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Track subscriptions, bills, loans, and recurring income
+          </p>
+          <div className="flex flex-wrap gap-2">
             <Button 
               variant="outline" 
               onClick={handleSyncRepair} 
@@ -521,7 +516,7 @@ export default function SubscriptionsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-2 mb-1">
-                <CreditCard className="h-4 w-4 text-purple-500" />
+                <CreditCard className="h-4 w-4 text-info" />
                 <p className="text-sm text-muted-foreground">Monthly Subscriptions</p>
               </div>
               <p className="text-2xl font-bold"><Money amount={totals.subscriptions} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
@@ -639,7 +634,7 @@ export default function SubscriptionsPage() {
                 ))}
               </div>
             ) : filteredItems.length === 0 ? (
-              <EmptyState type="subscriptions" />
+              <SubscriptionsEmptyState type="subscriptions" />
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredItems.map((item) => (
@@ -669,7 +664,7 @@ export default function SubscriptionsPage() {
                 ))}
               </div>
             ) : filteredItems.length === 0 ? (
-              <EmptyState type="bills" />
+              <SubscriptionsEmptyState type="bills" />
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredItems.map((item) => (
@@ -699,7 +694,7 @@ export default function SubscriptionsPage() {
                 ))}
               </div>
             ) : filteredItems.length === 0 ? (
-              <EmptyState type="loans" />
+              <SubscriptionsEmptyState type="loans" />
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 {filteredItems.map((item) => (
@@ -725,7 +720,7 @@ export default function SubscriptionsPage() {
                 ))}
               </div>
             ) : filteredItems.length === 0 ? (
-              <EmptyState type="income" />
+              <SubscriptionsEmptyState type="income" />
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredItems.map((item) => (
@@ -755,7 +750,7 @@ export default function SubscriptionsPage() {
                 ))}
               </div>
             ) : filteredItems.length === 0 ? (
-              <EmptyState type="ended" />
+              <SubscriptionsEmptyState type="ended" />
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredItems.map((item) =>

@@ -1,12 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Instrument_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import { AccountProvider, PrivacyProvider, CurrencyProvider } from "@/contexts";
+import { AccountProvider, PrivacyProvider, CurrencyProvider, ThemeProvider } from "@/contexts";
 import { Toaster } from "@/components/ui/toaster";
 import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
 
-const inter = Inter({
-  variable: "--font-inter",
+const instrumentSans = Instrument_Sans({
+  variable: "--font-sans",
+  subsets: ["latin"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-display",
   subsets: ["latin"],
 });
 
@@ -23,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0ea5e9",
+  themeColor: "#2CB1BC",
 };
 
 export default function RootLayout({
@@ -33,12 +38,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
-        <PrivacyProvider>
-          <CurrencyProvider>
-            <AccountProvider>{children}</AccountProvider>
-          </CurrencyProvider>
-        </PrivacyProvider>
+      <body className={`${instrumentSans.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
+        <ThemeProvider>
+          <PrivacyProvider>
+            <CurrencyProvider>
+              <AccountProvider>{children}</AccountProvider>
+            </CurrencyProvider>
+          </PrivacyProvider>
+        </ThemeProvider>
         <Toaster />
         <ServiceWorkerRegistration />
       </body>

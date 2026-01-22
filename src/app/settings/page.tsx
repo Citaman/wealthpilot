@@ -22,10 +22,9 @@ export default function SettingsPage() {
       <div className="mx-auto max-w-5xl space-y-6">
         <Tabs value={tab} onValueChange={(v) => setTab(v as SettingsTab)}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-              <p className="text-muted-foreground">Manage your preferences, finances, and data</p>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Manage your preferences, finances, and data
+            </p>
 
             <TabsList className="w-full sm:w-auto overflow-x-auto justify-start">
               <TabsTrigger value="general">General</TabsTrigger>
