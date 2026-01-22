@@ -9,7 +9,11 @@ import {
   Command,
   X,
   Menu,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import { usePrivacy } from "@/contexts";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +30,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useCommandSearch } from "@/hooks/use-command-search";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -48,8 +54,10 @@ export function Header({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchResults = useCommandSearch(searchQuery);
   const [notifications, setNotifications] = useState<{ id: string; title: string; time: string }[]>([
     { id: "1", title: "Budget limit reached for Food", time: "2 hours ago" },
     { id: "2", title: "New transaction detected", time: "5 hours ago" },
@@ -126,6 +134,21 @@ export function Header({
             aria-label="Search"
           >
             <Search className="h-4 w-4" />
+          </Button>
+
+          {/* Privacy Toggle */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={togglePrivacyMode}
+            title={isPrivacyMode ? "Show sensitive data (Shift+P)" : "Hide sensitive data (Shift+P)"}
+            aria-label={isPrivacyMode ? "Show sensitive data" : "Hide sensitive data"}
+          >
+            {isPrivacyMode ? (
+              <EyeOff className="h-4 w-4 text-primary" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
           </Button>
 
           {/* Notifications */}
@@ -208,10 +231,39 @@ export function Header({
           </div>
           <div className="max-h-96 overflow-y-auto p-2">
             {searchQuery ? (
-              <div className="space-y-2 p-4">
-                <p className="text-sm text-muted-foreground">
-                  Searching for "{searchQuery}"...
-                </p>
+              <div className="space-y-1">
+                {searchResults.length === 0 ? (
+                  <p className="p-4 text-sm text-muted-foreground">No results found for "{searchQuery}"</p>
+                ) : (
+                  searchResults.map((result) => (
+                    <button
+                      key={`${result.type}-${result.id}`}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-accent text-left"
+                      onClick={() => {
+                        if (result.href) router.push(result.href);
+                        setSearchOpen(false);
+                      }}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{result.title}</span>
+                        <span className="text-xs text-muted-foreground">{result.subtitle}</span>
+                      </div>
+                      {result.amount !== undefined && (
+                        <span className={cn(
+                          "font-mono font-semibold",
+                          result.amount < 0 ? "text-red-500" : result.type === 'goal' ? "text-blue-500" : "text-emerald-500"
+                        )}>
+                          <PrivacyBlur>
+                            {new Intl.NumberFormat("fr-FR", {
+                              style: "currency",
+                              currency: "EUR",
+                            }).format(result.amount)}
+                          </PrivacyBlur>
+                        </span>
+                      )}
+                    </button>
+                  ))
+                )}
               </div>
             ) : (
               <div className="space-y-4 p-4">

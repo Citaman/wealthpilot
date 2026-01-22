@@ -7,6 +7,7 @@ import { AppearanceSettings } from "@/components/settings/appearance-settings";
 import { NotificationsSettings } from "@/components/settings/notifications-settings";
 import { FinancialMonthSettingsCard } from "@/components/settings/financial-month-settings";
 import { AccountBalanceSettings } from "@/components/settings/account-balance-settings";
+import { CurrencySettings } from "@/components/settings/currency-settings";
 import { DataManagementSettings } from "@/components/settings/data-management-settings";
 import { AboutSettings } from "@/components/settings/about-settings";
 import { HelpSettings } from "@/components/settings/help-settings";
@@ -43,6 +44,7 @@ export default function SettingsPage() {
 
             <TabsContent value="finance" className="space-y-6">
               <FinancialMonthSettingsCard />
+              <CurrencySettings />
               <AccountBalanceSettings />
             </TabsContent>
 
