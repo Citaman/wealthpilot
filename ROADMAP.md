@@ -153,13 +153,22 @@ flowchart TB
 
 ---
 
-### v0.14.0 - Security & Privacy Hardening
+### v0.14.5 - Pro Intelligence & Security (In Progress)
+
+**Theme**: "100x Engineer" standards - Proactive intelligence + Bank-grade security.
+
+**Spec**: `specs/ui-revamp/v0.14.5-pro-intelligence.md`
 
 | # | Task | Status | Details |
 |---|------|--------|---------|
-| 1 | Encrypted exports (passphrase) | 📋 TODO | Encrypt backup file (WebCrypto) so exported data isn’t plain-text |
-| 2 | Optional app lock | 📋 TODO | Simple lock screen (PIN/passphrase) to protect casual access on shared devices |
-| 3 | Privacy audit | 📋 TODO | Ensure no sensitive data ends up in console logs/toasts/error reports |
+| 1 | Global Privacy Audit & Fix | 📋 TODO | Ensure `PrivacyBlur` covers ALL currency values across every page/component |
+| 2 | Advanced CFO Layer | 📋 TODO | Health Score v2, Cash Flow Anomaly Detection, Multi-month Predictions |
+| 3 | App Lock (PIN) | 📋 TODO | Lock screen with PIN protection + auto-lock on inactivity |
+| 4 | Encrypted Backups | 📋 TODO | AES-GCM encryption for exports with user passphrase |
+| 5 | Power-User Command Palette | 📋 TODO | Natural language search ("Amazon last month") + bulk actions |
+| 6 | Bulk Transaction Workbench | 📋 TODO | Dedicated UI for fast categorizing/cleaning large datasets |
+| 7 | Multi-Currency Engine | 📋 TODO | Support for accounts in different currencies with local FX caching |
+| 8 | Reliability Hardening | 📋 TODO | Stress testing (10k+ tx) + Schema Migration framework |
 
 ---
 

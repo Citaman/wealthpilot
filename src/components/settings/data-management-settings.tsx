@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, Download, Upload, Trash2, AlertTriangle } from "lucide-react";
+import { Database, Download, Upload, Trash2, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -36,6 +36,7 @@ import {
   clearAllUserData,
   getStringSetting,
   setStringSetting,
+  decryptData,
   type BackupPreview,
   type BackupSnapshotV1,
 } from "@/lib/backups";
@@ -43,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { recalculateAllBalances } from "@/lib/balance";
+import { StressTestControl } from "./stress-test-control";
 
 export function DataManagementSettings() {
   const { toast } = useToast();
@@ -59,6 +61,9 @@ export function DataManagementSettings() {
   const [exportLoading, setExportLoading] = useState(false);
   const [backupGzip, setBackupGzip] = useState(false);
   const [lastBackupAt, setLastBackupAt] = useState<string | null>(null);
+  const [useEncryption, setUseEncryption] = useState(false);
+  const [exportPassphrase, setExportPassphrase] = useState("");
+  const [showExportPassPrompt, setShowExportPassPrompt] = useState(false);
 
   // Restore State
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
@@ -69,6 +74,9 @@ export function DataManagementSettings() {
   const [createPreRestoreBackup, setCreatePreRestoreBackup] = useState(true);
   const [restoreDiagnostics, setRestoreDiagnostics] = useState<object | null>(null);
   const [restoreStrategy, setRestoreStrategy] = useState<"replace" | "merge">("replace");
+  const [importPassphrase, setImportPassphrase] = useState("");
+  const [isEncryptedImport, setIsEncryptedImport] = useState(false);
+  const [rawImportText, setRawImportText] = useState<string | null>(null);
 
   // Reset State
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -118,11 +126,13 @@ export function DataManagementSettings() {
     }
   };
 
-  const handleExportBackup = async (options?: { prefix?: string; gzip?: boolean }) => {
+  const handleExportBackup = async (options?: { prefix?: string; gzip?: boolean; passphrase?: string }) => {
     setExportLoading(true);
     try {
       const gzip = options?.gzip ?? backupGzip;
-      const { blob, extension, warning } = await createBackupBlob({ gzip });
+      const passphrase = options?.passphrase || (useEncryption ? exportPassphrase : undefined);
+      
+      const { blob, extension, warning } = await createBackupBlob({ gzip, passphrase });
       const filename = buildBackupFileName(options?.prefix ?? "wealthpilot-backup", extension);
       downloadBlob(blob, filename);
 
@@ -139,10 +149,12 @@ export function DataManagementSettings() {
         toast({
           variant: "success",
           title: "Backup Exported",
-          description: `Saved as ${filename}`,
+          description: `Saved as ${filename}${passphrase ? " (Encrypted)" : ""}`,
         });
       }
 
+      setExportPassphrase("");
+      setShowExportPassPrompt(false);
       return { exportedAt: now, filename };
     } catch (error) {
       console.error("Backup export failed:", error);
@@ -171,9 +183,19 @@ export function DataManagementSettings() {
     setRestorePreview(null);
     setRestoreFileName(file.name);
     setRestoreStrategy("replace"); // Default back to replace
+    setIsEncryptedImport(file.name.endsWith(".wpenc"));
+    setImportPassphrase("");
 
     try {
       const text = await readBackupFileAsText(file);
+      setRawImportText(text);
+
+      if (file.name.endsWith(".wpenc")) {
+        // Just open dialog to ask for passphrase
+        setRestoreDialogOpen(true);
+        return;
+      }
+
       const parsed = JSON.parse(text);
 
       const { ok, snapshot, preview } = validateSnapshotV1(parsed);
@@ -211,6 +233,36 @@ export function DataManagementSettings() {
       });
     } finally {
       event.target.value = "";
+    }
+  };
+
+  const handleDecryptAndPreview = async () => {
+    if (!rawImportText || !importPassphrase) return;
+    
+    setRestoreLoading(true);
+    try {
+      const decrypted = await decryptData(rawImportText, importPassphrase);
+      const parsed = JSON.parse(decrypted);
+      const { ok, snapshot, preview } = validateSnapshotV1(parsed);
+      
+      setRestorePreview(preview);
+      if (ok && snapshot) {
+        setRestoreSnapshot(snapshot);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Invalid Data",
+          description: "Decrypted data is not a valid WealthPilot backup.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Decryption Failed",
+        description: "Invalid passphrase. Please try again.",
+      });
+    } finally {
+      setRestoreLoading(false);
     }
   };
 
@@ -368,12 +420,23 @@ export function DataManagementSettings() {
                     Advanced: gzip (.json.gz)
                   </Label>
                 </div>
+
+                <div className="mt-2 flex items-center gap-2">
+                  <Checkbox
+                    id="backup-encrypt"
+                    checked={useEncryption}
+                    onCheckedChange={(v) => setUseEncryption(v === true)}
+                  />
+                  <Label htmlFor="backup-encrypt" className="text-sm">
+                    Encrypt backup (.wpenc)
+                  </Label>
+                </div>
               </div>
 
               <Button
                 className="mt-4 w-full"
                 variant="outline"
-                onClick={() => handleExportBackup()}
+                onClick={() => useEncryption ? setShowExportPassPrompt(true) : handleExportBackup()}
                 disabled={exportLoading}
               >
                 {exportLoading ? "Preparing..." : "Export backup"}
@@ -438,8 +501,43 @@ export function DataManagementSettings() {
               </Button>
             </div>
           </div>
+
+          <div className="pt-4 border-t">
+            <StressTestControl />
+          </div>
         </CardContent>
       </Card>
+
+      {/* Export Passphrase Dialog */}
+      <Dialog open={showExportPassPrompt} onOpenChange={setShowExportPassPrompt}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Encrypt Backup</DialogTitle>
+            <DialogDescription>
+              Set a passphrase to encrypt your backup file. You will need this to restore your data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="export-pass">Passphrase</Label>
+              <Input
+                id="export-pass"
+                type="password"
+                value={exportPassphrase}
+                onChange={(e) => setExportPassphrase(e.target.value)}
+                placeholder="Enter strong passphrase..."
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportPassPrompt(false)}>Cancel</Button>
+            <Button onClick={() => handleExportBackup()} disabled={!exportPassphrase || exportLoading}>
+              {exportLoading ? "Encrypting..." : "Export Encrypted"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Restore Preview Dialog */}
       <Dialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
@@ -453,6 +551,35 @@ export function DataManagementSettings() {
               {restoreFileName ? `Preview: ${restoreFileName}` : "Preview your backup before restoring."}
             </DialogDescription>
           </DialogHeader>
+
+          {isEncryptedImport && !restoreSnapshot && (
+            <div className="space-y-4 py-4">
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 flex gap-3">
+                <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+                <div className="text-sm">
+                  <p className="font-semibold">Encrypted Backup Detected</p>
+                  <p className="text-muted-foreground">Enter the passphrase to unlock and preview this backup.</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="import-pass">Passphrase</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="import-pass"
+                    type="password"
+                    value={importPassphrase}
+                    onChange={(e) => setImportPassphrase(e.target.value)}
+                    placeholder="Enter passphrase..."
+                    autoFocus
+                    onKeyDown={(e) => e.key === "Enter" && handleDecryptAndPreview()}
+                  />
+                  <Button onClick={handleDecryptAndPreview} disabled={!importPassphrase || restoreLoading}>
+                    {restoreLoading ? "Unlocking..." : "Unlock"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {restorePreview && (
             <div className="space-y-4">
