@@ -400,7 +400,7 @@ export function BalanceTimeline({
                 <span>Low Before Salary</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-0.5 bg-purple-500" style={{ borderStyle: 'dashed' }} />
+                <div className="w-3 h-0.5 bg-info" style={{ borderStyle: 'dashed' }} />
                 <span>Average</span>
               </div>
             </div>
@@ -421,7 +421,7 @@ export function BalanceTimeline({
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Average</p>
-                <p className="text-sm font-bold text-purple-500">
+                <p className="text-sm font-bold text-info">
                   <Money amount={stats.avg} />
                 </p>
               </div>

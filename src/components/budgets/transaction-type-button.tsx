@@ -70,10 +70,10 @@ export function TransactionTypeButton({
   };
 
   const typeConfig: Record<BudgetType, { color: string; bgColor: string; label: string }> = {
-    needs: { color: "text-blue-600", bgColor: "bg-blue-500", label: "Need" },
-    wants: { color: "text-purple-600", bgColor: "bg-purple-500", label: "Want" },
-    savings: { color: "text-emerald-600", bgColor: "bg-emerald-500", label: "Saving" },
-    income: { color: "text-amber-600", bgColor: "bg-amber-500", label: "Income" },
+    needs: { color: "text-info", bgColor: "bg-info", label: "Need" },
+    wants: { color: "text-warning", bgColor: "bg-warning", label: "Want" },
+    savings: { color: "text-success", bgColor: "bg-success", label: "Saving" },
+    income: { color: "text-primary", bgColor: "bg-primary", label: "Income" },
   };
 
   const config = typeConfig[effectiveType];
@@ -215,9 +215,9 @@ export function TransactionTypeBadge({
       className={cn(
         "text-xs",
         isOverridden && "ring-1 ring-offset-1 ring-primary/30",
-        effectiveType === "needs" && "bg-blue-500",
-        effectiveType === "wants" && "bg-purple-500",
-        effectiveType === "savings" && "bg-emerald-500",
+        effectiveType === "needs" && "bg-info",
+        effectiveType === "wants" && "bg-warning",
+        effectiveType === "savings" && "bg-success",
         className
       )}
     >

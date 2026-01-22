@@ -260,9 +260,9 @@ export function BatchActionBar({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <div className="flex items-center gap-4 bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-lg">
-        <span className="font-medium">{selectedCount} selected</span>
+    <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2">
+      <div className="glass-panel dock-shadow flex items-center gap-4 rounded-full px-6 py-3 text-foreground">
+        <span className="font-semibold">{selectedCount} selected</span>
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -289,7 +289,7 @@ export function BatchActionBar({
         <Button
           size="sm"
           variant="ghost"
-          className="text-primary-foreground hover:text-primary-foreground/80"
+          className="text-muted-foreground hover:text-foreground"
           onClick={onClearSelection}
         >
           Clear

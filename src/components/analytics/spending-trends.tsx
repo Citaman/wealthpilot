@@ -233,19 +233,19 @@ export function SpendingTrends({
         <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t">
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase">Min</p>
-            <p className="text-sm font-semibold text-emerald-500"><Money amount={stats.min} /></p>
+            <p className="text-sm font-semibold text-success"><Money amount={stats.min} /></p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase">Avg</p>
-            <p className="text-sm font-semibold text-purple-500"><Money amount={stats.avg} /></p>
+            <p className="text-sm font-semibold text-info"><Money amount={stats.avg} /></p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase">Max</p>
-            <p className="text-sm font-semibold text-red-500"><Money amount={stats.max} /></p>
+            <p className="text-sm font-semibold text-destructive"><Money amount={stats.max} /></p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase">Now</p>
-            <p className="text-sm font-semibold text-blue-500"><Money amount={stats.current} /></p>
+            <p className="text-sm font-semibold text-primary"><Money amount={stats.current} /></p>
           </div>
         </div>
 

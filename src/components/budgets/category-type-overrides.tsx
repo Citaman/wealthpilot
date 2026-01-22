@@ -82,10 +82,10 @@ export function CategoryTypeOverrides({ onChange }: CategoryTypeOverridesProps) 
   };
 
   const typeColors: Record<BudgetType, string> = {
-    needs: "bg-blue-500",
-    wants: "bg-purple-500",
-    savings: "bg-emerald-500",
-    income: "bg-amber-500",
+    needs: "bg-info",
+    wants: "bg-warning",
+    savings: "bg-success",
+    income: "bg-primary",
   };
 
   const resetAllOverrides = async () => {
@@ -175,7 +175,7 @@ export function CategoryTypeOverrides({ onChange }: CategoryTypeOverridesProps) 
                   <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                 )}
                 {saving !== category && isOverridden && (
-                  <Check className="h-3 w-3 text-emerald-500" />
+                  <Check className="h-3 w-3 text-success" />
                 )}
                 
                 <Select
@@ -192,19 +192,19 @@ export function CategoryTypeOverrides({ onChange }: CategoryTypeOverridesProps) 
                   <SelectContent>
                     <SelectItem value="needs">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-500" />
+                        <div className="h-2 w-2 rounded-full bg-info" />
                         Needs {defaultType === "needs" && <span className="text-xs text-muted-foreground">(default)</span>}
                       </div>
                     </SelectItem>
                     <SelectItem value="wants">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-purple-500" />
+                        <div className="h-2 w-2 rounded-full bg-warning" />
                         Wants {defaultType === "wants" && <span className="text-xs text-muted-foreground">(default)</span>}
                       </div>
                     </SelectItem>
                     <SelectItem value="savings">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                        <div className="h-2 w-2 rounded-full bg-success" />
                         Savings {defaultType === "savings" && <span className="text-xs text-muted-foreground">(default)</span>}
                       </div>
                     </SelectItem>
@@ -220,15 +220,15 @@ export function CategoryTypeOverrides({ onChange }: CategoryTypeOverridesProps) 
           <p className="text-xs text-muted-foreground mb-2">Budget Types:</p>
           <div className="flex gap-4">
             <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-blue-500" />
+              <div className="h-2 w-2 rounded-full bg-info" />
               <span className="text-xs">Needs - Essential expenses</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-purple-500" />
+              <div className="h-2 w-2 rounded-full bg-warning" />
               <span className="text-xs">Wants - Discretionary</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-emerald-500" />
+              <div className="h-2 w-2 rounded-full bg-success" />
               <span className="text-xs">Savings - Future goals</span>
             </div>
           </div>

@@ -63,20 +63,20 @@ const PERIOD_OPTIONS: PeriodOption[] = [
 
 // Category colors for stacked bars
 const INCOME_COLORS = [
-  "#3b82f6", // blue - Salary
-  "#8b5cf6", // purple - Other income
-  "#06b6d4", // cyan - Transfers in
+  "#2CB1BC", // aurora - Salary
+  "#6BB6FF", // sky - Other income
+  "#16A34A", // success - Transfers in
 ];
 
 const EXPENSE_COLORS = [
-  "#8b5cf6", // purple
-  "#ec4899", // pink
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#06b6d4", // cyan
-  "#10b981", // emerald
-  "#6366f1", // indigo
-  "#f97316", // orange
+  "#E5484D", // expense
+  "#F4B740", // warning
+  "#B87333", // copper
+  "#6BB6FF", // sky
+  "#2CB1BC", // aurora
+  "#16A34A", // success
+  "#94A3B8", // slate
+  "#F59E0B", // amber
 ];
 
 interface ChartDataPoint {

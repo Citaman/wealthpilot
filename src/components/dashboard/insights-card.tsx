@@ -27,10 +27,10 @@ const INSIGHT_ICONS = {
 };
 
 const INSIGHT_COLORS = {
-  warning: "text-amber-600 bg-amber-500/10",
-  success: "text-emerald-600 bg-emerald-500/10",
-  info: "text-blue-600 bg-blue-500/10",
-  tip: "text-purple-600 bg-purple-500/10",
+  warning: "text-warning bg-warning/10",
+  success: "text-success bg-success/10",
+  info: "text-info bg-info/10",
+  tip: "text-primary bg-primary/10",
 };
 
 export function InsightsCard({ insights }: InsightsCardProps) {

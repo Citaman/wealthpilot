@@ -385,16 +385,19 @@ export function SpendingForecast({
         {/* Legend */}
         <div className="flex items-center justify-center gap-6 mt-4 text-xs">
           <div className="flex items-center gap-2">
-            <div className="h-0.5 w-4 bg-blue-500 rounded" />
+            <div className="h-0.5 w-4 bg-info rounded" />
             <span className="text-muted-foreground">Actual</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-0.5 w-4 bg-purple-500 rounded" style={{ backgroundImage: "repeating-linear-gradient(90deg, #8b5cf6, #8b5cf6 4px, transparent 4px, transparent 8px)" }} />
+            <div
+              className="h-0.5 w-4 rounded bg-primary"
+              style={{ backgroundImage: "repeating-linear-gradient(90deg, #2cb1bc, #2cb1bc 4px, transparent 4px, transparent 8px)" }}
+            />
             <span className="text-muted-foreground">Forecast</span>
           </div>
           {showScenarios && (
             <div className="flex items-center gap-2">
-              <div className="h-3 w-4 bg-gradient-to-b from-emerald-500/20 to-red-500/20 rounded" />
+              <div className="h-3 w-4 rounded bg-gradient-to-b from-success/20 to-destructive/20" />
               <span className="text-muted-foreground">Confidence Band</span>
             </div>
           )}

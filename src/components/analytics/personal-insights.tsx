@@ -181,7 +181,7 @@ export function PersonalInsights({ transactions, className }: PersonalInsightsPr
         title: "Large Purchase Detected",
         description: `You made a €${Math.abs(largest.amount).toFixed(0)} purchase at ${largest.merchant || "Unknown"}. Make sure this was planned.`,
         priority: "medium",
-        icon: <Target className="h-5 w-5 text-purple-500" />,
+        icon: <Target className="h-5 w-5 text-info" />,
         category: "spending",
       });
     }
