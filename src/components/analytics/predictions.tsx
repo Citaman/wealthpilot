@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { format, parseISO, addMonths, startOfMonth, endOfMonth, isSameMonth } from "date-fns";
-import { TrendingUp, Target, AlertTriangle, Calculator } from "lucide-react";
+import { TrendingUp, Target, AlertTriangle, Calculator, AlertCircle } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -11,6 +11,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
 
@@ -29,12 +30,12 @@ interface PredictionResult {
   predictedHigh: number;
   predictedBalance: number;
   confidence: number;
+  threeMonthOutlook: { month: string; balance: number }[];
 }
 
 export function Predictions({ transactions, currentBalance, className }: PredictionsProps) {
   const prediction = useMemo((): PredictionResult => {
     const now = new Date();
-    const nextMonth = addMonths(now, 1);
 
     // Find recurring transactions
     const recurringTx = transactions.filter((tx) => tx.isRecurring && tx.direction === "debit");
@@ -54,25 +55,18 @@ export function Predictions({ transactions, currentBalance, className }: Predict
       monthlyVariable.push(monthTx.reduce((sum, tx) => sum + Math.abs(tx.amount), 0));
     }
 
-    // Use last 3 months for average
     const recentMonths = monthlyVariable.slice(0, 3).filter((v) => v > 0);
     const predictedVariable = recentMonths.length > 0
       ? recentMonths.reduce((a, b) => a + b, 0) / recentMonths.length
       : 0;
 
-    // Calculate standard deviation for confidence interval
     const mean = predictedVariable;
     const variance = recentMonths.length > 0
       ? recentMonths.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / recentMonths.length
       : 0;
     const stdDev = Math.sqrt(variance);
 
-    // 95% confidence interval
     const margin = 1.96 * stdDev;
-    const predictedLow = Math.max(0, predictedVariable - margin);
-    const predictedHigh = predictedVariable + margin;
-
-    // Total prediction
     const totalPredicted = expectedRecurring + predictedVariable;
 
     // Calculate expected income
@@ -90,10 +84,21 @@ export function Predictions({ transactions, currentBalance, className }: Predict
       ? monthlyIncome.reduce((a, b) => a + b, 0) / monthlyIncome.length
       : 0;
 
-    // Predicted end-of-month balance
     const predictedBalance = currentBalance + expectedIncome - totalPredicted;
 
-    // Confidence score based on data availability
+    // 3-Month Outlook
+    const outlook: { month: string; balance: number }[] = [];
+    let runningBalance = currentBalance;
+    const monthlyNet = expectedIncome - totalPredicted;
+
+    for (let i = 1; i <= 3; i++) {
+      runningBalance += monthlyNet;
+      outlook.push({
+        month: format(addMonths(now, i), "MMM"),
+        balance: runningBalance,
+      });
+    }
+
     const dataMonths = new Set(transactions.map((tx) => format(parseISO(tx.date), "yyyy-MM"))).size;
     const confidence = Math.min(95, Math.max(50, 50 + dataMonths * 5));
 
@@ -102,10 +107,11 @@ export function Predictions({ transactions, currentBalance, className }: Predict
       recurringCount: new Set(recurringTx.map((tx) => tx.merchant)).size,
       predictedVariable,
       totalPredicted,
-      predictedLow: expectedRecurring + predictedLow,
-      predictedHigh: expectedRecurring + predictedHigh,
+      predictedLow: totalPredicted - margin,
+      predictedHigh: totalPredicted + margin,
       predictedBalance,
       confidence,
+      threeMonthOutlook: outlook,
     };
   }, [transactions, currentBalance]);
 
@@ -144,7 +150,7 @@ export function Predictions({ transactions, currentBalance, className }: Predict
             <div>
               <h4 className="text-sm font-medium text-muted-foreground">Expected Recurring</h4>
               <p className="text-2xl font-bold text-orange-600">
-                {formatCurrency(prediction.expectedRecurring)}
+                <PrivacyBlur>{formatCurrency(prediction.expectedRecurring)}</PrivacyBlur>
               </p>
             </div>
             <Target className="h-5 w-5 text-orange-500" />
@@ -160,7 +166,7 @@ export function Predictions({ transactions, currentBalance, className }: Predict
             <div>
               <h4 className="text-sm font-medium text-muted-foreground">Predicted Variable</h4>
               <p className="text-2xl font-bold text-blue-600">
-                {formatCurrency(prediction.predictedVariable)}
+                <PrivacyBlur>{formatCurrency(prediction.predictedVariable)}</PrivacyBlur>
               </p>
             </div>
             <TrendingUp className="h-5 w-5 text-blue-500" />
@@ -176,9 +182,11 @@ export function Predictions({ transactions, currentBalance, className }: Predict
         {/* Total Predicted */}
         <div className="p-4 rounded-lg bg-muted">
           <h4 className="text-sm font-medium text-muted-foreground">Total Predicted Expenses</h4>
-          <p className="text-3xl font-bold">{formatCurrency(prediction.totalPredicted)}</p>
+          <p className="text-3xl font-bold">
+            <PrivacyBlur>{formatCurrency(prediction.totalPredicted)}</PrivacyBlur>
+          </p>
           <p className="text-sm text-muted-foreground mt-1">
-            Range: {formatCurrency(prediction.predictedLow)} – {formatCurrency(prediction.predictedHigh)}
+            Range: <PrivacyBlur>{formatCurrency(prediction.predictedLow)}</PrivacyBlur> – <PrivacyBlur>{formatCurrency(prediction.predictedHigh)}</PrivacyBlur>
           </p>
         </div>
 
@@ -191,23 +199,42 @@ export function Predictions({ transactions, currentBalance, className }: Predict
         >
           <div className="flex items-start justify-between">
             <div>
-              <h4 className="text-sm font-medium text-muted-foreground">Predicted End-of-Month Balance</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">Next Month Outlook</h4>
               <p
                 className={cn(
                   "text-3xl font-bold",
                   prediction.predictedBalance >= 0 ? "text-emerald-600" : "text-red-600"
                 )}
               >
-                {formatCurrency(prediction.predictedBalance)}
+                <PrivacyBlur>{formatCurrency(prediction.predictedBalance)}</PrivacyBlur>
               </p>
             </div>
             {prediction.predictedBalance < 0 && (
-              <AlertTriangle className="h-6 w-6 text-red-500" />
+              <AlertCircle className="h-6 w-6 text-red-500" />
             )}
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            Current: {formatCurrency(currentBalance)} → Predicted: {formatCurrency(prediction.predictedBalance)}
-          </p>
+          
+          {/* 3-Month Trajectory */}
+          <div className="mt-4 pt-4 border-t border-dashed">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">3-Month Trajectory</p>
+            <div className="flex items-end justify-between gap-2 h-16">
+              {prediction.threeMonthOutlook.map((item, idx) => (
+                <div key={item.month} className="flex-1 flex flex-col items-center gap-1">
+                  <div 
+                    className={cn(
+                      "w-full rounded-t-sm transition-all duration-500",
+                      item.balance >= 0 ? "bg-emerald-500/40" : "bg-red-500/40"
+                    )}
+                    style={{ height: `${Math.min(100, Math.max(10, (item.balance / Math.max(currentBalance, 1)) * 50))}%` }}
+                  />
+                  <span className="text-[10px] font-medium text-muted-foreground">{item.month}</span>
+                  <span className="text-[10px] font-bold">
+                    <PrivacyBlur>{item.balance >= 1000 ? `${(item.balance / 1000).toFixed(1)}k` : Math.round(item.balance)}</PrivacyBlur>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Warning if negative */}

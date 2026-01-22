@@ -449,3 +449,98 @@ export async function calculateGoalProgress(): Promise<{
 export async function getInsights(startDate?: Date, endDate?: Date): Promise<Insight[]> {
   return generateInsights();
 }
+
+/**
+ * Detects anomalous transactions in the given set based on 6-month historical averages
+ */
+export function detectAnomalies(transactions: Transaction[], history: Transaction[]) {
+  const anomalies: Array<{ transaction: Transaction; reason: string; deviation: number }> = [];
+  
+  // Group history by merchant to calculate averages
+  const merchantHistory = new Map<string, number[]>();
+  history
+    .filter(t => t.direction === 'debit')
+    .forEach(t => {
+      const amounts = merchantHistory.get(t.merchant) || [];
+      amounts.push(Math.abs(t.amount));
+      merchantHistory.set(t.merchant, amounts);
+    });
+
+  // Calculate merchant stats
+  const merchantStats = new Map<string, { avg: number; stdDev: number; count: number }>();
+  merchantHistory.forEach((amounts, merchant) => {
+    if (amounts.length < 3) return; // Need at least 3 samples
+    const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+    const variance = amounts.reduce((s, a) => s + Math.pow(a - avg, 2), 0) / amounts.length;
+    merchantStats.set(merchant, { avg, stdDev: Math.sqrt(variance), count: amounts.length });
+  });
+
+  // Check current transactions
+  transactions.forEach(t => {
+    if (t.direction !== 'debit') return;
+    const stats = merchantStats.get(t.merchant);
+    if (!stats) return;
+
+    const amount = Math.abs(t.amount);
+    // Anomaly if amount is > 2.5 std deviations from mean OR > 50% different from avg for low variance
+    const deviation = stats.stdDev > 0 ? (amount - stats.avg) / stats.stdDev : 0;
+    const percentageDiff = (amount - stats.avg) / stats.avg;
+
+    if (amount > stats.avg * 1.5 && (deviation > 2.5 || stats.stdDev === 0)) {
+      anomalies.push({
+        transaction: t,
+        reason: `Spending at ${t.merchant} is ${Math.round(percentageDiff * 100)}% higher than usual`,
+        deviation: percentageDiff
+      });
+    }
+  });
+
+  return anomalies;
+}
+
+/**
+ * Calculates advanced health metrics like Debt-to-Income and Net Worth Trend
+ */
+export function calculateAdvancedHealthMetrics(
+  transactions: Transaction[], 
+  accounts: any[],
+  history: Transaction[],
+  referenceDate: Date = new Date()
+) {
+  const now = referenceDate;
+  const threeMonthsAgo = subMonths(now, 3);
+  const sixMonthsAgo = subMonths(now, 6);
+
+  // 1. Debt-to-Income Ratio
+  // Monthly debt payments / Gross monthly income
+  const recentIncome = transactions
+    .filter(t => t.direction === 'credit' && t.date >= format(threeMonthsAgo, 'yyyy-MM-dd'))
+    .reduce((s, t) => s + t.amount, 0) / 3;
+
+  const totalDebt = accounts
+    .filter(a => a.type === 'credit')
+    .reduce((s, a) => s + Math.abs(a.balance), 0);
+
+  const dti = recentIncome > 0 ? (totalDebt / recentIncome) * 100 : 0;
+
+  // 2. Net Worth Trend (6-month)
+  const monthlyStats = new Map<string, number>(); // month -> net flow
+  history.forEach(t => {
+    const month = t.date.slice(0, 7);
+    const flow = t.direction === 'credit' ? t.amount : -Math.abs(t.amount);
+    monthlyStats.set(month, (monthlyStats.get(month) || 0) + flow);
+  });
+
+  const last6Months = Array.from({ length: 6 }, (_, i) => format(subMonths(now, i), 'yyyy-MM'))
+    .reverse();
+  
+  const flows = last6Months.map(m => monthlyStats.get(m) || 0);
+  const avgMonthlyGrowth = flows.reduce((a, b) => a + b, 0) / 6;
+
+  return {
+    debtToIncomeRatio: dti,
+    avgMonthlyGrowth,
+    recentIncome,
+    totalDebt
+  };
+}

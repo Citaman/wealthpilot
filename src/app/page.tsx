@@ -15,6 +15,7 @@ import { GoalsProgress } from "@/components/dashboard/goals-progress";
 import { QuickStats } from "@/components/dashboard/quick-stats";
 import { UpcomingBills } from "@/components/dashboard/upcoming-bills";
 import { MonthlySummary } from "@/components/dashboard/monthly-summary";
+import { AnomalyDetection } from "@/components/dashboard/anomaly-detection";
 import { Button } from "@/components/ui/button";
 import { DashboardSkeleton } from "@/components/ui/skeleton-card";
 import { useDashboard, useTransactions, useBudgets } from "@/hooks/use-data";
@@ -45,6 +46,7 @@ export default function DashboardPage() {
   });
 
   const { budgets } = useBudgets();
+  const { transactions: allTransactions } = useTransactions();
 
   // Calculate income sources breakdown
   const incomeSources = useMemo(() => {
@@ -178,6 +180,7 @@ export default function DashboardPage() {
 
           {/* Right Column - Transactions & Goals */}
           <div className="lg:col-span-4 space-y-6">
+            <AnomalyDetection transactions={allTransactions} />
             <RecentTransactions transactions={recentTransactions} limit={5} />
             <GoalsProgress
               goals={goals}
