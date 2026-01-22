@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, Suspense } from "react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import {
   Search,
@@ -40,17 +40,40 @@ import { AddEditRecurringDialog } from "@/components/subscriptions";
 import { useTransactions, useMerchantRules } from "@/hooks/use-data";
 import { CATEGORIES, db, type Transaction, type RecurringTransaction, type RecurringType } from "@/lib/db";
 import { linkTransactionToRecurring } from "@/lib/csv-parser";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 import { useAccount } from "@/contexts/account-context";
 import { getPrimaryAccount } from "@/lib/accounts";
+import { useSearchParams } from "next/navigation";
 
 type SortField = "date" | "amount" | "merchant" | "category";
 type SortDirection = "asc" | "desc";
 
 export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<TransactionsPageFallback />}>
+      <TransactionsPageContent />
+    </Suspense>
+  );
+}
+
+function TransactionsPageFallback() {
+  return (
+    <AppLayout>
+      <div className="flex h-full items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading transactions...</div>
+      </div>
+    </AppLayout>
+  );
+}
+
+function TransactionsPageContent() {
+  const { convertFromAccount } = useMoney();
   // Account context
   const { selectedAccountId } = useAccount();
+  const searchParams = useSearchParams();
+  const seededSearch = useRef(false);
   
   // Filters
   const [search, setSearch] = useState("");
@@ -79,6 +102,13 @@ export default function TransactionsPage() {
 
   // Bulk Workbench
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (seededSearch.current) return;
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+    seededSearch.current = true;
+  }, [searchParams]);
 
   // Date range
   const now = new Date();
@@ -321,14 +351,6 @@ export default function TransactionsPage() {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
-
   const exportToCSV = () => {
     const headers = ["Date", "Merchant", "Category", "Subcategory", "Amount", "Direction", "Balance", "Tags", "Notes"];
     const rows = filteredTransactions.map((t) => [
@@ -357,14 +379,14 @@ export default function TransactionsPage() {
   const totals = useMemo(() => {
     const income = filteredTransactions
       .filter((t) => t.direction === "credit")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
     const expenses = Math.abs(
       filteredTransactions
         .filter((t) => t.direction === "debit")
-        .reduce((sum, t) => sum + t.amount, 0)
+        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
     );
     return { income, expenses, net: income - expenses };
-  }, [filteredTransactions]);
+  }, [filteredTransactions, convertFromAccount]);
 
   const isAllSelected = paginatedTransactions.length > 0 && 
     paginatedTransactions.every((t) => selectedIds.has(t.id!));
@@ -402,7 +424,7 @@ export default function TransactionsPage() {
             <CardContent className="py-4">
               <p className="text-sm text-muted-foreground">Total Income</p>
               <p className="text-2xl font-bold text-emerald-600">
-                <PrivacyBlur>+{formatCurrency(totals.income)}</PrivacyBlur>
+                +<Money amount={totals.income} />
               </p>
             </CardContent>
           </Card>
@@ -410,7 +432,7 @@ export default function TransactionsPage() {
             <CardContent className="py-4">
               <p className="text-sm text-muted-foreground">Total Expenses</p>
               <p className="text-2xl font-bold text-red-600">
-                <PrivacyBlur>-{formatCurrency(totals.expenses)}</PrivacyBlur>
+                -<Money amount={totals.expenses} />
               </p>
             </CardContent>
           </Card>
@@ -423,10 +445,8 @@ export default function TransactionsPage() {
                 "text-2xl font-bold",
                 totals.net >= 0 ? "text-blue-600" : "text-amber-600"
               )}>
-                <PrivacyBlur>
-                  {totals.net >= 0 ? "+" : ""}
-                  {formatCurrency(totals.net)}
-                </PrivacyBlur>
+                {totals.net >= 0 ? "+" : "-"}
+                <Money amount={Math.abs(totals.net)} />
               </p>
             </CardContent>
           </Card>

@@ -43,7 +43,7 @@ import {
   type RecurringStatus,
 } from "@/lib/db";
 import { getPrimaryAccount } from "@/lib/accounts";
-import { 
+import {
   detectRecurringTransactions, 
   mergeRecurringItems,
   syncRecurringWithTransactions,
@@ -51,10 +51,13 @@ import {
   type SyncResult,
 } from "@/lib/csv-parser";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 type TabValue = "subscriptions" | "bills" | "loans" | "income" | "ended";
 
 export default function SubscriptionsPage() {
+  const { convertFromAccount } = useMoney();
   const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDetecting, setIsDetecting] = useState(false);
@@ -139,7 +142,7 @@ export default function SubscriptionsPage() {
 
     const calculateMonthly = (items: RecurringTransaction[]) => {
       return items.reduce((sum, r) => {
-        const amount = Math.abs(r.amount);
+        const amount = Math.abs(convertFromAccount(r.amount, r.accountId));
         switch (r.frequency) {
           case "weekly":
             return sum + amount * 4.33;
@@ -173,15 +176,7 @@ export default function SubscriptionsPage() {
       total: subscriptions + bills + loans,
       income,
     };
-  }, [recurring]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
+  }, [recurring, convertFromAccount]);
 
   // Auto-detect recurring transactions
   const handleDetect = async () => {
@@ -529,7 +524,7 @@ export default function SubscriptionsPage() {
                 <CreditCard className="h-4 w-4 text-purple-500" />
                 <p className="text-sm text-muted-foreground">Monthly Subscriptions</p>
               </div>
-              <p className="text-2xl font-bold">{formatCurrency(totals.subscriptions)}</p>
+              <p className="text-2xl font-bold"><Money amount={totals.subscriptions} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </CardContent>
           </Card>
           <Card>
@@ -538,7 +533,7 @@ export default function SubscriptionsPage() {
                 <Receipt className="h-4 w-4 text-blue-500" />
                 <p className="text-sm text-muted-foreground">Monthly Bills</p>
               </div>
-              <p className="text-2xl font-bold">{formatCurrency(totals.bills)}</p>
+              <p className="text-2xl font-bold"><Money amount={totals.bills} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </CardContent>
           </Card>
           <Card>
@@ -547,7 +542,7 @@ export default function SubscriptionsPage() {
                 <Landmark className="h-4 w-4 text-orange-500" />
                 <p className="text-sm text-muted-foreground">Monthly Loan Payments</p>
               </div>
-              <p className="text-2xl font-bold">{formatCurrency(totals.loans)}</p>
+              <p className="text-2xl font-bold"><Money amount={totals.loans} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
@@ -556,7 +551,7 @@ export default function SubscriptionsPage() {
                 <TrendingUp className="h-4 w-4 text-primary" />
                 <p className="text-sm text-muted-foreground">Total Monthly</p>
               </div>
-              <p className="text-2xl font-bold">{formatCurrency(totals.total)}</p>
+              <p className="text-2xl font-bold"><Money amount={totals.total} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </CardContent>
           </Card>
         </div>
@@ -801,16 +796,16 @@ export default function SubscriptionsPage() {
                 <TrendingUp className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
                   <p className="font-medium text-foreground mb-1">
-                    Your recurring expenses cost {formatCurrency(totals.total * 12)} per
+                    Your recurring expenses cost <Money amount={totals.total * 12} minimumFractionDigits={2} maximumFractionDigits={2} /> per
                     year
                   </p>
                   <p className="text-muted-foreground">
-                    That's {formatCurrency(totals.total)} per month, or about{" "}
-                    {formatCurrency(totals.total / 30)} per day.
+                    That's <Money amount={totals.total} minimumFractionDigits={2} maximumFractionDigits={2} /> per month, or about{" "}
+                    <Money amount={totals.total / 30} minimumFractionDigits={2} maximumFractionDigits={2} /> per day.
                     {totals.income > 0 && (
                       <>
                         {" "}
-                        Your recurring income is {formatCurrency(totals.income)}/month.
+                        Your recurring income is <Money amount={totals.income} minimumFractionDigits={2} maximumFractionDigits={2} />/month.
                       </>
                     )}
                   </p>

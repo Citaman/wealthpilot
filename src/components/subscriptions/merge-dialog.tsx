@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORIES, type RecurringTransaction } from "@/lib/db";
+import { Money } from "@/components/ui/money";
+import { useMoney } from "@/hooks/use-money";
 
 interface MergeRecurringDialogProps {
   open: boolean;
@@ -35,6 +37,7 @@ export function MergeRecurringDialog({
 }: MergeRecurringDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTargetId, setSelectedTargetId] = useState<number | null>(null);
+  const { getAccountCurrency } = useMoney();
 
   // Filter out the source item and search
   const availableItems = useMemo(() => {
@@ -50,14 +53,6 @@ export function MergeRecurringDialog({
       );
     });
   }, [allItems, sourceItem, searchTerm]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(Math.abs(value));
-  };
 
   const handleMerge = () => {
     if (selectedTargetId && sourceItem?.id) {
@@ -113,7 +108,13 @@ export function MergeRecurringDialog({
               <div className="flex-1">
                 <p className="font-medium">{sourceItem.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {formatCurrency(sourceItem.amount)} • {sourceItem.frequency}
+                  <Money
+                    amount={Math.abs(sourceItem.amount)}
+                    currency={getAccountCurrency(sourceItem.accountId)}
+                    minimumFractionDigits={2}
+                    maximumFractionDigits={2}
+                  />{" "}
+                  • {sourceItem.frequency}
                 </p>
               </div>
               {sourceItem.occurrences && sourceItem.occurrences.length > 0 && (
@@ -187,7 +188,12 @@ export function MergeRecurringDialog({
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">
-                            {formatCurrency(item.amount)}
+                            <Money
+                              amount={Math.abs(item.amount)}
+                              currency={getAccountCurrency(item.accountId)}
+                              minimumFractionDigits={2}
+                              maximumFractionDigits={2}
+                            />
                           </p>
                           <p className="text-xs text-muted-foreground capitalize">
                             {item.frequency}

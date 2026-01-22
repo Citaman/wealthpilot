@@ -12,6 +12,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { type RecurringTransaction, type RecurringOccurrence } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { Money } from "@/components/ui/money";
+import { useMoney } from "@/hooks/use-money";
 
 interface PaymentHistoryDialogProps {
   subscription: RecurringTransaction | null;
@@ -24,13 +26,7 @@ export function PaymentHistoryDialog({
   open,
   onOpenChange,
 }: PaymentHistoryDialogProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(Math.abs(value));
-  };
+  const { getAccountCurrency } = useMoney();
 
   // Generate upcoming predicted payments
   const upcomingPayments = useMemo(() => {
@@ -119,7 +115,13 @@ export function PaymentHistoryDialog({
                     </div>
 
                     <p className="font-semibold text-muted-foreground">
-                      ~{formatCurrency(payment.amount)}
+                      ~
+                      <Money
+                        amount={Math.abs(payment.amount)}
+                        currency={getAccountCurrency(subscription.accountId)}
+                        minimumFractionDigits={2}
+                        maximumFractionDigits={2}
+                      />
                     </p>
                   </div>
                 ))}
@@ -167,7 +169,12 @@ export function PaymentHistoryDialog({
                             occ.amount < 0 ? "text-red-500" : "text-green-500"
                           )}
                         >
-                          {formatCurrency(occ.amount)}
+                          <Money
+                            amount={Math.abs(occ.amount)}
+                            currency={getAccountCurrency(subscription.accountId)}
+                            minimumFractionDigits={2}
+                            maximumFractionDigits={2}
+                          />
                         </p>
 
                         {/* Variance indicator */}
@@ -210,11 +217,14 @@ export function PaymentHistoryDialog({
                   <div className="p-3 bg-muted rounded-lg">
                     <p className="text-xs text-muted-foreground">Total Paid</p>
                     <p className="font-semibold text-lg">
-                      {formatCurrency(
-                        occurrences
+                      <Money
+                        amount={occurrences
                           .filter((o) => o.status === "paid")
-                          .reduce((sum, o) => sum + Math.abs(o.amount), 0)
-                      )}
+                          .reduce((sum, o) => sum + Math.abs(o.amount), 0)}
+                        currency={getAccountCurrency(subscription.accountId)}
+                        minimumFractionDigits={2}
+                        maximumFractionDigits={2}
+                      />
                     </p>
                   </div>
                   {subscription.averageAmount && (
@@ -223,7 +233,12 @@ export function PaymentHistoryDialog({
                         Average Payment
                       </p>
                       <p className="font-semibold text-lg">
-                        {formatCurrency(subscription.averageAmount)}
+                        <Money
+                          amount={Math.abs(subscription.averageAmount)}
+                          currency={getAccountCurrency(subscription.accountId)}
+                          minimumFractionDigits={2}
+                          maximumFractionDigits={2}
+                        />
                       </p>
                     </div>
                   )}

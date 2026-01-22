@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CategorySelect } from "./category-select";
 import { TagInput } from "./tag-input";
 import { useToast } from "@/hooks/use-toast";
-import { CATEGORIES, db } from "@/lib/db";
+import { db, type Transaction } from "@/lib/db";
 
 interface BulkWorkbenchProps {
   open: boolean;
@@ -50,7 +50,7 @@ export function BulkWorkbench({
   const handleApply = async () => {
     setIsSaving(true);
     try {
-      const updates: any = {};
+      const updates: Partial<Transaction> = {};
       if (applyCategory && category) {
         updates.category = category;
         updates.subcategory = subcategory;

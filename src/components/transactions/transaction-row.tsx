@@ -13,11 +13,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { CategoryBadge } from "./category-select";
 import { type Transaction, CATEGORIES } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { TransactionTypeBadge, TransactionTypeButton } from "@/components/budgets";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface TransactionRowProps {
   transaction: Transaction;
@@ -41,14 +42,7 @@ export function TransactionRow({
   compact = false,
 }: TransactionRowProps) {
   const [isHovered, setIsHovered] = useState(false);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
+  const { getAccountCurrency } = useMoney();
 
   const categoryData = CATEGORIES[transaction.category];
   const IconComponent = categoryData?.icon;
@@ -151,10 +145,13 @@ export function TransactionRow({
           compact && "text-sm w-24"
         )}
       >
-        <PrivacyBlur>
-          {transaction.direction === "credit" ? "+" : "-"}
-          {formatCurrency(transaction.amount)}
-        </PrivacyBlur>
+        {transaction.direction === "credit" ? "+" : "-"}
+        <Money
+          amount={Math.abs(transaction.amount)}
+          currency={getAccountCurrency(transaction.accountId)}
+          minimumFractionDigits={2}
+          maximumFractionDigits={2}
+        />
       </div>
 
       {/* Actions */}

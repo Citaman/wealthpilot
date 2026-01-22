@@ -29,6 +29,8 @@ import { TagInput, COMMON_TAGS } from "./tag-input";
 import { type Transaction, CATEGORIES } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { TransactionTypeButton } from "@/components/budgets";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface TransactionEditDialogProps {
   transaction: Transaction | null;
@@ -47,6 +49,7 @@ export function TransactionEditDialog({
   onDelete,
   similarCount = 0,
 }: TransactionEditDialogProps) {
+  const { getAccountCurrency } = useMoney();
   const [editedTx, setEditedTx] = useState<Transaction | null>(null);
   const [applyToSimilar, setApplyToSimilar] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -96,13 +99,6 @@ export function TransactionEditDialog({
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-    }).format(value);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
@@ -138,7 +134,12 @@ export function TransactionEditDialog({
               )}
             >
               {editedTx.direction === "credit" ? "+" : "-"}
-              {formatCurrency(editedTx.amount)}
+              <Money
+                amount={Math.abs(editedTx.amount)}
+                currency={getAccountCurrency(editedTx.accountId)}
+                minimumFractionDigits={2}
+                maximumFractionDigits={2}
+              />
             </div>
           </div>
 
@@ -288,7 +289,14 @@ export function TransactionEditDialog({
                 </div>
                 <div>
                   <span className="text-muted-foreground">Balance After:</span>
-                  <span className="ml-2">{formatCurrency(editedTx.balanceAfter)}</span>
+                  <span className="ml-2">
+                    <Money
+                      amount={editedTx.balanceAfter}
+                      currency={getAccountCurrency(editedTx.accountId)}
+                      minimumFractionDigits={2}
+                      maximumFractionDigits={2}
+                    />
+                  </span>
                 </div>
               </div>
               <div>

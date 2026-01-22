@@ -32,6 +32,8 @@ import {
   type LoanDetails,
   type Transaction,
 } from "@/lib/db";
+import { Money } from "@/components/ui/money";
+import { useMoney } from "@/hooks/use-money";
 
 interface InitialValues {
   name?: string;
@@ -87,6 +89,7 @@ export function AddEditRecurringDialog({
   const [existingRecurring, setExistingRecurring] = useState<RecurringTransaction[]>([]);
   const [selectedExistingId, setSelectedExistingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const { getAccountCurrency } = useMoney();
 
   const isEditing = !!recurring?.id;
   const showLinkOption = !!sourceTransaction && !isEditing;
@@ -218,14 +221,6 @@ export function AddEditRecurringDialog({
       ? CATEGORIES[formData.category].subcategories
       : [];
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(Math.abs(value));
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px]">
@@ -328,7 +323,12 @@ export function AddEditRecurringDialog({
                               </div>
                               <div className="text-right">
                                 <p className="font-semibold">
-                                  {formatCurrency(item.amount)}
+                                  <Money
+                                    amount={Math.abs(item.amount)}
+                                    currency={getAccountCurrency(item.accountId)}
+                                    minimumFractionDigits={2}
+                                    maximumFractionDigits={2}
+                                  />
                                 </p>
                                 <p className="text-xs text-muted-foreground capitalize">
                                   {item.frequency} • {item.type || "subscription"}
@@ -351,7 +351,13 @@ export function AddEditRecurringDialog({
                   <div className="bg-muted/50 rounded-lg p-3">
                     <p className="text-sm font-medium mb-1">Transaction to link:</p>
                     <p className="text-sm">
-                      {sourceTransaction.merchant} - {formatCurrency(sourceTransaction.amount)}
+                      {sourceTransaction.merchant} -{" "}
+                      <Money
+                        amount={Math.abs(sourceTransaction.amount)}
+                        currency={getAccountCurrency(sourceTransaction.accountId)}
+                        minimumFractionDigits={2}
+                        maximumFractionDigits={2}
+                      />
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(sourceTransaction.date), "MMMM d, yyyy")}

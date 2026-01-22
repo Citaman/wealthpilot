@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CATEGORIES, type RecurringTransaction } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface LoanCardProps {
   loan: RecurringTransaction;
@@ -31,18 +33,11 @@ export function LoanCard({
   onDelete,
   onMarkComplete,
 }: LoanCardProps) {
+  const { convertFromAccount } = useMoney();
   const categoryInfo = CATEGORIES[loan.category];
   const loanDetails = loan.loan;
   const isActive = loan.status === "active";
   const isCompleted = loan.status === "completed";
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(Math.abs(value));
-  };
 
   const getStatusBadge = () => {
     if (isCompleted) {
@@ -141,8 +136,8 @@ export function LoanCard({
             </div>
             <Progress value={paymentProgress} className="h-3" />
             <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>Paid: {formatCurrency(loanDetails.totalPaid)}</span>
-              <span>Remaining: {formatCurrency(loanDetails.remainingBalance)}</span>
+              <span>Paid: <Money amount={Math.abs(convertFromAccount(loanDetails.totalPaid, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} /></span>
+              <span>Remaining: <Money amount={Math.abs(convertFromAccount(loanDetails.remainingBalance, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} /></span>
             </div>
           </div>
         )}
@@ -152,7 +147,7 @@ export function LoanCard({
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="text-center p-2 bg-muted rounded">
               <p className="text-xs text-muted-foreground">Monthly</p>
-              <p className="font-semibold">{formatCurrency(loan.amount)}</p>
+              <p className="font-semibold"><Money amount={Math.abs(convertFromAccount(loan.amount, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </div>
             <div className="text-center p-2 bg-muted rounded">
               <p className="text-xs text-muted-foreground">Interest Rate</p>
@@ -171,15 +166,17 @@ export function LoanCard({
             <div className="flex justify-between mb-1">
               <span className="text-sm">Principal Paid</span>
               <span className="font-medium">
-                {formatCurrency(
-                  loanDetails.totalPaid - loanDetails.totalInterestPaid
-                )}
+                <Money
+                  amount={Math.abs(convertFromAccount(loanDetails.totalPaid - loanDetails.totalInterestPaid, loan.accountId))}
+                  minimumFractionDigits={2}
+                  maximumFractionDigits={2}
+                />
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm">Interest Paid</span>
               <span className="font-medium text-orange-500">
-                {formatCurrency(loanDetails.totalInterestPaid)}
+                <Money amount={Math.abs(convertFromAccount(loanDetails.totalInterestPaid, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} />
               </span>
             </div>
           </div>

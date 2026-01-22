@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/collapsible";
 import { CATEGORIES, type RecurringTransaction, type RecurringType } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface SubscriptionCardProps {
   subscription: RecurringTransaction;
@@ -67,6 +69,7 @@ export function SubscriptionCard({
   onLinkTransaction,
   onChangeType,
 }: SubscriptionCardProps) {
+  const { convertFromAccount } = useMoney();
   const categoryInfo = CATEGORIES[sub.category];
   const isActive = sub.status === "active";
   const isPaused = sub.status === "paused";
@@ -80,14 +83,6 @@ export function SubscriptionCard({
     { type: "loan", label: "Loan", icon: Landmark },
     { type: "income", label: "Income", icon: Wallet },
   ];
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(Math.abs(value));
-  };
 
   const frequencyLabel = (freq: string) => {
     switch (freq) {
@@ -244,14 +239,14 @@ export function SubscriptionCard({
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-lg font-semibold">
-              {formatCurrency(sub.amount)}
+              <Money amount={Math.abs(convertFromAccount(sub.amount, sub.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} />
               <span className="text-sm font-normal text-muted-foreground">
                 /{frequencyLabel(sub.frequency)}
               </span>
             </p>
             {sub.isVariable && sub.averageAmount && (
               <p className="text-xs text-muted-foreground">
-                Avg: {formatCurrency(sub.averageAmount)}
+                Avg: <Money amount={Math.abs(convertFromAccount(sub.averageAmount, sub.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} />
               </p>
             )}
           </div>
@@ -296,7 +291,9 @@ export function SubscriptionCard({
                       />
                       {format(new Date(occ.date), "MMM d, yyyy")}
                     </span>
-                    <span>{formatCurrency(occ.amount)}</span>
+                    <span>
+                      <Money amount={Math.abs(convertFromAccount(occ.amount, sub.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} />
+                    </span>
                   </div>
                 ))}
                 {sub.occurrences.length > 5 && (
