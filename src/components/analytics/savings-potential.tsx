@@ -5,9 +5,10 @@ import { format, subMonths } from "date-fns";
 import { PiggyBank, Lightbulb, TrendingDown, Coffee, Utensils, ShoppingBag, Clapperboard } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface SavingsPotentialProps {
   transactions: Transaction[];
@@ -27,6 +28,8 @@ interface SavingOpportunity {
 }
 
 export function SavingsPotential({ transactions, className }: SavingsPotentialProps) {
+  const { convertFromAccount } = useMoney();
+
   const opportunities = useMemo(() => {
     const now = new Date();
     const thisMonth = format(now, "yyyy-MM");
@@ -43,16 +46,17 @@ export function SavingsPotential({ transactions, className }: SavingsPotentialPr
     // Calculate category totals for this month
     const categorySpending = new Map<string, number>();
     thisMonthExpenses.forEach((tx) => {
+      const amount = Math.abs(convertFromAccount(tx.amount, tx.accountId));
       categorySpending.set(
         tx.category,
-        (categorySpending.get(tx.category) || 0) + Math.abs(tx.amount)
+        (categorySpending.get(tx.category) || 0) + amount
       );
     });
 
     // Calculate total monthly income
     const monthlyIncome = transactions
       .filter((t) => t.direction === "credit" && t.date.startsWith(thisMonth))
-      .reduce((s, t) => s + t.amount, 0);
+      .reduce((s, t) => s + convertFromAccount(t.amount, t.accountId), 0);
 
     const suggestions: SavingOpportunity[] = [];
 
@@ -82,7 +86,7 @@ export function SavingsPotential({ transactions, className }: SavingsPotentialPr
     const coffeeTxs = thisMonthExpenses.filter((tx) =>
       coffeeKeywords.some((k) => tx.merchant?.toLowerCase().includes(k))
     );
-    const coffeeSpending = coffeeTxs.reduce((s, t) => s + Math.abs(t.amount), 0);
+    const coffeeSpending = coffeeTxs.reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
     if (coffeeSpending > 30) {
       suggestions.push({
         id: "coffee",
@@ -148,7 +152,7 @@ export function SavingsPotential({ transactions, className }: SavingsPotentialPr
       ) {
         const lastMonthAmount = lastMonthExpenses
           .filter((t) => t.category === category)
-          .reduce((s, t) => s + Math.abs(t.amount), 0);
+          .reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
         
         if (amount > lastMonthAmount * 1.3 && lastMonthAmount > 50) {
           suggestions.push({
@@ -170,18 +174,9 @@ export function SavingsPotential({ transactions, className }: SavingsPotentialPr
     suggestions.sort((a, b) => b.potentialSavings - a.potentialSavings);
 
     return suggestions.slice(0, 5);
-  }, [transactions]);
+  }, [transactions, convertFromAccount]);
 
   const totalPotentialSavings = opportunities.reduce((s, o) => s + o.potentialSavings, 0);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const difficultyColors = {
     easy: "text-emerald-500 bg-emerald-500/10",
@@ -204,7 +199,7 @@ export function SavingsPotential({ transactions, className }: SavingsPotentialPr
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Potential monthly savings</p>
               <p className="text-lg font-bold text-emerald-500">
-                <PrivacyBlur>{formatCurrency(totalPotentialSavings)}</PrivacyBlur>
+                <Money amount={totalPotentialSavings} />
               </p>
             </div>
           )}
@@ -245,18 +240,18 @@ export function SavingsPotential({ transactions, className }: SavingsPotentialPr
                       <div>
                         <span className="text-muted-foreground">Current: </span>
                         <span className="font-medium">
-                          <PrivacyBlur>{formatCurrency(opportunity.currentSpending)}</PrivacyBlur>
+                          <Money amount={opportunity.currentSpending} />
                         </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Target: </span>
                         <span className="font-medium text-emerald-500">
-                          <PrivacyBlur>{formatCurrency(opportunity.suggestedSpending)}</PrivacyBlur>
+                          <Money amount={opportunity.suggestedSpending} />
                         </span>
                       </div>
                       <div className="ml-auto">
                         <span className="font-semibold text-emerald-500">
-                          Save <PrivacyBlur>{formatCurrency(opportunity.potentialSavings)}</PrivacyBlur>
+                          Save <Money amount={opportunity.potentialSavings} />
                         </span>
                       </div>
                     </div>

@@ -19,7 +19,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { Money } from "@/components/ui/money";
 import {
   Popover,
   PopoverContent,
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
+import { useMoney } from "@/hooks/use-money";
 
 interface SpendingForecastProps {
   transactions: Transaction[];
@@ -51,6 +52,7 @@ export function SpendingForecast({
 }: SpendingForecastProps) {
   const [showScenarios, setShowScenarios] = useState(true);
   const [savingsAdjustment, setSavingsAdjustment] = useState(0); // % change in spending
+  const { convertFromAccount, formatCompactCurrency } = useMoney();
 
   const forecastData = useMemo(() => {
     const now = new Date();
@@ -74,9 +76,9 @@ export function SpendingForecast({
       const data = monthlyData.get(monthKey);
       if (data) {
         if (tx.direction === "credit") {
-          data.income += tx.amount;
+          data.income += convertFromAccount(tx.amount, tx.accountId);
         } else {
-          data.expenses += Math.abs(tx.amount);
+          data.expenses += Math.abs(convertFromAccount(tx.amount, tx.accountId));
         }
         data.net = data.income - data.expenses;
       }
@@ -144,24 +146,9 @@ export function SpendingForecast({
       monthsToTarget,
       stdDev,
     };
-  }, [transactions, currentBalance, savingsAdjustment]);
+  }, [transactions, currentBalance, savingsAdjustment, convertFromAccount]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatYAxis = (value: number) => {
-    const absValue = Math.abs(value);
-    if (absValue >= 1000) {
-      return `€${(value / 1000).toFixed(0)}k`;
-    }
-    return `€${value}`;
-  };
+  const formatYAxis = (value: number) => formatCompactCurrency(value);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -174,7 +161,7 @@ export function SpendingForecast({
           <div className="flex justify-between gap-4 text-sm">
             <span className="text-muted-foreground">Actual Net</span>
             <span className={cn("font-medium", data.actual >= 0 ? "text-emerald-500" : "text-red-500")}>
-              <PrivacyBlur>{formatCurrency(data.actual)}</PrivacyBlur>
+              <Money amount={data.actual} />
             </span>
           </div>
         )}
@@ -183,7 +170,7 @@ export function SpendingForecast({
             <div className="flex justify-between gap-4 text-sm">
               <span className="text-muted-foreground">Forecast</span>
               <span className={cn("font-medium", data.forecast >= 0 ? "text-emerald-500" : "text-red-500")}>
-                <PrivacyBlur>{formatCurrency(data.forecast)}</PrivacyBlur>
+                <Money amount={data.forecast} />
               </span>
             </div>
             {showScenarios && (
@@ -191,13 +178,13 @@ export function SpendingForecast({
                 <div className="flex justify-between gap-4 text-xs mt-1">
                   <span className="text-muted-foreground">Best case</span>
                   <span className="text-emerald-400">
-                    <PrivacyBlur>{formatCurrency(data.optimistic!)}</PrivacyBlur>
+                    <Money amount={data.optimistic!} />
                   </span>
                 </div>
                 <div className="flex justify-between gap-4 text-xs">
                   <span className="text-muted-foreground">Worst case</span>
                   <span className="text-red-400">
-                    <PrivacyBlur>{formatCurrency(data.pessimistic!)}</PrivacyBlur>
+                    <Money amount={data.pessimistic!} />
                   </span>
                 </div>
               </>
@@ -263,7 +250,7 @@ export function SpendingForecast({
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Monthly net</span>
                       <span className="font-medium">
-                        <PrivacyBlur>{formatCurrency(forecastData.adjustedNet)}</PrivacyBlur>
+                        <Money amount={forecastData.adjustedNet} />
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -272,7 +259,7 @@ export function SpendingForecast({
                         "font-medium",
                         forecastData.projectedSavings >= 0 ? "text-emerald-500" : "text-red-500"
                       )}>
-                        <PrivacyBlur>{formatCurrency(forecastData.projectedSavings)}</PrivacyBlur>
+                        <Money amount={forecastData.projectedSavings} />
                       </span>
                     </div>
                   </div>
@@ -371,7 +358,7 @@ export function SpendingForecast({
               "text-lg font-bold",
               forecastData.avgNet >= 0 ? "text-emerald-500" : "text-red-500"
             )}>
-              <PrivacyBlur>{formatCurrency(forecastData.avgNet)}</PrivacyBlur>
+              <Money amount={forecastData.avgNet} />
             </p>
           </div>
           <div className="text-center">
@@ -380,7 +367,7 @@ export function SpendingForecast({
               "text-lg font-bold",
               forecastData.projectedBalance >= 0 ? "text-emerald-500" : "text-red-500"
             )}>
-              <PrivacyBlur>{formatCurrency(forecastData.projectedBalance)}</PrivacyBlur>
+              <Money amount={forecastData.projectedBalance} />
             </p>
           </div>
           <div className="text-center">

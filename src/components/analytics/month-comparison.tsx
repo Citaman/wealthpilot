@@ -30,9 +30,10 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { CATEGORIES, type Transaction } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface MonthComparisonProps {
   transactions: Transaction[];
@@ -54,6 +55,7 @@ interface CategoryData {
 export function MonthComparison({ transactions, className }: MonthComparisonProps) {
   const now = new Date();
   const [viewMode, setViewMode] = useState<ViewMode>("overview");
+  const { convertFromAccount } = useMoney();
   
   // Generate available months from transactions
   const availableMonths = useMemo(() => {
@@ -89,14 +91,14 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
     // Income
     const selectedIncome = transactions
       .filter((tx) => tx.direction === "credit" && isSameMonth(parseISO(tx.date), selectedDate))
-      .reduce((sum, tx) => sum + tx.amount, 0);
+      .reduce((sum, tx) => sum + convertFromAccount(tx.amount, tx.accountId), 0);
     const prevIncome = transactions
       .filter((tx) => tx.direction === "credit" && isSameMonth(parseISO(tx.date), prevDate))
-      .reduce((sum, tx) => sum + tx.amount, 0);
+      .reduce((sum, tx) => sum + convertFromAccount(tx.amount, tx.accountId), 0);
 
     // Total expenses
-    const selectedTotal = selectedTx.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-    const prevTotal = prevTx.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+    const selectedTotal = selectedTx.reduce((sum, tx) => sum + Math.abs(convertFromAccount(tx.amount, tx.accountId)), 0);
+    const prevTotal = prevTx.reduce((sum, tx) => sum + Math.abs(convertFromAccount(tx.amount, tx.accountId)), 0);
 
     // Net
     const selectedNet = selectedIncome - selectedTotal;
@@ -107,13 +109,13 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
 
     selectedTx.forEach((tx) => {
       const current = categoryMap.get(tx.category) || { amount: 0, prevAmount: 0 };
-      current.amount += Math.abs(tx.amount);
+      current.amount += Math.abs(convertFromAccount(tx.amount, tx.accountId));
       categoryMap.set(tx.category, current);
     });
 
     prevTx.forEach((tx) => {
       const current = categoryMap.get(tx.category) || { amount: 0, prevAmount: 0 };
-      current.prevAmount += Math.abs(tx.amount);
+      current.prevAmount += Math.abs(convertFromAccount(tx.amount, tx.accountId));
       categoryMap.set(tx.category, current);
     });
 
@@ -147,16 +149,7 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
       incomeChange,
       categories,
     };
-  }, [transactions, selectedMonth]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, selectedMonth, convertFromAccount]);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -171,13 +164,13 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">This month</span>
             <span className="font-bold">
-              <PrivacyBlur>{formatCurrency(data.amount)}</PrivacyBlur>
+              <Money amount={data.amount} />
             </span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Last month</span>
             <span className="font-medium">
-              <PrivacyBlur>{formatCurrency(data.prevAmount)}</PrivacyBlur>
+              <Money amount={data.prevAmount} />
             </span>
           </div>
           {data.prevAmount > 0 && (
@@ -259,14 +252,14 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
               <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                 <p className="text-xs text-muted-foreground mb-1">Income</p>
                 <p className="text-lg font-bold text-emerald-500">
-                  <PrivacyBlur>{formatCurrency(monthData.income)}</PrivacyBlur>
+                  <Money amount={monthData.income} />
                 </p>
                 <ChangeIndicator value={monthData.incomeChange} />
               </div>
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-xs text-muted-foreground mb-1">Expenses</p>
                 <p className="text-lg font-bold text-red-500">
-                  <PrivacyBlur>{formatCurrency(monthData.expenses)}</PrivacyBlur>
+                  <Money amount={monthData.expenses} />
                 </p>
                 <ChangeIndicator value={monthData.expenseChange} inverse />
               </div>
@@ -281,10 +274,10 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
                   "text-lg font-bold",
                   monthData.net >= 0 ? "text-blue-500" : "text-amber-500"
                 )}>
-                  <PrivacyBlur>{formatCurrency(monthData.net)}</PrivacyBlur>
+                  <Money amount={monthData.net} />
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  vs <PrivacyBlur>{formatCurrency(monthData.prevNet)}</PrivacyBlur>
+                  vs <Money amount={monthData.prevNet} />
                 </p>
               </div>
             </div>
@@ -354,7 +347,7 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
                     />
                     <span className="text-xs flex-1 truncate">{cat.category}</span>
                     <span className="text-xs font-medium">
-                      <PrivacyBlur>{formatCurrency(cat.amount)}</PrivacyBlur>
+                      <Money amount={cat.amount} />
                     </span>
                     <span className={cn(
                       "text-[10px] w-10 text-right",

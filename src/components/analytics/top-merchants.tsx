@@ -6,6 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface TopMerchantsProps {
   transactions: Transaction[];
@@ -23,6 +25,8 @@ interface MerchantData {
 }
 
 export function TopMerchants({ transactions, limit = 10, className }: TopMerchantsProps) {
+  const { convertFromAccount } = useMoney();
+
   const merchantData = useMemo(() => {
     // Filter to expenses only
     const expenses = transactions.filter((t) => t.direction === "debit");
@@ -33,14 +37,15 @@ export function TopMerchants({ transactions, limit = 10, className }: TopMerchan
     expenses.forEach((tx) => {
       const merchant = tx.merchant || "Unknown";
       const current = merchantMap.get(merchant) || { total: 0, count: 0, amounts: [] };
-      current.total += Math.abs(tx.amount);
+      const amount = Math.abs(convertFromAccount(tx.amount, tx.accountId));
+      current.total += amount;
       current.count += 1;
-      current.amounts.push(Math.abs(tx.amount));
+      current.amounts.push(amount);
       merchantMap.set(merchant, current);
     });
 
     // Convert to array and sort
-    const totalExpenses = expenses.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const totalExpenses = expenses.reduce((sum, t) => sum + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
     
     const merchants: MerchantData[] = Array.from(merchantMap.entries())
       .map(([name, data]) => ({
@@ -55,16 +60,7 @@ export function TopMerchants({ transactions, limit = 10, className }: TopMerchan
       .slice(0, limit);
 
     return { merchants, totalExpenses };
-  }, [transactions, limit]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, limit, convertFromAccount]);
 
   const getTrendIcon = (trend: number) => {
     if (trend > 5) return <TrendingUp className="h-3 w-3 text-red-500" />;
@@ -85,7 +81,7 @@ export function TopMerchants({ transactions, limit = 10, className }: TopMerchan
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Total tracked</p>
-            <p className="text-sm font-semibold">{formatCurrency(merchantData.totalExpenses)}</p>
+            <p className="text-sm font-semibold"><Money amount={merchantData.totalExpenses} /></p>
           </div>
         </div>
       </CardHeader>
@@ -108,12 +104,12 @@ export function TopMerchants({ transactions, limit = 10, className }: TopMerchan
                         {merchant.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {merchant.count} transactions · avg {formatCurrency(merchant.avgAmount)}
+                        {merchant.count} transactions · avg <Money amount={merchant.avgAmount} />
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{formatCurrency(merchant.total)}</p>
+                    <p className="font-semibold"><Money amount={merchant.total} /></p>
                     <p className="text-xs text-muted-foreground">
                       {merchant.percentage.toFixed(1)}%
                     </p>

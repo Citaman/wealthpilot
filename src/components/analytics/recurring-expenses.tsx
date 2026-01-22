@@ -24,6 +24,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface RecurringExpensesProps {
   transactions: Transaction[];
@@ -48,6 +50,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [sortBy, setSortBy] = useState<SortBy>("frequency");
   const [selectedMerchant, setSelectedMerchant] = useState<string | null>(null);
+  const { convertFromAccount } = useMoney();
 
   const patterns = useMemo(() => {
     const now = new Date();
@@ -93,7 +96,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
 
       // Must appear in at least 3 different months OR have 5+ occurrences
       if (monthsWithActivity >= 3 || totalOccurrences >= 5) {
-        const totalSpent = data.transactions.reduce((s, t) => s + Math.abs(t.amount), 0);
+        const totalSpent = data.transactions.reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
         const avgAmount = totalSpent / totalOccurrences;
         const frequency = totalOccurrences / monthCount;
 
@@ -104,7 +107,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
           return {
             month: format(m, "MMM"),
             count: monthTx.length,
-            total: monthTx.reduce((s, t) => s + Math.abs(t.amount), 0),
+            total: monthTx.reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0),
           };
         });
 
@@ -145,19 +148,10 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
     }
 
     return recurring.slice(0, 15);
-  }, [transactions, sortBy]);
+  }, [transactions, sortBy, convertFromAccount]);
 
   const totalRecurring = patterns.reduce((s, p) => s + p.totalSpent, 0);
   const selectedPattern = selectedMerchant ? patterns.find((p) => p.merchant === selectedMerchant) : null;
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -166,7 +160,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
       <div className="rounded-lg border border-border bg-popover text-popover-foreground p-2 shadow-lg">
         <p className="font-medium">{data.month}</p>
         <p className="text-sm">{data.count} visits</p>
-        <p className="text-sm font-semibold">{formatCurrency(data.total)}</p>
+        <p className="text-sm font-semibold"><Money amount={data.total} /></p>
       </div>
     );
   };
@@ -213,7 +207,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
           </div>
         </div>
         <div className="text-sm text-muted-foreground mt-1">
-          Total: <span className="font-semibold text-foreground">{formatCurrency(totalRecurring)}</span> over 6 months
+          Total: <span className="font-semibold text-foreground"><Money amount={totalRecurring} /></span> over 6 months
         </div>
       </CardHeader>
       <CardContent>
@@ -244,7 +238,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
                     <p className="text-xs text-muted-foreground">{pattern.category}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{formatCurrency(pattern.avgAmount)}</p>
+                    <p className="font-semibold"><Money amount={pattern.avgAmount} /></p>
                     <div className="flex items-center gap-1 text-xs">
                       {pattern.trend > 10 ? (
                         <TrendingUp className="h-3 w-3 text-red-500" />
@@ -292,7 +286,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground mt-2">
                   <span>{selectedPattern.occurrences} total visits</span>
-                  <span>Total: {formatCurrency(selectedPattern.totalSpent)}</span>
+                  <span>Total: <Money amount={selectedPattern.totalSpent} /></span>
                 </div>
               </div>
             )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, subMonths, startOfMonth, eachMonthOfInterval } from "date-fns";
 import { LineChart as LineChartIcon, Eye, EyeOff } from "lucide-react";
 import {
@@ -19,6 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { CATEGORIES, type Transaction } from "@/lib/db";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface CategoryTrendsProps {
   transactions: Transaction[];
@@ -41,6 +43,7 @@ const CATEGORY_COLORS = [
 export function CategoryTrends({ transactions, className }: CategoryTrendsProps) {
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(new Set());
   const [initialized, setInitialized] = useState(false);
+  const { convertFromAccount, formatCompactCurrency } = useMoney();
 
   const { chartData, categories, months } = useMemo(() => {
     const now = new Date();
@@ -65,8 +68,9 @@ export function CategoryTrends({ transactions, className }: CategoryTrendsProps)
       const monthKey = tx.date.slice(0, 7);
       const monthIdx = monthKeys.indexOf(monthKey);
       if (monthIdx >= 0) {
-        categoryMap.get(tx.category)![monthIdx] += Math.abs(tx.amount);
-        categoryTotals.set(tx.category, (categoryTotals.get(tx.category) || 0) + Math.abs(tx.amount));
+        const amount = Math.abs(convertFromAccount(tx.amount, tx.accountId));
+        categoryMap.get(tx.category)![monthIdx] += amount;
+        categoryTotals.set(tx.category, (categoryTotals.get(tx.category) || 0) + amount);
       }
     });
 
@@ -92,10 +96,10 @@ export function CategoryTrends({ transactions, className }: CategoryTrendsProps)
     });
 
     return { chartData: data, categories: cats, months: monthLabels };
-  }, [transactions]);
+  }, [transactions, convertFromAccount]);
 
   // Initialize visible categories to top 5
-  useMemo(() => {
+  useEffect(() => {
     if (!initialized && categories.length > 0) {
       const topFive = categories.slice(0, 5).map((c) => c.category);
       setVisibleCategories(new Set(topFive));
@@ -116,19 +120,7 @@ export function CategoryTrends({ transactions, className }: CategoryTrendsProps)
   const showAll = () => setVisibleCategories(new Set(categories.map((c) => c.category)));
   const hideAll = () => setVisibleCategories(new Set());
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatYAxis = (value: number) => {
-    if (value >= 1000) return `€${(value / 1000).toFixed(0)}k`;
-    return `€${value}`;
-  };
+  const formatYAxis = (value: number) => formatCompactCurrency(value);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -148,7 +140,7 @@ export function CategoryTrends({ transactions, className }: CategoryTrendsProps)
                 />
                 <span className="truncate max-w-[100px]">{item.dataKey}</span>
               </div>
-              <span className="font-medium">{formatCurrency(item.value)}</span>
+              <Money amount={item.value} className="font-medium" />
             </div>
           ))}
         </div>
@@ -245,7 +237,7 @@ export function CategoryTrends({ transactions, className }: CategoryTrendsProps)
                         {cat.category}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {formatCurrency(cat.total)}
+                        <Money amount={cat.total} />
                       </p>
                     </div>
                   </label>

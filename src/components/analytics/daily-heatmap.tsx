@@ -12,6 +12,14 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface DailyHeatmapProps {
   transactions: Transaction[];
@@ -35,6 +43,8 @@ export function DailyHeatmap({
   endDate,
   className,
 }: DailyHeatmapProps) {
+  const { convertFromAccount } = useMoney();
+
   const heatmapData = useMemo(() => {
     // Create a map of date -> spending
     const dayMap = new Map<string, { amount: number; count: number }>();
@@ -44,7 +54,7 @@ export function DailyHeatmap({
       .forEach((tx) => {
         const dateKey = tx.date;
         const current = dayMap.get(dateKey) || { amount: 0, count: 0 };
-        current.amount += Math.abs(tx.amount);
+        current.amount += Math.abs(convertFromAccount(tx.amount, tx.accountId));
         current.count += 1;
         dayMap.set(dateKey, current);
       });
@@ -117,16 +127,7 @@ export function DailyHeatmap({
       maxAmount,
       totalSpending: dayData.reduce((sum, d) => sum + d.amount, 0),
     };
-  }, [transactions, startDate, endDate]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, startDate, endDate, convertFromAccount]);
 
   const getIntensityClass = (intensity: number) => {
     switch (intensity) {
@@ -180,21 +181,33 @@ export function DailyHeatmap({
               </div>
 
               {/* Weeks */}
-              {heatmapData.weeklyData.map((week, weekIndex) => (
-                <div key={weekIndex} className="flex flex-col gap-1">
-                  {week.map((day, dayIndex) => (
-                    <div
-                      key={`${weekIndex}-${dayIndex}`}
-                      className={cn(
-                        "w-4 h-4 rounded-sm cursor-pointer transition-colors",
-                        getIntensityClass(day.intensity),
-                        "hover:ring-2 hover:ring-primary hover:ring-offset-1"
-                      )}
-                      title={`${format(day.date, "MMM d, yyyy")}\n${formatCurrency(day.amount)} (${day.count} transactions)`}
-                    />
-                  ))}
-                </div>
-              ))}
+              <TooltipProvider>
+                {heatmapData.weeklyData.map((week, weekIndex) => (
+                  <div key={weekIndex} className="flex flex-col gap-1">
+                    {week.map((day, dayIndex) => (
+                      <Tooltip key={`${weekIndex}-${dayIndex}`}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={cn(
+                              "w-4 h-4 rounded-sm cursor-pointer transition-colors",
+                              getIntensityClass(day.intensity),
+                              "hover:ring-2 hover:ring-primary hover:ring-offset-1"
+                            )}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent className="text-xs">
+                          <div className="space-y-1">
+                            <p className="font-medium">{format(day.date, "MMM d, yyyy")}</p>
+                            <p>
+                              <Money amount={day.amount} /> ({day.count} transactions)
+                            </p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                ))}
+              </TooltipProvider>
             </div>
           </div>
 
@@ -226,7 +239,7 @@ export function DailyHeatmap({
               >
                 <p className="text-xs font-medium">{day.day}</p>
                 <p className="text-sm font-bold mt-1">
-                  {formatCurrency(day.total)}
+                  <Money amount={day.total} />
                 </p>
                 <p className="text-[10px] text-muted-foreground">
                   {day.count} txn
@@ -238,7 +251,7 @@ export function DailyHeatmap({
           {/* Insight */}
           <div className="p-3 rounded-lg bg-muted text-sm">
             💡 You spend the most on <strong>{heatmapData.peakDay?.day}s</strong>, averaging{" "}
-            <strong>{formatCurrency(heatmapData.peakDay?.avgPerDay || 0)}</strong> per {heatmapData.peakDay?.day}.
+            <strong><Money amount={heatmapData.peakDay?.avgPerDay || 0} /></strong> per {heatmapData.peakDay?.day}.
           </div>
         </div>
       </CardContent>

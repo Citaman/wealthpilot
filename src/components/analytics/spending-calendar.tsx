@@ -20,6 +20,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface SpendingCalendarProps {
   transactions: Transaction[];
@@ -38,6 +40,7 @@ const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export function SpendingCalendar({ transactions, className }: SpendingCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const { convertFromAccount, formatCompactCurrency } = useMoney();
 
   const calendarData = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -65,9 +68,9 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
       if (dayData) {
         dayData.transactions.push(tx);
         if (tx.direction === "credit") {
-          dayData.income += Math.abs(tx.amount);
+          dayData.income += Math.abs(convertFromAccount(tx.amount, tx.accountId));
         } else {
-          dayData.expenses += Math.abs(tx.amount);
+          dayData.expenses += Math.abs(convertFromAccount(tx.amount, tx.accountId));
         }
       }
     });
@@ -92,19 +95,7 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
       monthlyIncome,
       monthlyExpenses,
     };
-  }, [transactions, currentMonth]);
-
-  const formatCurrency = (value: number, compact = false) => {
-    if (compact && value >= 1000) {
-      return `€${(value / 1000).toFixed(1)}k`;
-    }
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, currentMonth, convertFromAccount]);
 
   const getIntensityClass = (expenses: number) => {
     if (expenses === 0) return "";
@@ -155,12 +146,12 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-emerald-500" />
             <span className="text-muted-foreground">Income:</span>
-            <span className="font-semibold text-emerald-600">{formatCurrency(calendarData.monthlyIncome)}</span>
+            <span className="font-semibold text-emerald-600"><Money amount={calendarData.monthlyIncome} /></span>
           </div>
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-red-500" />
             <span className="text-muted-foreground">Expenses:</span>
-            <span className="font-semibold text-red-600">{formatCurrency(calendarData.monthlyExpenses)}</span>
+            <span className="font-semibold text-red-600"><Money amount={calendarData.monthlyExpenses} /></span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Net:</span>
@@ -168,7 +159,7 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
               "font-semibold",
               calendarData.monthlyIncome - calendarData.monthlyExpenses >= 0 ? "text-emerald-600" : "text-red-600"
             )}>
-              {formatCurrency(calendarData.monthlyIncome - calendarData.monthlyExpenses)}
+              <Money amount={calendarData.monthlyIncome - calendarData.monthlyExpenses} />
             </span>
           </div>
         </div>
@@ -215,12 +206,12 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
                   <div className="mt-0.5 space-y-0.5">
                     {hasIncome && (
                       <div className="text-[10px] text-emerald-600 font-medium truncate">
-                        +{formatCurrency(dayData.income, true)}
+                        +{formatCompactCurrency(dayData.income)}
                       </div>
                     )}
                     {hasExpenses && (
                       <div className="text-[10px] text-red-600 font-medium truncate">
-                        -{formatCurrency(dayData.expenses, true)}
+                        -{formatCompactCurrency(dayData.expenses)}
                       </div>
                     )}
                   </div>
@@ -242,10 +233,10 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
               <h4 className="font-semibold">{format(selectedDayData.date, "EEEE, MMMM d")}</h4>
               <div className="flex gap-3 text-sm">
                 {selectedDayData.income > 0 && (
-                  <span className="text-emerald-600">+{formatCurrency(selectedDayData.income)}</span>
+                  <span className="text-emerald-600">+<Money amount={selectedDayData.income} /></span>
                 )}
                 {selectedDayData.expenses > 0 && (
-                  <span className="text-red-600">-{formatCurrency(selectedDayData.expenses)}</span>
+                  <span className="text-red-600">-<Money amount={selectedDayData.expenses} /></span>
                 )}
               </div>
             </div>
@@ -265,7 +256,8 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
                       "font-semibold",
                       tx.direction === "credit" ? "text-emerald-600" : "text-red-600"
                     )}>
-                      {tx.direction === "credit" ? "+" : "-"}{formatCurrency(Math.abs(tx.amount))}
+                      {tx.direction === "credit" ? "+" : "-"}
+                      <Money amount={Math.abs(convertFromAccount(tx.amount, tx.accountId))} />
                     </span>
                   </div>
                 ))}

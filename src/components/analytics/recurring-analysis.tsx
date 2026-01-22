@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -21,6 +21,8 @@ import {
 import { ClientOnly } from "@/components/ui/client-only";
 import { CATEGORIES, type Transaction } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface RecurringAnalysisProps {
   transactions: Transaction[];
@@ -43,6 +45,8 @@ export function RecurringAnalysis({
   endDate,
   className,
 }: RecurringAnalysisProps) {
+  const { convertFromAccount, formatCompactCurrency } = useMoney();
+
   const recurringStats = useMemo(() => {
     // Filter recurring transactions
     const recurringTx = transactions.filter(
@@ -58,7 +62,7 @@ export function RecurringAnalysis({
 
     recurringTx.forEach((tx) => {
       const current = merchantMap.get(tx.merchant) || { amount: 0, count: 0, category: tx.category };
-      current.amount += Math.abs(tx.amount);
+      current.amount += Math.abs(convertFromAccount(tx.amount, tx.accountId));
       current.count += 1;
       merchantMap.set(tx.merchant, current);
     });
@@ -99,16 +103,7 @@ export function RecurringAnalysis({
       categoryData,
       count: items.length,
     };
-  }, [transactions, startDate, endDate]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, startDate, endDate, convertFromAccount]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -117,12 +112,16 @@ export function RecurringAnalysis({
       <div className="rounded-lg border bg-background p-3 shadow-lg">
         <p className="font-medium mb-1">{label}</p>
         <p className="text-sm">
-          <span className="font-medium">{formatCurrency(payload[0]?.value || 0)}</span>
+          <span className="font-medium"><Money amount={payload[0]?.value || 0} /></span>
           <span className="text-muted-foreground"> / month</span>
         </p>
       </div>
     );
   };
+
+  const formatAmountTick = useCallback((value: number, _index: number) => {
+    return formatCompactCurrency(value);
+  }, [formatCompactCurrency]);
 
   return (
     <Card className={className}>
@@ -149,9 +148,9 @@ export function RecurringAnalysis({
             {/* Monthly Total */}
             <div className="text-center mb-6 p-4 rounded-lg bg-muted">
               <p className="text-sm text-muted-foreground">Monthly Recurring</p>
-              <p className="text-4xl font-bold">{formatCurrency(recurringStats.monthlyTotal)}</p>
+              <p className="text-4xl font-bold"><Money amount={recurringStats.monthlyTotal} /></p>
               <p className="text-sm text-muted-foreground mt-1">
-                = {formatCurrency(recurringStats.yearlyTotal)} / year
+                = <Money amount={recurringStats.yearlyTotal} /> / year
               </p>
             </div>
 
@@ -169,7 +168,7 @@ export function RecurringAnalysis({
                       tick={{ fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(v) => `€${(v / 1).toFixed(0)}`}
+                      tickFormatter={formatAmountTick}
                     />
                     <YAxis
                       type="category"
@@ -209,7 +208,7 @@ export function RecurringAnalysis({
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{formatCurrency(item.amount)}</p>
+                    <p className="font-semibold"><Money amount={item.amount} /></p>
                     <p className="text-xs text-muted-foreground">/month</p>
                   </div>
                 </div>
@@ -223,7 +222,7 @@ export function RecurringAnalysis({
                 <span className="text-sm">
                   Your recurring expenses cost you{" "}
                   <strong className="text-amber-700 dark:text-amber-400">
-                    {formatCurrency(recurringStats.yearlyTotal)}
+                    <Money amount={recurringStats.yearlyTotal} />
                   </strong>{" "}
                   per year
                 </span>

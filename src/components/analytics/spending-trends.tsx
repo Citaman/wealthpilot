@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/card";
 import { CATEGORIES, type Transaction } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface SpendingTrendsProps {
   transactions: Transaction[];
@@ -44,6 +46,8 @@ export function SpendingTrends({
   endDate,
   className,
 }: SpendingTrendsProps) {
+  const { convertFromAccount, formatCompactCurrency } = useMoney();
+
   const trendData = useMemo(() => {
     const months = eachMonthOfInterval({ start: startDate, end: endDate });
     const now = new Date();
@@ -55,7 +59,7 @@ export function SpendingTrends({
           isSameMonth(parseISO(tx.date), monthStart)
       );
 
-      const amount = monthTx.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+      const amount = monthTx.reduce((sum, tx) => sum + Math.abs(convertFromAccount(tx.amount, tx.accountId)), 0);
       const isCurrentMonth = isSameMonth(monthStart, now);
 
       return {
@@ -73,7 +77,7 @@ export function SpendingTrends({
     });
 
     return { data, avg };
-  }, [transactions, startDate, endDate]);
+  }, [transactions, startDate, endDate, convertFromAccount]);
 
   const stats = useMemo(() => {
     const { data, avg } = trendData;
@@ -123,21 +127,7 @@ export function SpendingTrends({
     };
   }, [trendData]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatCompact = (value: number) => {
-    if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}k`;
-    }
-    return value.toString();
-  };
+  const formatCompact = (value: number) => formatCompactCurrency(value);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -150,7 +140,7 @@ export function SpendingTrends({
         <p className="font-medium mb-2">{label}</p>
         <div className="flex justify-between gap-4 text-sm">
           <span className="text-muted-foreground">Spent</span>
-          <span className="font-bold">{formatCurrency(data.amount)}</span>
+          <Money amount={data.amount} className="font-bold" />
         </div>
         {data.isBelowAvg && (
           <p className="text-xs text-emerald-500 mt-1">✓ Below average</p>
@@ -243,19 +233,19 @@ export function SpendingTrends({
         <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t">
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase">Min</p>
-            <p className="text-sm font-semibold text-emerald-500">{formatCurrency(stats.min)}</p>
+            <p className="text-sm font-semibold text-emerald-500"><Money amount={stats.min} /></p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase">Avg</p>
-            <p className="text-sm font-semibold text-purple-500">{formatCurrency(stats.avg)}</p>
+            <p className="text-sm font-semibold text-purple-500"><Money amount={stats.avg} /></p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase">Max</p>
-            <p className="text-sm font-semibold text-red-500">{formatCurrency(stats.max)}</p>
+            <p className="text-sm font-semibold text-red-500"><Money amount={stats.max} /></p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-muted-foreground uppercase">Now</p>
-            <p className="text-sm font-semibold text-blue-500">{formatCurrency(stats.current)}</p>
+            <p className="text-sm font-semibold text-blue-500"><Money amount={stats.current} /></p>
           </div>
         </div>
 

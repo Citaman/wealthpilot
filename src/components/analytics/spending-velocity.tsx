@@ -7,6 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface SpendingVelocityProps {
   transactions: Transaction[];
@@ -19,6 +21,8 @@ export function SpendingVelocity({
   monthlyBudget,
   className,
 }: SpendingVelocityProps) {
+  const { convertFromAccount } = useMoney();
+
   const velocityData = useMemo(() => {
     const now = new Date();
     const thisMonth = format(now, "yyyy-MM");
@@ -30,12 +34,12 @@ export function SpendingVelocity({
     // This month expenses
     const thisMonthExpenses = transactions
       .filter((t) => t.direction === "debit" && t.date.startsWith(thisMonth))
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
+      .reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
 
     // Last month total expenses
     const lastMonthTotal = transactions
       .filter((t) => t.direction === "debit" && t.date.startsWith(lastMonth))
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
+      .reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
 
     // Last month expenses up to same day
     const lastMonthSameDay = transactions
@@ -44,7 +48,7 @@ export function SpendingVelocity({
         const txDay = parseInt(t.date.split("-")[2], 10);
         return txDay <= dayOfMonth;
       })
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
+      .reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
 
     // Calculate velocity
     const budget = monthlyBudget || lastMonthTotal || thisMonthExpenses * 2;
@@ -87,16 +91,7 @@ export function SpendingVelocity({
       dayOfMonth,
       daysInMonth,
     };
-  }, [transactions, monthlyBudget]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, monthlyBudget, convertFromAccount]);
 
   const statusConfig = {
     under: {
@@ -151,7 +146,7 @@ export function SpendingVelocity({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Budget Used</span>
               <span className="font-medium">
-                {formatCurrency(velocityData.thisMonthExpenses)} / {formatCurrency(velocityData.budget)}
+                <Money amount={velocityData.thisMonthExpenses} /> / <Money amount={velocityData.budget} />
               </span>
             </div>
             <div className="relative h-3 bg-muted rounded-full overflow-hidden">
@@ -179,7 +174,7 @@ export function SpendingVelocity({
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div className="p-3 rounded-lg bg-muted/50">
               <p className="text-xs text-muted-foreground mb-1">Daily Average</p>
-              <p className="text-lg font-bold">{formatCurrency(velocityData.dailyAvg)}</p>
+              <p className="text-lg font-bold"><Money amount={velocityData.dailyAvg} /></p>
             </div>
             <div className="p-3 rounded-lg bg-muted/50">
               <p className="text-xs text-muted-foreground mb-1">Daily Budget Left</p>
@@ -187,7 +182,7 @@ export function SpendingVelocity({
                 "text-lg font-bold",
                 velocityData.dailyBudgetRemaining < velocityData.dailyAvg && "text-amber-500"
               )}>
-                {formatCurrency(velocityData.dailyBudgetRemaining)}
+                <Money amount={velocityData.dailyBudgetRemaining} />
               </p>
             </div>
           </div>
@@ -201,7 +196,7 @@ export function SpendingVelocity({
               <div>
                 <p className="text-xs text-muted-foreground">Month-End Projection</p>
                 <p className="text-lg font-bold">
-                  {formatCurrency(velocityData.projectedTotal)}
+                  <Money amount={velocityData.projectedTotal} />
                 </p>
               </div>
               <div className="text-right">
@@ -210,7 +205,7 @@ export function SpendingVelocity({
                   "text-lg font-bold",
                   velocityData.projectedDiff > 0 ? "text-red-500" : "text-emerald-500"
                 )}>
-                  {velocityData.projectedDiff > 0 ? "+" : ""}{formatCurrency(velocityData.projectedDiff)}
+                  {velocityData.projectedDiff > 0 ? "+" : ""}<Money amount={Math.abs(velocityData.projectedDiff)} />
                 </p>
               </div>
             </div>

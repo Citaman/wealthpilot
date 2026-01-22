@@ -12,9 +12,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { db, type Transaction } from "@/lib/db";
+import { type Transaction } from "@/lib/db";
 import { calculateAdvancedHealthMetrics } from "@/lib/analytics";
 import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface FinancialHealthScoreProps {
   transactions: Transaction[];
@@ -38,17 +40,28 @@ export function FinancialHealthScore({
   className,
 }: FinancialHealthScoreProps) {
   const [simulationValue, setSimulationValue] = useState(0);
+  const { convertFromAccount } = useMoney();
 
   const { overallScore, breakdown, tips, advancedMetrics, simulatedSavingsRate } = useMemo(() => {
     const now = new Date();
     const threeMonthsAgo = format(subMonths(now, 3), "yyyy-MM-dd");
 
-    const last3MonthsTx = transactions.filter((t) => t.date >= threeMonthsAgo);
-    const advanced = calculateAdvancedHealthMetrics(last3MonthsTx, accounts, transactions);
+    const baseTransactions = transactions.map((tx) => ({
+      ...tx,
+      amount: convertFromAccount(tx.amount, tx.accountId),
+      balanceAfter: convertFromAccount(tx.balanceAfter, tx.accountId),
+    }));
+    const baseAccounts = accounts.map((acc) => ({
+      ...acc,
+      balance: convertFromAccount(acc.balance, acc.id),
+    }));
+
+    const last3MonthsTx = baseTransactions.filter((t) => t.date >= threeMonthsAgo);
+    const advanced = calculateAdvancedHealthMetrics(last3MonthsTx, baseAccounts, baseTransactions);
 
     // Filter transactions for this month
     const thisMonth = format(now, "yyyy-MM");
-    const thisMonthTx = transactions.filter((t) => t.date.startsWith(thisMonth));
+    const thisMonthTx = baseTransactions.filter((t) => t.date.startsWith(thisMonth));
 
     // Calculate metrics
     const thisMonthIncome = thisMonthTx
@@ -178,7 +191,7 @@ export function FinancialHealthScore({
       advancedMetrics: advanced,
       simulatedSavingsRate: currentSimulatedSavingsRate
     };
-  }, [transactions, currentBalance, accounts, simulationValue]);
+  }, [transactions, currentBalance, accounts, simulationValue, convertFromAccount]);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-500";
@@ -205,6 +218,13 @@ export function FinancialHealthScore({
     good: "text-emerald-500",
     warning: "text-amber-500",
     bad: "text-red-500",
+  };
+  const breakdownTooltips: Record<string, string> = {
+    "Savings Rate": "Percent of income kept after expenses. 20%+ is a healthy target.",
+    "Emergency Fund": "How many months of expenses your cash balance can cover.",
+    "Debt Health (DTI)": "Debt payments as a share of income. Lower is better.",
+    "Net Worth Trend": "Average monthly net flow over the last 6 months.",
+    "Balanced Spending": "How concentrated your spending is in one category.",
   };
 
   return (
@@ -279,7 +299,26 @@ export function FinancialHealthScore({
           {breakdown.map((item) => (
             <div key={item.name} className="space-y-1">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{item.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{item.name}</span>
+                  {breakdownTooltips[item.name] && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span
+                            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-border text-[10px] text-muted-foreground"
+                            tabIndex={0}
+                          >
+                            i
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-xs">
+                          <p>{breakdownTooltips[item.name]}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <span className={cn("font-semibold", statusColors[item.status])}>
                   {item.score}/{item.maxScore}
                 </span>
@@ -301,11 +340,14 @@ export function FinancialHealthScore({
               Intelligence Simulator
             </h4>
             <span className="text-xs font-mono font-bold text-primary">
-              {simulationValue >= 0 ? "+" : ""}{simulationValue}€ / mo
+              {simulationValue >= 0 ? "+" : "-"}
+              <Money amount={Math.abs(simulationValue)} className="mx-1" />
+              / mo
             </span>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            "What if I save an extra {simulationValue}€ every month?"
+            "What if I save an extra {simulationValue >= 0 ? "+" : "-"}
+            <Money amount={Math.abs(simulationValue)} /> every month?"
           </p>
           <Slider
             value={[simulationValue]}
@@ -316,8 +358,12 @@ export function FinancialHealthScore({
             className="mb-2"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>Spend +500€</span>
-            <span>Save +2000€</span>
+            <span>
+              Spend +<Money amount={500} />
+            </span>
+            <span>
+              Save +<Money amount={2000} />
+            </span>
           </div>
         </div>
 
@@ -334,6 +380,27 @@ export function FinancialHealthScore({
                 <span className="font-medium">{simulatedSavingsRate.toFixed(0)}%</span>
                 <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-1 rounded">Target: 20%</span>
               </div>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-xs">
+              <span className="text-muted-foreground flex items-center gap-1">
+                50/30/20 Rule
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-border text-[10px] text-muted-foreground"
+                        tabIndex={0}
+                      >
+                        i
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">
+                      <p>Common guideline: 50% needs, 30% wants, 20% savings.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </span>
+              <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-1 rounded">Savings ≥ 20%</span>
             </div>
             <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-xs">
               <span className="text-muted-foreground">DTI Ratio</span>

@@ -23,7 +23,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { Money } from "@/components/ui/money";
 import {
   // Core Analytics
   BalanceTimeline,
@@ -39,15 +39,18 @@ import {
   FinancialHealthScore,
   SpendingVelocity,
   TopMerchants,
+  Predictions,
 } from "@/components/analytics";
 import { useTransactions } from "@/hooks/use-data";
 import { useAccount } from "@/contexts/account-context";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
 
 type Period = "1m" | "3m" | "6m" | "12m" | "ytd";
 
 export default function AnalyticsPage() {
-  const { selectedAccountId, accounts, totalBalance } = useAccount();
+  const { selectedAccountId, accounts, totalBalance, selectedAccount } = useAccount();
+  const { convertFromAccount } = useMoney();
   const [period, setPeriod] = useState<Period>("6m");
   const now = new Date();
 
@@ -80,12 +83,12 @@ export default function AnalyticsPage() {
   const stats = useMemo(() => {
     const totalIncome = transactions
       .filter((t) => t.direction === "credit")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
 
     const totalExpenses = Math.abs(
       transactions
         .filter((t) => t.direction === "debit")
-        .reduce((sum, t) => sum + t.amount, 0)
+        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
     );
 
     // Get unique months
@@ -101,7 +104,9 @@ export default function AnalyticsPage() {
     const sortedTx = [...transactions].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-    const currentBalance = sortedTx[0]?.balanceAfter || 0;
+    const currentBalance = selectedAccountId === "all"
+      ? totalBalance
+      : convertFromAccount(selectedAccount?.balance || 0, selectedAccount?.id);
 
     // Calculate month-over-month change
     const thisMonthExpenses = transactions
@@ -110,7 +115,7 @@ export default function AnalyticsPage() {
           t.direction === "debit" &&
           format(new Date(t.date), "yyyy-MM") === format(now, "yyyy-MM")
       )
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      .reduce((sum, t) => sum + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
 
     const lastMonthExpenses = transactions
       .filter(
@@ -118,7 +123,7 @@ export default function AnalyticsPage() {
           t.direction === "debit" &&
           format(new Date(t.date), "yyyy-MM") === format(subMonths(now, 1), "yyyy-MM")
       )
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      .reduce((sum, t) => sum + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
 
     const momChange = lastMonthExpenses !== 0
       ? ((thisMonthExpenses - lastMonthExpenses) / lastMonthExpenses) * 100
@@ -135,16 +140,7 @@ export default function AnalyticsPage() {
       transactionCount: transactions.length,
       momChange,
     };
-  }, [transactions]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, convertFromAccount, selectedAccountId, selectedAccount, totalBalance, now]);
 
   const periodLabels: Record<Period, string> = {
     "1m": "This Month",
@@ -187,7 +183,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Income</p>
-                  <p className="text-xl font-bold"><PrivacyBlur>{formatCurrency(stats.totalIncome)}</PrivacyBlur></p>
+                  <p className="text-xl font-bold"><Money amount={stats.totalIncome} /></p>
                 </div>
               </div>
             </CardContent>
@@ -200,7 +196,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Expenses</p>
-                  <p className="text-xl font-bold"><PrivacyBlur>{formatCurrency(stats.totalExpenses)}</PrivacyBlur></p>
+                  <p className="text-xl font-bold"><Money amount={stats.totalExpenses} /></p>
                 </div>
               </div>
             </CardContent>
@@ -222,7 +218,7 @@ export default function AnalyticsPage() {
                   <p className={cn(
                     "text-xl font-bold",
                     stats.netSavings >= 0 ? "text-emerald-600" : "text-red-600"
-                  )}><PrivacyBlur>{formatCurrency(stats.netSavings)}</PrivacyBlur></p>
+                  )}><Money amount={stats.netSavings} /></p>
                 </div>
               </div>
             </CardContent>
@@ -235,7 +231,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Avg. Monthly</p>
-                  <p className="text-xl font-bold"><PrivacyBlur>{formatCurrency(stats.avgExpenses)}</PrivacyBlur></p>
+                  <p className="text-xl font-bold"><Money amount={stats.avgExpenses} /></p>
                 </div>
               </div>
             </CardContent>
@@ -300,10 +296,17 @@ export default function AnalyticsPage() {
 
             {/* Row 3: Spending Forecast + Savings Potential */}
             <div className="grid gap-6 lg:grid-cols-2">
+              <Predictions
+                transactions={transactions}
+                currentBalance={stats.currentBalance}
+              />
               <SpendingForecast
                 transactions={transactions}
                 currentBalance={stats.currentBalance}
               />
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-1">
               <SavingsPotential transactions={transactions} />
             </div>
 

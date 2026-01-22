@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { Money } from "@/components/ui/money";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
+import { useMoney } from "@/hooks/use-money";
 
 interface PredictionsProps {
   transactions: Transaction[];
@@ -34,12 +36,14 @@ interface PredictionResult {
 }
 
 export function Predictions({ transactions, currentBalance, className }: PredictionsProps) {
+  const { convertFromAccount, formatCompact } = useMoney();
+
   const prediction = useMemo((): PredictionResult => {
     const now = new Date();
 
     // Find recurring transactions
     const recurringTx = transactions.filter((tx) => tx.isRecurring && tx.direction === "debit");
-    const expectedRecurring = recurringTx.reduce((sum, tx) => sum + Math.abs(tx.amount), 0) / 
+    const expectedRecurring = recurringTx.reduce((sum, tx) => sum + Math.abs(convertFromAccount(tx.amount, tx.accountId)), 0) / 
       Math.max(1, new Set(recurringTx.map(tx => format(parseISO(tx.date), "yyyy-MM"))).size);
 
     // Calculate variable spending (3-month moving average)
@@ -52,7 +56,7 @@ export function Predictions({ transactions, currentBalance, className }: Predict
           !tx.isRecurring &&
           isSameMonth(parseISO(tx.date), monthStart)
       );
-      monthlyVariable.push(monthTx.reduce((sum, tx) => sum + Math.abs(tx.amount), 0));
+      monthlyVariable.push(monthTx.reduce((sum, tx) => sum + Math.abs(convertFromAccount(tx.amount, tx.accountId)), 0));
     }
 
     const recentMonths = monthlyVariable.slice(0, 3).filter((v) => v > 0);
@@ -78,7 +82,7 @@ export function Predictions({ transactions, currentBalance, className }: Predict
           tx.direction === "credit" &&
           isSameMonth(parseISO(tx.date), monthStart)
       );
-      monthlyIncome.push(monthTx.reduce((sum, tx) => sum + tx.amount, 0));
+      monthlyIncome.push(monthTx.reduce((sum, tx) => sum + convertFromAccount(tx.amount, tx.accountId), 0));
     }
     const expectedIncome = monthlyIncome.length > 0
       ? monthlyIncome.reduce((a, b) => a + b, 0) / monthlyIncome.length
@@ -113,16 +117,7 @@ export function Predictions({ transactions, currentBalance, className }: Predict
       confidence,
       threeMonthOutlook: outlook,
     };
-  }, [transactions, currentBalance]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }, [transactions, currentBalance, convertFromAccount]);
 
   const nextMonthName = format(addMonths(new Date(), 1), "MMMM");
 
@@ -150,7 +145,7 @@ export function Predictions({ transactions, currentBalance, className }: Predict
             <div>
               <h4 className="text-sm font-medium text-muted-foreground">Expected Recurring</h4>
               <p className="text-2xl font-bold text-orange-600">
-                <PrivacyBlur>{formatCurrency(prediction.expectedRecurring)}</PrivacyBlur>
+                <Money amount={prediction.expectedRecurring} />
               </p>
             </div>
             <Target className="h-5 w-5 text-orange-500" />
@@ -166,7 +161,7 @@ export function Predictions({ transactions, currentBalance, className }: Predict
             <div>
               <h4 className="text-sm font-medium text-muted-foreground">Predicted Variable</h4>
               <p className="text-2xl font-bold text-blue-600">
-                <PrivacyBlur>{formatCurrency(prediction.predictedVariable)}</PrivacyBlur>
+                <Money amount={prediction.predictedVariable} />
               </p>
             </div>
             <TrendingUp className="h-5 w-5 text-blue-500" />
@@ -183,10 +178,10 @@ export function Predictions({ transactions, currentBalance, className }: Predict
         <div className="p-4 rounded-lg bg-muted">
           <h4 className="text-sm font-medium text-muted-foreground">Total Predicted Expenses</h4>
           <p className="text-3xl font-bold">
-            <PrivacyBlur>{formatCurrency(prediction.totalPredicted)}</PrivacyBlur>
+            <Money amount={prediction.totalPredicted} />
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            Range: <PrivacyBlur>{formatCurrency(prediction.predictedLow)}</PrivacyBlur> – <PrivacyBlur>{formatCurrency(prediction.predictedHigh)}</PrivacyBlur>
+            Range: <Money amount={prediction.predictedLow} /> – <Money amount={prediction.predictedHigh} />
           </p>
         </div>
 
@@ -206,7 +201,7 @@ export function Predictions({ transactions, currentBalance, className }: Predict
                   prediction.predictedBalance >= 0 ? "text-emerald-600" : "text-red-600"
                 )}
               >
-                <PrivacyBlur>{formatCurrency(prediction.predictedBalance)}</PrivacyBlur>
+                <Money amount={prediction.predictedBalance} />
               </p>
             </div>
             {prediction.predictedBalance < 0 && (
@@ -229,7 +224,7 @@ export function Predictions({ transactions, currentBalance, className }: Predict
                   />
                   <span className="text-[10px] font-medium text-muted-foreground">{item.month}</span>
                   <span className="text-[10px] font-bold">
-                    <PrivacyBlur>{item.balance >= 1000 ? `${(item.balance / 1000).toFixed(1)}k` : Math.round(item.balance)}</PrivacyBlur>
+                    <PrivacyBlur>{formatCompact(item.balance)}</PrivacyBlur>
                   </span>
                 </div>
               ))}
@@ -241,7 +236,8 @@ export function Predictions({ transactions, currentBalance, className }: Predict
         {prediction.predictedBalance < 0 && (
           <div className="p-3 rounded-lg bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-sm">
             ⚠️ Your balance may go negative. Consider reducing variable spending by{" "}
-            <strong>{formatCurrency(Math.abs(prediction.predictedBalance))}</strong>.
+            <Money as="strong" amount={Math.abs(prediction.predictedBalance)} />
+            .
           </div>
         )}
       </CardContent>

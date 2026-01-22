@@ -19,10 +19,11 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { Money } from "@/components/ui/money";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
 import { ClientOnly } from "@/components/ui/client-only";
+import { useMoney } from "@/hooks/use-money";
 
 interface BalanceTimelineProps {
   transactions: Transaction[];
@@ -49,6 +50,15 @@ export function BalanceTimeline({
   className,
 }: BalanceTimelineProps) {
   const [viewPeriod, setViewPeriod] = useState<ViewPeriod>("6m");
+  const { convertFromAccount, formatCompactCurrency } = useMoney();
+
+  const baseTransactions = useMemo(() => {
+    return transactions.map((tx) => ({
+      ...tx,
+      amount: convertFromAccount(tx.amount, tx.accountId),
+      balanceAfter: convertFromAccount(tx.balanceAfter, tx.accountId),
+    }));
+  }, [transactions, convertFromAccount]);
 
   // Calculate date range based on view period
   const effectiveDateRange = useMemo(() => {
@@ -74,18 +84,18 @@ export function BalanceTimeline({
   // Detect salary days (large income, typically around same date each month)
   const salaryDays = useMemo(() => {
     const uniqueByDate = new Map<string, Date>();
-    transactions
+    baseTransactions
       .filter((t) => t.direction === "credit" && t.amount > 1000)
       .forEach((t) => {
         uniqueByDate.set(t.date, parseISO(t.date));
       });
 
     return Array.from(uniqueByDate.values()).sort((a, b) => a.getTime() - b.getTime());
-  }, [transactions]);
+  }, [baseTransactions]);
 
   const balanceData = useMemo(() => {
     // Filter transactions in range
-    const rangeTransactions = transactions.filter((t) => {
+    const rangeTransactions = baseTransactions.filter((t) => {
       const txDate = parseISO(t.date);
       return txDate >= effectiveDateRange.start && txDate <= effectiveDateRange.end;
     });
@@ -168,7 +178,7 @@ export function BalanceTimeline({
     });
 
     return data;
-  }, [transactions, effectiveDateRange, salaryDays]);
+  }, [baseTransactions, effectiveDateRange, salaryDays]);
 
   const stats = useMemo(() => {
     if (balanceData.length === 0) {
@@ -196,15 +206,6 @@ export function BalanceTimeline({
     return { min, max, avg, current, trend, lowestBeforeSalary };
   }, [balanceData]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   // Custom tooltip that follows cursor
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -222,7 +223,7 @@ export function BalanceTimeline({
               "font-bold text-lg",
               data.balance >= 0 ? "text-blue-500" : "text-red-500"
             )}>
-              <PrivacyBlur>{formatCurrency(data.balance)}</PrivacyBlur>
+              <Money amount={data.balance} />
             </span>
           </div>
           {data.isSalaryDay && (
@@ -280,6 +281,10 @@ export function BalanceTimeline({
         return format(date, "MMM d");
     }
   }, [viewPeriod]);
+
+  const formatYAxis = useCallback((value: number, _index?: number) => {
+    return formatCompactCurrency(value);
+  }, [formatCompactCurrency]);
 
   // Determine tick interval based on data length
   const tickInterval = useMemo(() => {
@@ -344,7 +349,7 @@ export function BalanceTimeline({
                     tick={{ fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v.toString()}
+                    tickFormatter={formatYAxis}
                     className="fill-muted-foreground"
                     domain={['dataMin - 100', 'dataMax + 100']}
                   />
@@ -405,31 +410,31 @@ export function BalanceTimeline({
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Lowest</p>
                 <p className={cn("text-sm font-bold", stats.min < 0 ? "text-red-500" : "text-foreground")}>
-                  <PrivacyBlur>{formatCurrency(stats.min)}</PrivacyBlur>
+                  <Money amount={stats.min} />
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Highest</p>
                 <p className="text-sm font-bold text-emerald-500">
-                  <PrivacyBlur>{formatCurrency(stats.max)}</PrivacyBlur>
+                  <Money amount={stats.max} />
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Average</p>
                 <p className="text-sm font-bold text-purple-500">
-                  <PrivacyBlur>{formatCurrency(stats.avg)}</PrivacyBlur>
+                  <Money amount={stats.avg} />
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Current</p>
                 <p className="text-sm font-bold text-blue-500">
-                  <PrivacyBlur>{formatCurrency(stats.current)}</PrivacyBlur>
+                  <Money amount={stats.current} />
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pre-Salary Low</p>
                 <p className={cn("text-sm font-bold", stats.lowestBeforeSalary < 500 ? "text-amber-500" : "text-foreground")}>
-                  <PrivacyBlur>{formatCurrency(stats.lowestBeforeSalary)}</PrivacyBlur>
+                  <Money amount={stats.lowestBeforeSalary} />
                 </p>
               </div>
               <div className="text-center">

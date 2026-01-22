@@ -13,3 +13,4 @@ export { SavingsPotential } from "./savings-potential";
 export { FinancialHealthScore } from "./financial-health-score";
 export { SpendingVelocity } from "./spending-velocity";
 export { TopMerchants } from "./top-merchants";
+export { Predictions } from "./predictions";
