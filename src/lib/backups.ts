@@ -1,4 +1,19 @@
-import { db } from "@/lib/db";
+import {
+  db,
+  type Account,
+  type Transaction,
+  type Budget,
+  type Goal,
+  type GoalContribution,
+  type CategoryRule,
+  type RecurringTransaction,
+  type DetectedSalary,
+  type Settings,
+  type MerchantRule,
+  type ImportRule,
+  type CustomCategory,
+  type BalanceCheckpoint,
+} from "@/lib/db";
 
 export type BackupFormatVersion = 1;
 export type BackupStrategy = "snapshot";
@@ -14,19 +29,19 @@ export type BackupMetaV1 = {
 };
 
 export type BackupTablesV1 = {
-  accounts: unknown[];
-  transactions: unknown[];
-  budgets: unknown[];
-  goals: unknown[];
-  goalContributions: unknown[];
-  categoryRules: unknown[];
-  recurringTransactions: unknown[];
-  detectedSalaries: unknown[];
-  settings: unknown[];
-  merchantRules: unknown[];
-  importRules: unknown[];
-  customCategories: unknown[];
-  balanceCheckpoints: unknown[];
+  accounts: Account[];
+  transactions: Transaction[];
+  budgets: Budget[];
+  goals: Goal[];
+  goalContributions: GoalContribution[];
+  categoryRules: CategoryRule[];
+  recurringTransactions: RecurringTransaction[];
+  detectedSalaries: DetectedSalary[];
+  settings: Settings[];
+  merchantRules: MerchantRule[];
+  importRules: ImportRule[];
+  customCategories: CustomCategory[];
+  balanceCheckpoints: BalanceCheckpoint[];
 };
 
 export type BackupSnapshotV1 = {
@@ -363,11 +378,11 @@ export async function restoreReplaceSnapshotV1(snapshot: BackupSnapshotV1) {
     db.importRules,
     db.customCategories,
     db.balanceCheckpoints,
-  ];
+  ] as const;
 
-  await (db as any).transaction(
+  await db.transaction(
     "rw",
-    ...tables,
+    [...tables],
     async () => {
       await Promise.all([
         db.transactions.clear(),
@@ -387,19 +402,19 @@ export async function restoreReplaceSnapshotV1(snapshot: BackupSnapshotV1) {
 
       const t = snapshot.tables;
 
-      if (t.accounts.length) await db.accounts.bulkAdd(t.accounts as any[]);
-      if (t.transactions.length) await db.transactions.bulkAdd(t.transactions as any[]);
-      if (t.budgets.length) await db.budgets.bulkAdd(t.budgets as any[]);
-      if (t.goals.length) await db.goals.bulkAdd(t.goals as any[]);
-      if (t.goalContributions.length) await db.goalContributions.bulkAdd(t.goalContributions as any[]);
-      if (t.categoryRules.length) await db.categoryRules.bulkAdd(t.categoryRules as any[]);
-      if (t.recurringTransactions.length) await db.recurringTransactions.bulkAdd(t.recurringTransactions as any[]);
-      if (t.detectedSalaries.length) await db.detectedSalaries.bulkAdd(t.detectedSalaries as any[]);
-      if (t.settings.length) await db.settings.bulkAdd(t.settings as any[]);
-      if (t.merchantRules.length) await db.merchantRules.bulkAdd(t.merchantRules as any[]);
-      if (t.importRules.length) await db.importRules.bulkAdd(t.importRules as any[]);
-      if (t.customCategories.length) await db.customCategories.bulkAdd(t.customCategories as any[]);
-      if (t.balanceCheckpoints.length) await db.balanceCheckpoints.bulkAdd(t.balanceCheckpoints as any[]);
+      if (t.accounts.length) await db.accounts.bulkAdd(t.accounts);
+      if (t.transactions.length) await db.transactions.bulkAdd(t.transactions);
+      if (t.budgets.length) await db.budgets.bulkAdd(t.budgets);
+      if (t.goals.length) await db.goals.bulkAdd(t.goals);
+      if (t.goalContributions.length) await db.goalContributions.bulkAdd(t.goalContributions);
+      if (t.categoryRules.length) await db.categoryRules.bulkAdd(t.categoryRules);
+      if (t.recurringTransactions.length) await db.recurringTransactions.bulkAdd(t.recurringTransactions);
+      if (t.detectedSalaries.length) await db.detectedSalaries.bulkAdd(t.detectedSalaries);
+      if (t.settings.length) await db.settings.bulkAdd(t.settings);
+      if (t.merchantRules.length) await db.merchantRules.bulkAdd(t.merchantRules);
+      if (t.importRules.length) await db.importRules.bulkAdd(t.importRules);
+      if (t.customCategories.length) await db.customCategories.bulkAdd(t.customCategories);
+      if (t.balanceCheckpoints.length) await db.balanceCheckpoints.bulkAdd(t.balanceCheckpoints);
     }
   );
 }
@@ -422,27 +437,27 @@ export async function restoreMergeSnapshotV1(snapshot: BackupSnapshotV1) {
     db.importRules,
     db.customCategories,
     db.balanceCheckpoints,
-  ];
+  ] as const;
 
-  await (db as any).transaction(
+  await db.transaction(
     "rw",
-    ...tables,
+    [...tables],
     async () => {
       const t = snapshot.tables;
 
-      if (t.accounts.length) await db.accounts.bulkPut(t.accounts as any[]);
-      if (t.transactions.length) await db.transactions.bulkPut(t.transactions as any[]);
-      if (t.budgets.length) await db.budgets.bulkPut(t.budgets as any[]);
-      if (t.goals.length) await db.goals.bulkPut(t.goals as any[]);
-      if (t.goalContributions.length) await db.goalContributions.bulkPut(t.goalContributions as any[]);
-      if (t.categoryRules.length) await db.categoryRules.bulkPut(t.categoryRules as any[]);
-      if (t.recurringTransactions.length) await db.recurringTransactions.bulkPut(t.recurringTransactions as any[]);
-      if (t.detectedSalaries.length) await db.detectedSalaries.bulkPut(t.detectedSalaries as any[]);
-      if (t.settings.length) await db.settings.bulkPut(t.settings as any[]);
-      if (t.merchantRules.length) await db.merchantRules.bulkPut(t.merchantRules as any[]);
-      if (t.importRules.length) await db.importRules.bulkPut(t.importRules as any[]);
-      if (t.customCategories.length) await db.customCategories.bulkPut(t.customCategories as any[]);
-      if (t.balanceCheckpoints.length) await db.balanceCheckpoints.bulkPut(t.balanceCheckpoints as any[]);
+      if (t.accounts.length) await db.accounts.bulkPut(t.accounts);
+      if (t.transactions.length) await db.transactions.bulkPut(t.transactions);
+      if (t.budgets.length) await db.budgets.bulkPut(t.budgets);
+      if (t.goals.length) await db.goals.bulkPut(t.goals);
+      if (t.goalContributions.length) await db.goalContributions.bulkPut(t.goalContributions);
+      if (t.categoryRules.length) await db.categoryRules.bulkPut(t.categoryRules);
+      if (t.recurringTransactions.length) await db.recurringTransactions.bulkPut(t.recurringTransactions);
+      if (t.detectedSalaries.length) await db.detectedSalaries.bulkPut(t.detectedSalaries);
+      if (t.settings.length) await db.settings.bulkPut(t.settings);
+      if (t.merchantRules.length) await db.merchantRules.bulkPut(t.merchantRules);
+      if (t.importRules.length) await db.importRules.bulkPut(t.importRules);
+      if (t.customCategories.length) await db.customCategories.bulkPut(t.customCategories);
+      if (t.balanceCheckpoints.length) await db.balanceCheckpoints.bulkPut(t.balanceCheckpoints);
     }
   );
 }
@@ -571,11 +586,11 @@ export async function clearAllUserData() {
     db.importRules,
     db.customCategories,
     db.balanceCheckpoints,
-  ];
+  ] as const;
 
-  await (db as any).transaction(
+  await db.transaction(
     "rw",
-    ...tables,
+    [...tables],
     async () => {
       await Promise.all([
         db.transactions.clear(),

@@ -1,5 +1,5 @@
 // Analytics calculations and data aggregation
-import { db, Transaction, CATEGORIES } from './db';
+import { db, type Account, type Transaction, CATEGORIES } from './db';
 import { startOfMonth, endOfMonth, subMonths, format, parseISO, startOfYear, endOfYear } from 'date-fns';
 
 export interface MonthlyStats {
@@ -503,7 +503,7 @@ export function detectAnomalies(transactions: Transaction[], history: Transactio
  */
 export function calculateAdvancedHealthMetrics(
   transactions: Transaction[], 
-  accounts: any[],
+  accounts: Account[],
   history: Transaction[],
   referenceDate: Date = new Date()
 ) {

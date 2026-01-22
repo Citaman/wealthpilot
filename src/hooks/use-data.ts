@@ -14,6 +14,7 @@ import {
 } from "@/lib/db";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { recalculateBalances } from "@/lib/balance";
+import { useMoney } from "@/hooks/use-money";
 
 // Simple category stats type for dashboard
 export interface SimpleCategoryStats {
@@ -46,6 +47,7 @@ export interface DashboardData {
 }
 
 export function useDashboard() {
+  const { convertFromAccount } = useMoney();
   const now = new Date();
   const start = startOfMonth(now);
   const end = endOfMonth(now);
@@ -121,23 +123,23 @@ export function useDashboard() {
     // Calculate totals for current month
     const totalIncome = currentMonthTx
       .filter((t) => t.direction === "credit")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
 
     const totalExpenses = Math.abs(
       currentMonthTx
         .filter((t) => t.direction === "debit")
-        .reduce((sum, t) => sum + t.amount, 0)
+        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
     );
 
     // Calculate totals for previous month
     const prevIncome = prevMonthTx
       .filter((t) => t.direction === "credit")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
 
     const prevExpenses = Math.abs(
       prevMonthTx
         .filter((t) => t.direction === "debit")
-        .reduce((sum, t) => sum + t.amount, 0)
+        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
     );
 
     // Calculate changes
@@ -146,7 +148,7 @@ export function useDashboard() {
     const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
 
     // Total balance from all accounts
-    const balance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+    const balance = accounts.reduce((sum, acc) => sum + convertFromAccount(acc.balance, acc.id), 0);
 
     // Monthly stats for last 6 months (for cash flow chart)
     const monthlyStats: { month: string; income: number; expenses: number }[] = [];
@@ -163,12 +165,12 @@ export function useDashboard() {
       
       const monthIncome = monthTxs
         .filter((t) => t.direction === "credit")
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
       
       const monthExpenses = Math.abs(
         monthTxs
           .filter((t) => t.direction === "debit")
-          .reduce((sum, t) => sum + t.amount, 0)
+          .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
       );
       
       monthlyStats.push({
@@ -186,7 +188,7 @@ export function useDashboard() {
       .forEach((t) => {
         const existing = categoryMap.get(t.category) || { amount: 0, count: 0 };
         categoryMap.set(t.category, { 
-          amount: existing.amount + Math.abs(t.amount), 
+          amount: existing.amount + Math.abs(convertFromAccount(t.amount, t.accountId)), 
           count: existing.count + 1 
         });
       });
@@ -216,7 +218,7 @@ export function useDashboard() {
       incomeChange,
       expenseChange,
     };
-  }, [currentMonthTx, prevMonthTx, last6MonthsTx, recentTransactions, goals, budgets, accounts]);
+  }, [currentMonthTx, prevMonthTx, last6MonthsTx, recentTransactions, goals, budgets, accounts, convertFromAccount]);
 
   return data;
 }

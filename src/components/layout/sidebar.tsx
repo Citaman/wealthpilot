@@ -39,8 +39,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { useAccount } from "@/contexts/account-context";
+import { Money } from "@/components/ui/money";
 
 interface NavItem {
   title: string;
@@ -107,15 +107,6 @@ export function SidebarNav({
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   const getAccountIcon = (type: string) => {
@@ -229,7 +220,7 @@ export function SidebarNav({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
-                        <PrivacyBlur>{formatCurrency(selectedAccount?.balance ?? totalBalance)}</PrivacyBlur>
+                        <Money amount={selectedAccount?.balance ?? totalBalance} currency={selectedAccount?.currency} />
                       </span>
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </div>
@@ -246,7 +237,7 @@ export function SidebarNav({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
-                        <PrivacyBlur>{formatCurrency(totalBalance)}</PrivacyBlur>
+                        <Money amount={totalBalance} />
                       </span>
                       {selectedAccountId === "all" && <Check className="h-4 w-4" />}
                     </div>
@@ -269,7 +260,7 @@ export function SidebarNav({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">
-                            <PrivacyBlur>{formatCurrency(account.balance)}</PrivacyBlur>
+                            <Money amount={account.balance} currency={account.currency} />
                           </span>
                           {selectedAccountId === account.id && <Check className="h-4 w-4" />}
                         </div>

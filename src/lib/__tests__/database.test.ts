@@ -3,11 +3,11 @@ import Dexie from 'dexie';
 
 // Create a test database that mirrors our schema
 class TestWealthPilotDB extends Dexie {
-  transactions!: Dexie.Table<any>;
-  accounts!: Dexie.Table<any>;
-  budgets!: Dexie.Table<any>;
-  goals!: Dexie.Table<any>;
-  settings!: Dexie.Table<any>;
+  transactions!: Dexie.Table<Record<string, unknown>, number>;
+  accounts!: Dexie.Table<Record<string, unknown>, number>;
+  budgets!: Dexie.Table<Record<string, unknown>, number>;
+  goals!: Dexie.Table<Record<string, unknown>, number>;
+  settings!: Dexie.Table<Record<string, unknown>, number>;
 
   constructor() {
     super('TestWealthPilotDB');

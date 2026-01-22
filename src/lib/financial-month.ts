@@ -106,7 +106,7 @@ export function calculateIncomeStatistics(salaryTransactions: Transaction[]): In
     medianSalary: Math.round(median),
     lastSalary: amounts[0] || 0,
     salaryDay,
-    outlierThreshold: Math.round(outlierThreshold),
+    outlierThreshold,
     confidence,
     salaryCount: sortedSalaries.length,
     outlierCount,
