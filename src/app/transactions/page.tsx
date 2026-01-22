@@ -35,10 +35,12 @@ import {
 } from "@/components/ui/select";
 import { TransactionRow, BatchActionBar } from "@/components/transactions/transaction-row";
 import { TransactionEditDialog } from "@/components/transactions/transaction-edit-dialog";
+import { BulkWorkbench } from "@/components/transactions/bulk-workbench";
 import { AddEditRecurringDialog } from "@/components/subscriptions";
 import { useTransactions, useMerchantRules } from "@/hooks/use-data";
 import { CATEGORIES, db, type Transaction, type RecurringTransaction, type RecurringType } from "@/lib/db";
 import { linkTransactionToRecurring } from "@/lib/csv-parser";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import { useAccount } from "@/contexts/account-context";
 
@@ -73,6 +75,9 @@ export default function TransactionsPage() {
   // Create Recurring Dialog
   const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
   const [recurringFromTransaction, setRecurringFromTransaction] = useState<Transaction | null>(null);
+
+  // Bulk Workbench
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   // Date range
   const now = new Date();
@@ -396,7 +401,7 @@ export default function TransactionsPage() {
             <CardContent className="py-4">
               <p className="text-sm text-muted-foreground">Total Income</p>
               <p className="text-2xl font-bold text-emerald-600">
-                +{formatCurrency(totals.income)}
+                <PrivacyBlur>+{formatCurrency(totals.income)}</PrivacyBlur>
               </p>
             </CardContent>
           </Card>
@@ -404,7 +409,7 @@ export default function TransactionsPage() {
             <CardContent className="py-4">
               <p className="text-sm text-muted-foreground">Total Expenses</p>
               <p className="text-2xl font-bold text-red-600">
-                -{formatCurrency(totals.expenses)}
+                <PrivacyBlur>-{formatCurrency(totals.expenses)}</PrivacyBlur>
               </p>
             </CardContent>
           </Card>
@@ -417,7 +422,10 @@ export default function TransactionsPage() {
                 "text-2xl font-bold",
                 totals.net >= 0 ? "text-blue-600" : "text-amber-600"
               )}>
-                {totals.net >= 0 ? "+" : ""}{formatCurrency(totals.net)}
+                <PrivacyBlur>
+                  {totals.net >= 0 ? "+" : ""}
+                  {formatCurrency(totals.net)}
+                </PrivacyBlur>
               </p>
             </CardContent>
           </Card>
@@ -719,10 +727,17 @@ export default function TransactionsPage() {
 
       <BatchActionBar
         selectedCount={selectedIds.size}
-        onCategorize={() => {}}
-        onTag={() => {}}
+        onCategorize={() => setBulkDialogOpen(true)}
+        onTag={() => setBulkDialogOpen(true)}
         onDelete={handleBatchDelete}
         onClearSelection={() => setSelectedIds(new Set())}
+      />
+
+      <BulkWorkbench
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        selectedIds={Array.from(selectedIds)}
+        onComplete={() => setSelectedIds(new Set())}
       />
     </AppLayout>
   );

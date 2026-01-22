@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -116,7 +117,9 @@ export function BudgetControl({
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
             <p className="text-sm text-muted-foreground">Monthly Limit</p>
-            <p className="text-lg font-semibold">{formatCurrency(budgetLimit)}</p>
+            <p className="text-lg font-semibold">
+              <PrivacyBlur>{formatCurrency(budgetLimit)}</PrivacyBlur>
+            </p>
           </div>
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
@@ -128,7 +131,7 @@ export function BudgetControl({
                 isOverBudget ? "text-red-600" : "text-emerald-600"
               )}
             >
-              {formatCurrency(Math.abs(remaining))}
+              <PrivacyBlur>{formatCurrency(Math.abs(remaining))}</PrivacyBlur>
             </p>
           </div>
         </div>

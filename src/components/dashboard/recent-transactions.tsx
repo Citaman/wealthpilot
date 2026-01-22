@@ -5,6 +5,7 @@ import { ArrowUpRight, ArrowDownRight, MoreHorizontal, ArrowRight } from "lucide
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES, type Transaction } from "@/lib/db";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -115,8 +116,10 @@ export function RecentTransactions({
                         isCredit ? "text-emerald-600" : "text-foreground"
                       )}
                     >
-                      {isCredit ? "+" : "-"}
-                      {formatCurrency(Math.abs(tx.amount))}
+                      <PrivacyBlur>
+                        {isCredit ? "+" : "-"}
+                        {formatCurrency(Math.abs(tx.amount))}
+                      </PrivacyBlur>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {tx.category}

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { CategoryBadge } from "./category-select";
 import { type Transaction, CATEGORIES } from "@/lib/db";
 import { cn } from "@/lib/utils";
@@ -150,8 +151,10 @@ export function TransactionRow({
           compact && "text-sm w-24"
         )}
       >
-        {transaction.direction === "credit" ? "+" : "-"}
-        {formatCurrency(transaction.amount)}
+        <PrivacyBlur>
+          {transaction.direction === "credit" ? "+" : "-"}
+          {formatCurrency(transaction.amount)}
+        </PrivacyBlur>
       </div>
 
       {/* Actions */}

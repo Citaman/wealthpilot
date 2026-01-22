@@ -22,6 +22,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-r
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, CATEGORIES } from "@/lib/db";
 import { ClientOnly } from "@/components/ui/client-only";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import {
   format,
   subMonths,
@@ -357,14 +358,16 @@ export function CashFlowChart() {
               <div className="h-3 w-3 rounded-full bg-blue-500" />
               <span className="font-medium">In</span>
             </div>
-            <span className="font-bold text-blue-500">{formatCurrency(totalIncome)}</span>
+            <span className="font-bold text-blue-500">
+              <PrivacyBlur>{formatCurrency(totalIncome)}</PrivacyBlur>
+            </span>
           </div>
           {showCategories && incomeBreakdown.length > 0 && (
             <div className="pl-5 space-y-0.5">
               {incomeBreakdown.map((item) => (
                 <div key={item.name} className="flex justify-between text-xs opacity-70">
                   <span>{item.name}</span>
-                  <span>{formatCurrency(item.value)}</span>
+                  <span><PrivacyBlur>{formatCurrency(item.value)}</PrivacyBlur></span>
                 </div>
               ))}
             </div>
@@ -377,14 +380,16 @@ export function CashFlowChart() {
               <div className="h-3 w-3 rounded-full bg-violet-500" />
               <span className="font-medium">Out</span>
             </div>
-            <span className="font-bold text-violet-500">{formatCurrency(totalExpenses)}</span>
+            <span className="font-bold text-violet-500">
+              <PrivacyBlur>{formatCurrency(totalExpenses)}</PrivacyBlur>
+            </span>
           </div>
           {showCategories && expenseBreakdown.length > 0 && (
             <div className="pl-5 space-y-0.5">
               {expenseBreakdown.map((item) => (
                 <div key={item.name} className="flex justify-between text-xs opacity-70">
                   <span>{item.name}</span>
-                  <span>{formatCurrency(item.value)}</span>
+                  <span><PrivacyBlur>{formatCurrency(item.value)}</PrivacyBlur></span>
                 </div>
               ))}
             </div>
@@ -394,7 +399,7 @@ export function CashFlowChart() {
         <div className="pt-2 border-t border-border flex items-center justify-between">
           <span className="font-medium">Net</span>
           <span className={`font-bold ${net >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-            {net >= 0 ? "+" : "-"}{formatCurrency(Math.abs(net))}
+            <PrivacyBlur>{net >= 0 ? "+" : "-"}{formatCurrency(Math.abs(net))}</PrivacyBlur>
           </span>
         </div>
       </div>

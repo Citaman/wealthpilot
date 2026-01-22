@@ -39,6 +39,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { db, type Account, type Transaction } from "@/lib/db";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 
 const ACCOUNT_TYPES = [
@@ -225,7 +226,7 @@ export default function AccountsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Assets</p>
                   <p className="text-xl font-bold text-emerald-600">
-                    {formatCurrency(totals.assets || latestBalance)}
+                    <PrivacyBlur>{formatCurrency(totals.assets || latestBalance)}</PrivacyBlur>
                   </p>
                 </div>
               </div>
@@ -240,7 +241,7 @@ export default function AccountsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Liabilities</p>
                   <p className="text-xl font-bold text-red-600">
-                    {formatCurrency(totals.liabilities)}
+                    <PrivacyBlur>{formatCurrency(totals.liabilities)}</PrivacyBlur>
                   </p>
                 </div>
               </div>
@@ -258,7 +259,7 @@ export default function AccountsPage() {
                     "text-xl font-bold",
                     (totals.netWorth || latestBalance) >= 0 ? "text-blue-600" : "text-red-600"
                   )}>
-                    {formatCurrency(totals.netWorth || latestBalance)}
+                    <PrivacyBlur>{formatCurrency(totals.netWorth || latestBalance)}</PrivacyBlur>
                   </p>
                 </div>
               </div>
@@ -345,7 +346,7 @@ export default function AccountsPage() {
                             account.balance < 0 ? "text-red-600" : ""
                           )}
                         >
-                          {formatCurrency(account.balance)}
+                          <PrivacyBlur>{formatCurrency(account.balance)}</PrivacyBlur>
                         </p>
                       </div>
 

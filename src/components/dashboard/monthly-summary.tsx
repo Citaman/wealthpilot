@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import Link from "next/link";
 
 interface MonthlySummaryProps {
@@ -160,12 +161,16 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center p-2 rounded-lg bg-emerald-500/10">
             <p className="text-xs text-muted-foreground mb-0.5">Income</p>
-            <p className="text-sm font-bold text-emerald-500">{formatCurrency(summary.income)}</p>
+            <p className="text-sm font-bold text-emerald-500">
+              <PrivacyBlur>{formatCurrency(summary.income)}</PrivacyBlur>
+            </p>
             <ChangeIndicator value={summary.incomeChange} />
           </div>
           <div className="text-center p-2 rounded-lg bg-red-500/10">
             <p className="text-xs text-muted-foreground mb-0.5">Expenses</p>
-            <p className="text-sm font-bold text-red-500">{formatCurrency(summary.expenses)}</p>
+            <p className="text-sm font-bold text-red-500">
+              <PrivacyBlur>{formatCurrency(summary.expenses)}</PrivacyBlur>
+            </p>
             <ChangeIndicator value={summary.expenseChange} inverse />
           </div>
           <div className={cn(
@@ -177,7 +182,7 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
               "text-sm font-bold",
               summary.net >= 0 ? "text-blue-500" : "text-amber-500"
             )}>
-              {formatCurrency(summary.net)}
+              <PrivacyBlur>{formatCurrency(summary.net)}</PrivacyBlur>
             </p>
             <span className="text-xs text-muted-foreground">
               {summary.txCount} tx
@@ -192,7 +197,9 @@ export function MonthlySummary({ className }: MonthlySummaryProps) {
               <p className="text-xs text-muted-foreground">Top Spending</p>
               <p className="text-sm font-medium">{summary.topCategory.name}</p>
             </div>
-            <p className="text-sm font-bold">{formatCurrency(summary.topCategory.amount)}</p>
+            <p className="text-sm font-bold">
+              <PrivacyBlur>{formatCurrency(summary.topCategory.amount)}</PrivacyBlur>
+            </p>
           </div>
         )}
 

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { CATEGORIES, type Transaction } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
@@ -169,11 +170,15 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
         <div className="space-y-1 text-sm">
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">This month</span>
-            <span className="font-bold">{formatCurrency(data.amount)}</span>
+            <span className="font-bold">
+              <PrivacyBlur>{formatCurrency(data.amount)}</PrivacyBlur>
+            </span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Last month</span>
-            <span className="font-medium">{formatCurrency(data.prevAmount)}</span>
+            <span className="font-medium">
+              <PrivacyBlur>{formatCurrency(data.prevAmount)}</PrivacyBlur>
+            </span>
           </div>
           {data.prevAmount > 0 && (
             <div className={cn(
@@ -253,12 +258,16 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                 <p className="text-xs text-muted-foreground mb-1">Income</p>
-                <p className="text-lg font-bold text-emerald-500">{formatCurrency(monthData.income)}</p>
+                <p className="text-lg font-bold text-emerald-500">
+                  <PrivacyBlur>{formatCurrency(monthData.income)}</PrivacyBlur>
+                </p>
                 <ChangeIndicator value={monthData.incomeChange} />
               </div>
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-xs text-muted-foreground mb-1">Expenses</p>
-                <p className="text-lg font-bold text-red-500">{formatCurrency(monthData.expenses)}</p>
+                <p className="text-lg font-bold text-red-500">
+                  <PrivacyBlur>{formatCurrency(monthData.expenses)}</PrivacyBlur>
+                </p>
                 <ChangeIndicator value={monthData.expenseChange} inverse />
               </div>
               <div className={cn(
@@ -272,10 +281,10 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
                   "text-lg font-bold",
                   monthData.net >= 0 ? "text-blue-500" : "text-amber-500"
                 )}>
-                  {formatCurrency(monthData.net)}
+                  <PrivacyBlur>{formatCurrency(monthData.net)}</PrivacyBlur>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  vs {formatCurrency(monthData.prevNet)}
+                  vs <PrivacyBlur>{formatCurrency(monthData.prevNet)}</PrivacyBlur>
                 </p>
               </div>
             </div>
@@ -344,7 +353,9 @@ export function MonthComparison({ transactions, className }: MonthComparisonProp
                       style={{ backgroundColor: cat.color }}
                     />
                     <span className="text-xs flex-1 truncate">{cat.category}</span>
-                    <span className="text-xs font-medium">{formatCurrency(cat.amount)}</span>
+                    <span className="text-xs font-medium">
+                      <PrivacyBlur>{formatCurrency(cat.amount)}</PrivacyBlur>
+                    </span>
                     <span className={cn(
                       "text-[10px] w-10 text-right",
                       cat.change > 0 ? "text-red-500" : "text-emerald-500"

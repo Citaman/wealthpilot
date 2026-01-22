@@ -5,6 +5,7 @@ import { format, subMonths } from "date-fns";
 import { PiggyBank, Lightbulb, TrendingDown, Coffee, Utensils, ShoppingBag, Clapperboard } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
 
@@ -203,7 +204,7 @@ export function SavingsPotential({ transactions, className }: SavingsPotentialPr
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Potential monthly savings</p>
               <p className="text-lg font-bold text-emerald-500">
-                {formatCurrency(totalPotentialSavings)}
+                <PrivacyBlur>{formatCurrency(totalPotentialSavings)}</PrivacyBlur>
               </p>
             </div>
           )}
@@ -243,17 +244,19 @@ export function SavingsPotential({ transactions, className }: SavingsPotentialPr
                     <div className="flex items-center gap-4 text-xs">
                       <div>
                         <span className="text-muted-foreground">Current: </span>
-                        <span className="font-medium">{formatCurrency(opportunity.currentSpending)}</span>
+                        <span className="font-medium">
+                          <PrivacyBlur>{formatCurrency(opportunity.currentSpending)}</PrivacyBlur>
+                        </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Target: </span>
                         <span className="font-medium text-emerald-500">
-                          {formatCurrency(opportunity.suggestedSpending)}
+                          <PrivacyBlur>{formatCurrency(opportunity.suggestedSpending)}</PrivacyBlur>
                         </span>
                       </div>
                       <div className="ml-auto">
                         <span className="font-semibold text-emerald-500">
-                          Save {formatCurrency(opportunity.potentialSavings)}
+                          Save <PrivacyBlur>{formatCurrency(opportunity.potentialSavings)}</PrivacyBlur>
                         </span>
                       </div>
                     </div>

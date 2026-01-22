@@ -5,6 +5,7 @@ import { Edit2, Check, X, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { CATEGORIES } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
@@ -163,16 +164,16 @@ export function CategoryBudgetCard({
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          {formatCurrency(spent)} spent
+          <PrivacyBlur>{formatCurrency(spent)}</PrivacyBlur> spent
         </p>
         <p className={cn(
           "text-xs",
           isOver ? "text-red-500 font-medium" : "text-muted-foreground"
         )}>
           {isOver ? (
-            <>Over by {formatCurrency(Math.abs(remaining))}</>
+            <>Over by <PrivacyBlur>{formatCurrency(Math.abs(remaining))}</PrivacyBlur></>
           ) : (
-            <>{formatCurrency(remaining)} left</>
+            <><PrivacyBlur>{formatCurrency(remaining)}</PrivacyBlur> left</>
           )}
         </p>
       </div>
@@ -213,7 +214,9 @@ export function CategoryBudgetCard({
         ) : (
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <p className="text-sm font-medium">{formatCurrency(budget)}</p>
+              <p className="text-sm font-medium">
+                <PrivacyBlur>{formatCurrency(budget)}</PrivacyBlur>
+              </p>
               <p className="text-[10px] text-muted-foreground">budget</p>
             </div>
             <Button

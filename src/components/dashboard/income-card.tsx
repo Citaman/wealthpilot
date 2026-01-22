@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 
 interface IncomeSource {
@@ -90,7 +91,7 @@ export function IncomeCard({
               Monthly Recap
             </p>
             <p className="text-3xl font-bold text-emerald-600">
-              {formatCurrency(totalIncome)}
+              <PrivacyBlur>{formatCurrency(totalIncome)}</PrivacyBlur>
             </p>
           </div>
           {change !== undefined && (
@@ -136,7 +137,9 @@ export function IncomeCard({
                       </div>
                       <span className="text-muted-foreground">{source.name}</span>
                     </div>
-                    <span className="font-medium">{formatCurrency(source.amount)}</span>
+                    <span className="font-medium">
+                      <PrivacyBlur>{formatCurrency(source.amount)}</PrivacyBlur>
+                    </span>
                   </div>
                   <Progress
                     value={percentage}

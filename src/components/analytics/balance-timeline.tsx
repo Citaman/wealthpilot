@@ -19,6 +19,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
 import { ClientOnly } from "@/components/ui/client-only";
@@ -221,7 +222,7 @@ export function BalanceTimeline({
               "font-bold text-lg",
               data.balance >= 0 ? "text-blue-500" : "text-red-500"
             )}>
-              {formatCurrency(data.balance)}
+              <PrivacyBlur>{formatCurrency(data.balance)}</PrivacyBlur>
             </span>
           </div>
           {data.isSalaryDay && (
@@ -404,25 +405,31 @@ export function BalanceTimeline({
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Lowest</p>
                 <p className={cn("text-sm font-bold", stats.min < 0 ? "text-red-500" : "text-foreground")}>
-                  {formatCurrency(stats.min)}
+                  <PrivacyBlur>{formatCurrency(stats.min)}</PrivacyBlur>
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Highest</p>
-                <p className="text-sm font-bold text-emerald-500">{formatCurrency(stats.max)}</p>
+                <p className="text-sm font-bold text-emerald-500">
+                  <PrivacyBlur>{formatCurrency(stats.max)}</PrivacyBlur>
+                </p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Average</p>
-                <p className="text-sm font-bold text-purple-500">{formatCurrency(stats.avg)}</p>
+                <p className="text-sm font-bold text-purple-500">
+                  <PrivacyBlur>{formatCurrency(stats.avg)}</PrivacyBlur>
+                </p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Current</p>
-                <p className="text-sm font-bold text-blue-500">{formatCurrency(stats.current)}</p>
+                <p className="text-sm font-bold text-blue-500">
+                  <PrivacyBlur>{formatCurrency(stats.current)}</PrivacyBlur>
+                </p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pre-Salary Low</p>
                 <p className={cn("text-sm font-bold", stats.lowestBeforeSalary < 500 ? "text-amber-500" : "text-foreground")}>
-                  {formatCurrency(stats.lowestBeforeSalary)}
+                  <PrivacyBlur>{formatCurrency(stats.lowestBeforeSalary)}</PrivacyBlur>
                 </p>
               </div>
               <div className="text-center">

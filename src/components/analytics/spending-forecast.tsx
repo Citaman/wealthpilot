@@ -19,6 +19,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import {
   Popover,
   PopoverContent,
@@ -173,7 +174,7 @@ export function SpendingForecast({
           <div className="flex justify-between gap-4 text-sm">
             <span className="text-muted-foreground">Actual Net</span>
             <span className={cn("font-medium", data.actual >= 0 ? "text-emerald-500" : "text-red-500")}>
-              {formatCurrency(data.actual)}
+              <PrivacyBlur>{formatCurrency(data.actual)}</PrivacyBlur>
             </span>
           </div>
         )}
@@ -182,18 +183,22 @@ export function SpendingForecast({
             <div className="flex justify-between gap-4 text-sm">
               <span className="text-muted-foreground">Forecast</span>
               <span className={cn("font-medium", data.forecast >= 0 ? "text-emerald-500" : "text-red-500")}>
-                {formatCurrency(data.forecast)}
+                <PrivacyBlur>{formatCurrency(data.forecast)}</PrivacyBlur>
               </span>
             </div>
             {showScenarios && (
               <>
                 <div className="flex justify-between gap-4 text-xs mt-1">
                   <span className="text-muted-foreground">Best case</span>
-                  <span className="text-emerald-400">{formatCurrency(data.optimistic!)}</span>
+                  <span className="text-emerald-400">
+                    <PrivacyBlur>{formatCurrency(data.optimistic!)}</PrivacyBlur>
+                  </span>
                 </div>
                 <div className="flex justify-between gap-4 text-xs">
                   <span className="text-muted-foreground">Worst case</span>
-                  <span className="text-red-400">{formatCurrency(data.pessimistic!)}</span>
+                  <span className="text-red-400">
+                    <PrivacyBlur>{formatCurrency(data.pessimistic!)}</PrivacyBlur>
+                  </span>
                 </div>
               </>
             )}
@@ -257,7 +262,9 @@ export function SpendingForecast({
                   <div className="pt-2 border-t space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Monthly net</span>
-                      <span className="font-medium">{formatCurrency(forecastData.adjustedNet)}</span>
+                      <span className="font-medium">
+                        <PrivacyBlur>{formatCurrency(forecastData.adjustedNet)}</PrivacyBlur>
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">6-month savings</span>
@@ -265,7 +272,7 @@ export function SpendingForecast({
                         "font-medium",
                         forecastData.projectedSavings >= 0 ? "text-emerald-500" : "text-red-500"
                       )}>
-                        {formatCurrency(forecastData.projectedSavings)}
+                        <PrivacyBlur>{formatCurrency(forecastData.projectedSavings)}</PrivacyBlur>
                       </span>
                     </div>
                   </div>
@@ -364,7 +371,7 @@ export function SpendingForecast({
               "text-lg font-bold",
               forecastData.avgNet >= 0 ? "text-emerald-500" : "text-red-500"
             )}>
-              {formatCurrency(forecastData.avgNet)}
+              <PrivacyBlur>{formatCurrency(forecastData.avgNet)}</PrivacyBlur>
             </p>
           </div>
           <div className="text-center">
@@ -373,7 +380,7 @@ export function SpendingForecast({
               "text-lg font-bold",
               forecastData.projectedBalance >= 0 ? "text-emerald-500" : "text-red-500"
             )}>
-              {formatCurrency(forecastData.projectedBalance)}
+              <PrivacyBlur>{formatCurrency(forecastData.projectedBalance)}</PrivacyBlur>
             </p>
           </div>
           <div className="text-center">

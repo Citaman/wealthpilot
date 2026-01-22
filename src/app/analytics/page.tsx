@@ -23,6 +23,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import {
   // Core Analytics
   BalanceTimeline,
@@ -46,7 +47,7 @@ import { cn } from "@/lib/utils";
 type Period = "1m" | "3m" | "6m" | "12m" | "ytd";
 
 export default function AnalyticsPage() {
-  const { selectedAccountId } = useAccount();
+  const { selectedAccountId, accounts, totalBalance } = useAccount();
   const [period, setPeriod] = useState<Period>("6m");
   const now = new Date();
 
@@ -186,7 +187,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Income</p>
-                  <p className="text-xl font-bold">{formatCurrency(stats.totalIncome)}</p>
+                  <p className="text-xl font-bold"><PrivacyBlur>{formatCurrency(stats.totalIncome)}</PrivacyBlur></p>
                 </div>
               </div>
             </CardContent>
@@ -199,7 +200,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Expenses</p>
-                  <p className="text-xl font-bold">{formatCurrency(stats.totalExpenses)}</p>
+                  <p className="text-xl font-bold"><PrivacyBlur>{formatCurrency(stats.totalExpenses)}</PrivacyBlur></p>
                 </div>
               </div>
             </CardContent>
@@ -221,7 +222,7 @@ export default function AnalyticsPage() {
                   <p className={cn(
                     "text-xl font-bold",
                     stats.netSavings >= 0 ? "text-emerald-600" : "text-red-600"
-                  )}>{formatCurrency(stats.netSavings)}</p>
+                  )}><PrivacyBlur>{formatCurrency(stats.netSavings)}</PrivacyBlur></p>
                 </div>
               </div>
             </CardContent>
@@ -234,7 +235,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Avg. Monthly</p>
-                  <p className="text-xl font-bold">{formatCurrency(stats.avgExpenses)}</p>
+                  <p className="text-xl font-bold"><PrivacyBlur>{formatCurrency(stats.avgExpenses)}</PrivacyBlur></p>
                 </div>
               </div>
             </CardContent>
@@ -283,11 +284,11 @@ export default function AnalyticsPage() {
 
             {/* Row 1: Financial Health Score + Spending Velocity + Top Merchants */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <FinancialHealthScore 
-                transactions={transactions}
-                currentBalance={stats.currentBalance}
-              />
-              <SpendingVelocity transactions={transactions} />
+                          <FinancialHealthScore 
+                            transactions={transactions} 
+                            currentBalance={totalBalance}
+                            accounts={accounts}
+                          />              <SpendingVelocity transactions={transactions} />
               <TopMerchants transactions={transactions} />
             </div>
 

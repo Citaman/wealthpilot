@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 
 interface QuickStatsProps {
   className?: string;
@@ -161,7 +162,7 @@ export function QuickStats({ className }: QuickStatsProps) {
                 "text-2xl font-bold",
                 velocityConfig[stats.velocityStatus].color
               )}>
-                {formatCurrency(stats.dailyAvg)}
+                <PrivacyBlur>{formatCurrency(stats.dailyAvg)}</PrivacyBlur>
               </span>
               <span className="text-xs text-muted-foreground">/day</span>
             </div>
@@ -214,12 +215,12 @@ export function QuickStats({ className }: QuickStatsProps) {
                 "text-2xl font-bold",
                 stats.projectedTotal > stats.lastMonthTotal ? "text-red-500" : "text-emerald-500"
               )}>
-                {formatCurrency(stats.projectedTotal)}
+                <PrivacyBlur>{formatCurrency(stats.projectedTotal)}</PrivacyBlur>
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
               {stats.lastMonthTotal > 0 && (
-                <>vs {formatCurrency(stats.lastMonthTotal)} last month</>
+                <>vs <PrivacyBlur>{formatCurrency(stats.lastMonthTotal)}</PrivacyBlur> last month</>
               )}
             </p>
           </div>

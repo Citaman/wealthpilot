@@ -39,6 +39,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { useAccount } from "@/contexts/account-context";
 
 interface NavItem {
@@ -228,7 +229,7 @@ export function SidebarNav({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
-                        {formatCurrency(selectedAccount?.balance ?? totalBalance)}
+                        <PrivacyBlur>{formatCurrency(selectedAccount?.balance ?? totalBalance)}</PrivacyBlur>
                       </span>
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </div>
@@ -245,7 +246,7 @@ export function SidebarNav({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
-                        {formatCurrency(totalBalance)}
+                        <PrivacyBlur>{formatCurrency(totalBalance)}</PrivacyBlur>
                       </span>
                       {selectedAccountId === "all" && <Check className="h-4 w-4" />}
                     </div>
@@ -268,7 +269,7 @@ export function SidebarNav({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">
-                            {formatCurrency(account.balance)}
+                            <PrivacyBlur>{formatCurrency(account.balance)}</PrivacyBlur>
                           </span>
                           {selectedAccountId === account.id && <Check className="h-4 w-4" />}
                         </div>

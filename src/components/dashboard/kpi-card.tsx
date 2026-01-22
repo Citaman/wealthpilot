@@ -2,6 +2,8 @@
 
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { useCurrency } from "@/contexts";
 import { cn } from "@/lib/utils";
 
 interface KpiCardProps {
@@ -13,6 +15,7 @@ interface KpiCardProps {
   icon: React.ReactNode;
   iconColor?: string;
   trend?: "up" | "down" | "neutral";
+  currencyCode?: string;
 }
 
 export function KpiCard({
@@ -24,15 +27,13 @@ export function KpiCard({
   icon,
   iconColor = "text-primary",
   trend,
+  currencyCode,
 }: KpiCardProps) {
+  const { format: formatCurrency } = useCurrency();
+
   const formatValue = (val: string | number) => {
     if (typeof val === "number") {
-      return new Intl.NumberFormat("fr-FR", {
-        style: "currency",
-        currency: "EUR",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(val);
+      return formatCurrency(val, currencyCode);
     }
     return val;
   };
@@ -59,7 +60,9 @@ export function KpiCard({
         <div className="flex items-start justify-between">
           <div className="space-y-2">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold tracking-tight">{formatValue(value)}</p>
+            <p className="text-3xl font-bold tracking-tight">
+              <PrivacyBlur>{formatValue(value)}</PrivacyBlur>
+            </p>
             {(change !== undefined || subtitle) && (
               <div className="flex items-center gap-2">
                 {change !== undefined && (

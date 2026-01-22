@@ -12,6 +12,7 @@ import { ClientOnly } from "@/components/ui/client-only";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { CATEGORIES } from "@/lib/db";
 import type { CategoryStats } from "@/lib/analytics";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 
 interface CategoryBreakdownProps {
   data: CategoryStats[];
@@ -54,7 +55,7 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
           <span className="font-medium">{item.name}</span>
         </div>
         <div className="text-sm text-muted-foreground">
-          {formatCurrency(item.value)} ({percentage}%)
+          <PrivacyBlur>{formatCurrency(item.value)}</PrivacyBlur> ({percentage}%)
         </div>
       </div>
     );

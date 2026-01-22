@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
+import { useCurrency } from "@/contexts";
 import { cn } from "@/lib/utils";
 import { type Account } from "@/lib/db";
 
@@ -21,15 +23,7 @@ export function BalanceCard({
   onSelectAccount,
 }: BalanceCardProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  const { format: formatCurrency } = useCurrency();
 
   const handlePrev = () => {
     setCarouselIndex((prev) => Math.max(0, prev - 1));
@@ -67,7 +61,7 @@ export function BalanceCard({
               isPositive ? "text-foreground" : "text-red-600"
             )}
           >
-            {formatCurrency(totalBalance)}
+            <PrivacyBlur>{formatCurrency(totalBalance)}</PrivacyBlur>
           </p>
         </div>
 
@@ -114,7 +108,7 @@ export function BalanceCard({
                         account.balance >= 0 ? "" : "text-red-600"
                       )}
                     >
-                      {formatCurrency(account.balance)}
+                      <PrivacyBlur>{formatCurrency(account.balance, account.currency)}</PrivacyBlur>
                     </p>
                     <p className="text-xs text-muted-foreground capitalize">
                       {account.type}

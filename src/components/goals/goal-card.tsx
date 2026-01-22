@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import {
@@ -145,9 +146,11 @@ export function GoalCard(props: {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs text-muted-foreground">Saved</p>
-            <p className="truncate text-2xl font-bold">{formatCurrency0(goal.currentAmount)}</p>
+            <p className="truncate text-2xl font-bold">
+              <PrivacyBlur>{formatCurrency0(goal.currentAmount)}</PrivacyBlur>
+            </p>
             <p className="text-xs text-muted-foreground">
-              of {formatCurrency0(goal.targetAmount)} · {summary.progress.toFixed(0)}%
+              of <PrivacyBlur>{formatCurrency0(goal.targetAmount)}</PrivacyBlur> · {summary.progress.toFixed(0)}%
             </p>
           </div>
           <CircularProgress progress={summary.progress} color={goal.color} size={78} strokeWidth={6} />
@@ -157,7 +160,9 @@ export function GoalCard(props: {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Remaining</p>
-              <p className="font-semibold">{formatCurrency0(Math.max(0, summary.remaining))}</p>
+              <p className="font-semibold">
+                <PrivacyBlur>{formatCurrency0(Math.max(0, summary.remaining))}</PrivacyBlur>
+              </p>
               <p className="text-xs text-muted-foreground">{summary.status.hint}</p>
             </div>
             {(summary.status.forecast.requiredMonthlyForDeadline || summary.status.forecast.averageMonthlyNet) && (
@@ -165,12 +170,14 @@ export function GoalCard(props: {
                 {summary.status.forecast.requiredMonthlyForDeadline && (
                   <p>
                     <span className="text-muted-foreground">Need</span>{" "}
-                    <span className="font-semibold">{formatCurrency0(summary.status.forecast.requiredMonthlyForDeadline)}/mo</span>
+                    <span className="font-semibold">
+                      <PrivacyBlur>{formatCurrency0(summary.status.forecast.requiredMonthlyForDeadline)}</PrivacyBlur>/mo
+                    </span>
                   </p>
                 )}
                 {summary.status.forecast.averageMonthlyNet && (
                   <p className="text-muted-foreground">
-                    Pace ~{formatCurrency0(summary.status.forecast.averageMonthlyNet)}/mo
+                    Pace ~<PrivacyBlur>{formatCurrency0(summary.status.forecast.averageMonthlyNet)}</PrivacyBlur>/mo
                   </p>
                 )}
               </div>
@@ -217,7 +224,7 @@ export function GoalCard(props: {
                   </span>
                   <span className={cn("font-medium", c.amount >= 0 ? "text-emerald-600" : "text-red-600")}>
                     {c.amount >= 0 ? "+" : "-"}
-                    {formatCurrency0(Math.abs(c.amount))}
+                    <PrivacyBlur>{formatCurrency0(Math.abs(c.amount))}</PrivacyBlur>
                   </span>
                 </li>
               ))}

@@ -3,6 +3,7 @@
 import { Target, Plus, ArrowRight, Sparkles } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import type { Goal } from "@/lib/db";
 import Link from "next/link";
@@ -95,13 +96,13 @@ export function GoalsProgress({ goals, onAddClick }: GoalsProgressProps) {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}
+                        <PrivacyBlur>{formatCurrency(goal.currentAmount)}</PrivacyBlur> of <PrivacyBlur>{formatCurrency(goal.targetAmount)}</PrivacyBlur>
                       </p>
                     </div>
                     {!isComplete && (
                       <div className="text-right shrink-0">
                         <p className="text-xs text-muted-foreground">
-                          {formatCurrency(goal.targetAmount - goal.currentAmount)}
+                          <PrivacyBlur>{formatCurrency(goal.targetAmount - goal.currentAmount)}</PrivacyBlur>
                         </p>
                         <p className="text-[10px] text-muted-foreground">left</p>
                       </div>
@@ -116,7 +117,9 @@ export function GoalsProgress({ goals, onAddClick }: GoalsProgressProps) {
               <div className="pt-3 border-t">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Total saved</span>
-                  <span className="font-semibold">{formatCurrency(totalSaved)}</span>
+                  <span className="font-semibold">
+                    <PrivacyBlur>{formatCurrency(totalSaved)}</PrivacyBlur>
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
                   <span>Overall progress</span>

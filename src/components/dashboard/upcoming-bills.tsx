@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CATEGORIES, db, type Transaction } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { PrivacyBlur } from "@/components/ui/privacy-blur";
 
 interface UpcomingBillsProps {
   className?: string;
@@ -163,7 +164,7 @@ export function UpcomingBills({ className }: UpcomingBillsProps) {
           </CardTitle>
           {upcomingBills.length > 0 && (
             <Badge variant="secondary" className="font-normal">
-              {formatCurrency(totalUpcoming)} due
+              <PrivacyBlur>{formatCurrency(totalUpcoming)}</PrivacyBlur> due
             </Badge>
           )}
         </div>
@@ -198,7 +199,9 @@ export function UpcomingBills({ className }: UpcomingBillsProps) {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="font-semibold">{formatCurrency(bill.amount)}</p>
+                  <p className="font-semibold">
+                    <PrivacyBlur>{formatCurrency(bill.amount)}</PrivacyBlur>
+                  </p>
                   <p className={cn(
                     "text-xs",
                     bill.daysUntil === 0 ? "text-red-500 font-medium" :
