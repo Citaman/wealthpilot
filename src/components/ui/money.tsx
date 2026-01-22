@@ -30,7 +30,7 @@ export function Money({
   });
 
   return (
-    <Comp className={cn(className)}>
+    <Comp className={cn("tabular-nums", className)}>
       <PrivacyBlur display={blurDisplay}>{formatted}</PrivacyBlur>
     </Comp>
   );
