@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, ty
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, type Account } from "@/lib/db";
 import { recalculateAllBalances } from "@/lib/balance";
+import { useCurrency } from "./currency-context";
 
 interface AccountContextValue {
   accounts: Account[];
@@ -21,6 +22,7 @@ const AccountContext = createContext<AccountContextValue | undefined>(undefined)
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [selectedAccountId, setSelectedAccountId] = useState<number | "all">("all");
   const hasRecalculated = useRef(false);
+  const { convert } = useCurrency();
 
   // Live query for accounts - auto-updates when accounts change
   const accounts = useLiveQuery(
@@ -36,13 +38,14 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     ? null 
     : accounts?.find((a) => a.id === selectedAccountId) || null;
 
-  // Calculate total balance across all accounts
+  // Calculate total balance across all accounts (with currency conversion)
   const totalBalance = accounts?.reduce((sum, acc) => {
+    const balanceInBase = convert(acc.balance, acc.currency || "EUR");
     // For credit accounts, balance is a liability (negative)
     if (acc.type === "credit") {
-      return sum - Math.abs(acc.balance);
+      return sum - Math.abs(balanceInBase);
     }
-    return sum + acc.balance;
+    return sum + balanceInBase;
   }, 0) || 0;
 
   // Load saved selection from localStorage
