@@ -186,22 +186,26 @@ flowchart TB
 
 ### v0.15.0 - UI Foundation & System
 
-**Theme**: Remove the “template-like” feel by making one cohesive product system.
+**Theme**: AI-first finance system with a cohesive product language across every page.
 
 **Spec**: `specs/ui-revamp/v0.15.0-ui-foundation.md`
 
 | # | Task | Status | Details |
 |---|------|--------|---------|
-| 1 | Design system & visual language | 📋 TODO | Tokens (spacing/type/color), component standards, consistent hierarchy |
-| 2 | App shell & navigation polish | 📋 TODO | Sidebar/header cohesion, responsive shell, unify theme control |
-| 3 | Data table + filters system | 📋 TODO | One FilterBar + DataTable pattern for all list pages |
-| 4 | Empty/loading/error states | 📋 TODO | Designed states for every major page + component |
-| 5 | Command palette & search | 📋 TODO | Cmd/Ctrl+K that actually searches transactions/categories/merchants |
-| 6 | Notifications center | 📋 TODO | Real notifications model + UX (not mock data) |
+| 1 | Design system & visual language | 📋 TODO | Tokens, typography, color semantics, motion, chart styling, data formatting |
+| 2 | Bottom dock + command center | 📋 TODO | Replace sidebar with dock navigation + AI-first command/search bar |
+| 3 | All pages restyled | 📋 TODO | Every page and component updated to the new system |
+| 4 | Data table + filters system | 📋 TODO | One FilterBar + DataTable pattern for all list pages |
+| 5 | Empty/loading/error states | 📋 TODO | Designed states for every major page + component |
+| 6 | Command palette & search | 📋 TODO | AI-first search with transaction/category/merchant + actions |
+| 7 | Notifications center | 📋 TODO | Real notifications model + UX (not mock data) |
+| 8 | Motion + micro-interactions | 📋 TODO | Page-load, staggered lists, reduced-motion support |
+| 9 | Brand mark or mascot | 📋 TODO | Minimal logo/mascot system for headers and empty states |
 
 **Verification Checklist**:
 
-- [ ] Design tokens applied across shell + buttons + cards
+- [ ] Design tokens applied across shell + buttons + cards on every page
+- [ ] Bottom dock and command center work across all routes
 - [ ] One table/filter system used by Transactions and at least one other page
 - [ ] Dark mode persisted and controlled in one place
 - [ ] Command palette can open a transaction from search
