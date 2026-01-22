@@ -35,6 +35,7 @@ import {
 } from "@/lib/csv-parser";
 import { db, type Transaction, CATEGORIES } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { Money } from "@/components/ui/money";
 import { format } from "date-fns";
 import { MigrationWizard } from "@/components/import/migration-wizard";
 import { useAccount } from "@/contexts/account-context";
@@ -59,6 +60,28 @@ export default function ImportPage() {
 
   // Set default account for basic import
   const targetAccountId = basicImportAccountId || (typeof selectedAccountId === 'number' ? selectedAccountId : accounts[0]?.id);
+
+  const processFile = async (file: File) => {
+    if (!file.name.endsWith(".csv")) {
+      setError("Please select a CSV file");
+      return;
+    }
+
+    if (!targetAccountId) {
+      setError("Please select or create an account first");
+      return;
+    }
+
+    setError(null);
+
+    try {
+      const result = await parseCSV(file, targetAccountId);
+      setParseResult(result);
+      setStep("preview");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to parse CSV file");
+    }
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -110,27 +133,6 @@ export default function ImportPage() {
     }
   };
 
-  const processFile = async (file: File) => {
-    if (!file.name.endsWith(".csv")) {
-      setError("Please select a CSV file");
-      return;
-    }
-
-    if (!targetAccountId) {
-      setError("Please select or create an account first");
-      return;
-    }
-
-    setError(null);
-
-    try {
-      const result = await parseCSV(file, targetAccountId);
-      setParseResult(result);
-      setStep("preview");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to parse CSV file");
-    }
-  };
 
   const handleImport = async () => {
     if (!parseResult) return;
@@ -171,14 +173,6 @@ export default function ImportPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(value);
   };
 
   return (
@@ -502,7 +496,11 @@ export default function ImportPage() {
                             )}
                           >
                             {tx.direction === "credit" ? "+" : "-"}
-                            {formatCurrency(Math.abs(tx.amount))}
+                            <Money
+                              amount={Math.abs(tx.amount)}
+                              minimumFractionDigits={2}
+                              maximumFractionDigits={2}
+                            />
                           </td>
                           <td className="py-3 px-4 text-center">
                             {tx.isDuplicate ? (

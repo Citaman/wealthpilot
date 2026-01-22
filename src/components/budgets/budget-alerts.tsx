@@ -5,6 +5,7 @@ import { AlertTriangle, Bell, CheckCircle, XCircle, TrendingUp } from "lucide-re
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Money } from "@/components/ui/money";
 
 interface BudgetAlert {
   category: string;
@@ -71,15 +72,6 @@ export function BudgetAlerts({ categoryData, className }: BudgetAlertsProps) {
       return order[a.severity] - order[b.severity];
     });
   }, [categoryData]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const severityConfig = {
     warning: {
@@ -170,13 +162,13 @@ export function BudgetAlerts({ categoryData, className }: BudgetAlertsProps) {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {formatCurrency(alert.spent)} of {formatCurrency(alert.budget)}
+                      <Money amount={alert.spent} /> of <Money amount={alert.budget} />
                     </p>
                   </div>
                   <div className="text-right shrink-0">
                     <Badge className={cn("text-xs", config.labelBg)}>
                       {alert.threshold === "over" ? (
-                        <>+{formatCurrency(overBy)}</>
+                        <>+<Money amount={overBy} /></>
                       ) : (
                         <>{percent.toFixed(0)}%</>
                       )}

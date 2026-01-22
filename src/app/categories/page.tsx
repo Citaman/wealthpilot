@@ -39,6 +39,8 @@ import {
 import { useTransactions } from "@/hooks/use-data";
 import { CATEGORIES, type Transaction } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface CategoryStats {
   category: string;
@@ -49,6 +51,7 @@ interface CategoryStats {
 }
 
 export default function CategoriesPage() {
+  const { convertFromAccount } = useMoney();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -86,12 +89,13 @@ export default function CategoriesPage() {
     transactions.forEach((tx) => {
       const stat = stats.get(tx.category);
       if (stat) {
-        stat.totalAmount += tx.amount;
+        const baseAmount = convertFromAccount(tx.amount, tx.accountId);
+        stat.totalAmount += baseAmount;
         stat.transactionCount += 1;
 
         const subcat = stat.subcategories.find((s) => s.name === tx.subcategory);
         if (subcat) {
-          subcat.amount += tx.amount;
+          subcat.amount += baseAmount;
           subcat.count += 1;
         }
       }
@@ -101,28 +105,23 @@ export default function CategoriesPage() {
       // Sort by absolute amount (expenses and income mixed)
       return Math.abs(b.totalAmount) - Math.abs(a.totalAmount);
     });
-  }, [transactions, expandedCategories]);
+  }, [transactions, expandedCategories, convertFromAccount]);
 
   // Totals
   const totals = useMemo(() => {
     const income = transactions
       .filter((t) => t.direction === "credit")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
     const expenses = Math.abs(
       transactions
         .filter((t) => t.direction === "debit")
-        .reduce((sum, t) => sum + t.amount, 0)
+        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
     );
     return { income, expenses };
-  }, [transactions]);
+  }, [transactions, convertFromAccount]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(Math.abs(value));
-  };
+  const uncategorizedCount =
+    categoryStats.find((s) => s.category === "Uncategorized")?.transactionCount ?? 0;
 
   const toggleExpanded = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -168,7 +167,7 @@ export default function CategoriesPage() {
             <CardContent className="py-4">
               <p className="text-sm text-muted-foreground">Total Income (12 months)</p>
               <p className="text-2xl font-bold text-emerald-600">
-                +{formatCurrency(totals.income)}
+                +<Money amount={totals.income} minimumFractionDigits={2} maximumFractionDigits={2} />
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Across all income categories
@@ -179,7 +178,7 @@ export default function CategoriesPage() {
             <CardContent className="py-4">
               <p className="text-sm text-muted-foreground">Total Expenses (12 months)</p>
               <p className="text-2xl font-bold text-red-600">
-                -{formatCurrency(totals.expenses)}
+                -<Money amount={totals.expenses} minimumFractionDigits={2} maximumFractionDigits={2} />
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Across all expense categories
@@ -271,7 +270,8 @@ export default function CategoriesPage() {
                             isIncome ? "text-emerald-600" : "text-foreground"
                           )}
                         >
-                          {isIncome ? "+" : "-"}{formatCurrency(stat.totalAmount)}
+                          {isIncome ? "+" : "-"}
+                          <Money amount={Math.abs(stat.totalAmount)} minimumFractionDigits={2} maximumFractionDigits={2} />
                         </p>
                         {hasTransactions && (
                           <p className="text-xs text-muted-foreground">
@@ -329,7 +329,8 @@ export default function CategoriesPage() {
                                   isIncome ? "text-emerald-600" : ""
                                 )}
                               >
-                                {isIncome ? "+" : "-"}{formatCurrency(sub.amount)}
+                                {isIncome ? "+" : "-"}
+                                <Money amount={Math.abs(sub.amount)} minimumFractionDigits={2} maximumFractionDigits={2} />
                               </span>
                             </div>
                           ))}
@@ -343,7 +344,7 @@ export default function CategoriesPage() {
         </Card>
 
         {/* Uncategorized Alert */}
-        {categoryStats.find((s) => s.category === "Uncategorized")?.transactionCount! > 0 && (
+        {uncategorizedCount > 0 && (
           <Card className="border-amber-500/50 bg-amber-500/5">
             <CardContent className="py-4 flex items-center gap-4">
               <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-500/10">
@@ -351,7 +352,7 @@ export default function CategoriesPage() {
               </div>
               <div className="flex-1">
                 <p className="font-medium text-amber-700">
-                  {categoryStats.find((s) => s.category === "Uncategorized")?.transactionCount} uncategorized transactions
+                  {uncategorizedCount} uncategorized transactions
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Review and categorize these transactions for accurate reporting

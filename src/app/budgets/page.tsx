@@ -60,6 +60,8 @@ import {
   BudgetType,
 } from "@/lib/budget-types";
 import { useSmartIncome } from "@/lib/financial-month";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 // Budget rule presets
 const BUDGET_PRESETS = [
@@ -73,6 +75,7 @@ export default function BudgetsPage() {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
+  const { convertFromAccount, formatBase } = useMoney();
 
   const { budgets, setBudget, isLoading: budgetsLoading } = useBudgets();
   
@@ -121,8 +124,8 @@ export default function BudgetsPage() {
   const actualIncome = useMemo(() => {
     return transactions
       .filter((t) => t.direction === "credit")
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, [transactions]);
+      .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
+  }, [transactions, convertFromAccount]);
 
   // Use smart income average if available, otherwise actual income
   // Smart income excludes bonuses/outliers for more stable budgeting
@@ -153,11 +156,11 @@ export default function BudgetsPage() {
       .forEach((t) => {
         const type = getTransactionType(t);
         if (type && type !== "income") {
-          result[type] += Math.abs(t.amount);
+          result[type] += Math.abs(convertFromAccount(t.amount, t.accountId));
         }
       });
     return result;
-  }, [transactions, getTransactionType]);
+  }, [transactions, getTransactionType, convertFromAccount]);
 
   // Calculate spending by category
   const spendingByCategory = useMemo(() => {
@@ -165,10 +168,10 @@ export default function BudgetsPage() {
     transactions
       .filter((t) => t.direction === "debit")
       .forEach((t) => {
-        result[t.category] = (result[t.category] || 0) + Math.abs(t.amount);
+        result[t.category] = (result[t.category] || 0) + Math.abs(convertFromAccount(t.amount, t.accountId));
       });
     return result;
-  }, [transactions]);
+  }, [transactions, convertFromAccount]);
 
   // Previous month spending by category
   const prevSpendingByCategory = useMemo(() => {
@@ -176,10 +179,10 @@ export default function BudgetsPage() {
     prevTransactions
       .filter((t) => t.direction === "debit")
       .forEach((t) => {
-        result[t.category] = (result[t.category] || 0) + Math.abs(t.amount);
+        result[t.category] = (result[t.category] || 0) + Math.abs(convertFromAccount(t.amount, t.accountId));
       });
     return result;
-  }, [prevTransactions]);
+  }, [prevTransactions, convertFromAccount]);
 
   // Get budget for a category
   const getCategoryBudget = useCallback((category: string) => {
@@ -214,15 +217,6 @@ export default function BudgetsPage() {
         color: info.color,
       }));
   }, [getCategoryType, getCategoryBudget, spendingByCategory]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const totalBudget = budgetAmounts.needs + budgetAmounts.wants + budgetAmounts.savings;
   const totalSpent = spendingByType.needs + spendingByType.wants;
@@ -278,7 +272,7 @@ export default function BudgetsPage() {
                       </label>
                       <Input
                         type="number"
-                        placeholder={smartIncomeValue > 0 ? `Smart income: ${formatCurrency(smartIncomeValue)}` : "Enter your monthly income"}
+                        placeholder={smartIncomeValue > 0 ? `Smart income: ${formatBase(smartIncomeValue)}` : "Enter your monthly income"}
                         value={monthlyIncome}
                         onChange={(e) => setMonthlyIncome(e.target.value)}
                       />
@@ -289,7 +283,7 @@ export default function BudgetsPage() {
                               <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 cursor-help">
                                 <TrendingUp className="h-3 w-3" />
                                 <span>
-                                  Using smart income: {formatCurrency(smartIncome.averageSalary)}
+                                  Using smart income: <Money amount={smartIncome.averageSalary} />
                                 </span>
                                 <Badge variant="outline" className="text-xs ml-1">
                                   {smartIncome.confidence}
@@ -305,11 +299,11 @@ export default function BudgetsPage() {
                               <div className="text-xs space-y-1">
                                 <div className="flex justify-between">
                                   <span>Median salary:</span>
-                                  <span>{formatCurrency(smartIncome.medianSalary)}</span>
+                                  <span><Money amount={smartIncome.medianSalary} /></span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span>Average (excl. bonuses):</span>
-                                  <span>{formatCurrency(smartIncome.averageSalary)}</span>
+                                  <span><Money amount={smartIncome.averageSalary} /></span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span>Typical salary day:</span>
@@ -401,12 +395,12 @@ export default function BudgetsPage() {
                               <div className={cn("h-3 w-3 rounded-full", color)} />
                               <span className="text-sm">{label} ({allocations[type]}%)</span>
                             </div>
-                            <span className="font-medium">{formatCurrency(budgetAmounts[type])}</span>
+                            <span className="font-medium"><Money amount={budgetAmounts[type]} /></span>
                           </div>
                         ))}
                         <div className="pt-2 border-t flex items-center justify-between font-semibold">
                           <span>Total Budget</span>
-                          <span>{formatCurrency(totalBudget)}</span>
+                          <span><Money amount={totalBudget} /></span>
                         </div>
                       </div>
                     </div>
@@ -480,7 +474,7 @@ export default function BudgetsPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold">
-                        {formatCurrency(typeSpent)} <span className="text-sm font-normal text-muted-foreground">/ {formatCurrency(typeBudget)}</span>
+                        <Money amount={typeSpent} /> <span className="text-sm font-normal text-muted-foreground">/ <Money amount={typeBudget} /></span>
                       </p>
                       <Badge 
                         variant={typePercent > 100 ? "destructive" : typePercent > 80 ? "secondary" : "default"}

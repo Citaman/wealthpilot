@@ -16,6 +16,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ClientOnly } from "@/components/ui/client-only";
+import { Money } from "@/components/ui/money";
+import { useMoney } from "@/hooks/use-money";
 
 interface BudgetVsActualProps {
   budgets: {
@@ -38,6 +40,7 @@ export function BudgetVsActual({
   income,
   className,
 }: BudgetVsActualProps) {
+  const { formatCompactCurrency } = useMoney();
   const data = useMemo(() => {
     return [
       {
@@ -64,15 +67,6 @@ export function BudgetVsActual({
     ];
   }, [budgets, actuals]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   // Calculate overall budget health
   const totalBudget = budgets.needs + budgets.wants + budgets.savings;
   const totalSpent = actuals.needs + actuals.wants;
@@ -93,18 +87,18 @@ export function BudgetVsActual({
         <div className="space-y-1">
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Budget:</span>
-            <span className="font-medium">{formatCurrency(item.budget)}</span>
+            <span className="font-medium"><Money amount={item.budget} /></span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Actual:</span>
-            <span className="font-medium">{formatCurrency(item.actual)}</span>
+            <span className="font-medium"><Money amount={item.actual} /></span>
           </div>
           <div className={cn(
             "flex justify-between gap-4 pt-1 border-t",
             diff >= 0 ? "text-emerald-500" : "text-red-500"
           )}>
             <span>{diff >= 0 ? "Under by:" : "Over by:"}</span>
-            <span className="font-bold">{formatCurrency(Math.abs(diff))}</span>
+            <span className="font-bold"><Money amount={Math.abs(diff)} /></span>
           </div>
           <p className="text-xs text-muted-foreground text-center pt-1">
             {percent}% of budget used
@@ -159,7 +153,7 @@ export function BudgetVsActual({
               >
                 <XAxis
                   type="number"
-                  tickFormatter={(v) => formatCurrency(v)}
+                  tickFormatter={(value) => formatCompactCurrency(value)}
                   tick={{ fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
@@ -230,7 +224,7 @@ export function BudgetVsActual({
                   "text-sm font-semibold",
                   isOver ? "text-red-500" : "text-emerald-500"
                 )}>
-                  {isOver ? "-" : "+"}{formatCurrency(Math.abs(diff))}
+                  {isOver ? "-" : "+"}<Money amount={Math.abs(diff)} />
                 </p>
               </div>
             );

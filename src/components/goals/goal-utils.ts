@@ -13,15 +13,6 @@ import { differenceInDays, parseISO } from "date-fns";
 import type { Goal, GoalContribution } from "@/lib/db";
 import { computeGoalForecast } from "@/lib/goals";
 
-export function formatCurrency0(value: number): string {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
 export function getGoalIcon(goal: Pick<Goal, "icon" | "name">): React.ElementType {
   const key = (goal.icon || "").toLowerCase();
   if (key.includes("shield")) return Shield;

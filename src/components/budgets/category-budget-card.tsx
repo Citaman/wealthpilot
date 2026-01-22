@@ -5,9 +5,9 @@ import { Edit2, Check, X, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { CATEGORIES } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { Money } from "@/components/ui/money";
 
 interface CategoryBudgetCardProps {
   category: string;
@@ -97,15 +97,6 @@ export function CategoryBudgetCard({
     ? ((spent - previousSpent) / previousSpent) * 100
     : undefined;
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const handleSave = async () => {
     const amount = parseFloat(editValue);
     if (!isNaN(amount) && amount >= 0) {
@@ -164,16 +155,16 @@ export function CategoryBudgetCard({
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          <PrivacyBlur>{formatCurrency(spent)}</PrivacyBlur> spent
+          <Money amount={spent} /> spent
         </p>
         <p className={cn(
           "text-xs",
           isOver ? "text-red-500 font-medium" : "text-muted-foreground"
         )}>
           {isOver ? (
-            <>Over by <PrivacyBlur>{formatCurrency(Math.abs(remaining))}</PrivacyBlur></>
+            <>Over by <Money amount={Math.abs(remaining)} /></>
           ) : (
-            <><PrivacyBlur>{formatCurrency(remaining)}</PrivacyBlur> left</>
+            <><Money amount={remaining} /> left</>
           )}
         </p>
       </div>
@@ -215,7 +206,7 @@ export function CategoryBudgetCard({
           <div className="flex items-center gap-2">
             <div className="text-right">
               <p className="text-sm font-medium">
-                <PrivacyBlur>{formatCurrency(budget)}</PrivacyBlur>
+                <Money amount={budget} />
               </p>
               <p className="text-[10px] text-muted-foreground">budget</p>
             </div>

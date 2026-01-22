@@ -6,6 +6,7 @@ import { Gauge, TrendingUp, TrendingDown, Minus, CheckCircle, AlertTriangle, XCi
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { Money } from "@/components/ui/money";
 
 interface BudgetPaceProps {
   totalBudget: number;
@@ -70,15 +71,6 @@ export function BudgetPace({ totalBudget, totalSpent, className }: BudgetPacePro
       statusMessage,
     };
   }, [totalBudget, totalSpent]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const statusConfig = {
     excellent: { 
@@ -178,7 +170,7 @@ export function BudgetPace({ totalBudget, totalSpent, className }: BudgetPacePro
         <div className="grid grid-cols-2 gap-3 pt-2 border-t">
           <div className="text-center p-2 rounded-lg bg-muted/50">
             <p className="text-xs text-muted-foreground">Daily Budget</p>
-            <p className="text-lg font-bold">{formatCurrency(paceData.dailyBudget)}</p>
+            <p className="text-lg font-bold"><Money amount={paceData.dailyBudget} /></p>
           </div>
           <div className="text-center p-2 rounded-lg bg-muted/50">
             <p className="text-xs text-muted-foreground">Daily Average</p>
@@ -186,7 +178,7 @@ export function BudgetPace({ totalBudget, totalSpent, className }: BudgetPacePro
               "text-lg font-bold",
               paceData.dailyAvg > paceData.dailyBudget ? "text-red-500" : "text-emerald-500"
             )}>
-              {formatCurrency(paceData.dailyAvg)}
+              <Money amount={paceData.dailyAvg} />
             </p>
           </div>
           <div className="text-center p-2 rounded-lg bg-muted/50">
@@ -195,7 +187,7 @@ export function BudgetPace({ totalBudget, totalSpent, className }: BudgetPacePro
               "text-lg font-bold",
               paceData.dailyRemaining < 0 ? "text-red-500" : "text-emerald-500"
             )}>
-              {formatCurrency(Math.max(0, paceData.dailyRemaining))}
+              <Money amount={Math.max(0, paceData.dailyRemaining)} />
             </p>
           </div>
           <div className="text-center p-2 rounded-lg bg-muted/50">
@@ -204,7 +196,7 @@ export function BudgetPace({ totalBudget, totalSpent, className }: BudgetPacePro
               "text-lg font-bold",
               paceData.projectedTotal > totalBudget ? "text-red-500" : "text-emerald-500"
             )}>
-              {formatCurrency(paceData.projectedTotal)}
+              <Money amount={paceData.projectedTotal} />
             </p>
           </div>
         </div>

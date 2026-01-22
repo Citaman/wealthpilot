@@ -42,7 +42,8 @@ import { CircularProgress } from "@/components/ui/circular-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGoalContributionActions, useGoalContributions, useGoals, useAccounts } from "@/hooks/use-data";
 import { cn } from "@/lib/utils";
-import { formatCurrency0, getGoalHealth, getGoalIcon } from "@/components/goals/goal-utils";
+import { getGoalHealth, getGoalIcon } from "@/components/goals/goal-utils";
+import { Money } from "@/components/ui/money";
 
 const GOAL_COLORS = [
   "#3b82f6",
@@ -248,8 +249,12 @@ export default function GoalDetailsPage() {
                     <CircularProgress progress={Math.min(progress, 100)} color={goal.color} size={52} strokeWidth={4} />
                     <div>
                       <p className="text-sm text-muted-foreground">Saved</p>
-                      <p className="text-xl font-bold">{formatCurrency0(goal.currentAmount)}</p>
-                      <p className="text-xs text-muted-foreground">of {formatCurrency0(goal.targetAmount)}</p>
+                      <p className="text-xl font-bold">
+                        <Money amount={goal.currentAmount} minimumFractionDigits={0} maximumFractionDigits={0} />
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        of <Money amount={goal.targetAmount} minimumFractionDigits={0} maximumFractionDigits={0} />
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -263,7 +268,9 @@ export default function GoalDetailsPage() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Remaining</p>
-                      <p className="text-xl font-bold">{formatCurrency0(Math.max(0, remaining))}</p>
+                      <p className="text-xl font-bold">
+                        <Money amount={Math.max(0, remaining)} minimumFractionDigits={0} maximumFractionDigits={0} />
+                      </p>
                       <p className="text-xs text-muted-foreground">{Math.max(0, (100 - Math.min(progress, 100))).toFixed(0)}% left</p>
                     </div>
                   </div>
@@ -279,7 +286,8 @@ export default function GoalDetailsPage() {
                     <div>
                       <p className="text-sm text-muted-foreground">Net funding (30d)</p>
                       <p className={cn("text-xl font-bold", net30 >= 0 ? "text-violet-700 dark:text-violet-300" : "text-red-600")}>
-                        {net30 >= 0 ? "+" : "-"}{formatCurrency0(Math.abs(net30))}
+                        {net30 >= 0 ? "+" : "-"}
+                        <Money amount={Math.abs(net30)} minimumFractionDigits={0} maximumFractionDigits={0} />
                       </p>
                       <p className="text-xs text-muted-foreground">Based on contributions</p>
                     </div>
@@ -296,7 +304,9 @@ export default function GoalDetailsPage() {
                     <div>
                       <p className="text-sm text-muted-foreground">Monthly pace</p>
                       <p className="text-xl font-bold">
-                        {health.forecast.averageMonthlyNet ? formatCurrency0(health.forecast.averageMonthlyNet) : "—"}
+                        {health.forecast.averageMonthlyNet ? (
+                          <Money amount={health.forecast.averageMonthlyNet} minimumFractionDigits={0} maximumFractionDigits={0} />
+                        ) : "—"}
                         {health.forecast.averageMonthlyNet ? <span className="text-sm font-medium text-muted-foreground">/mo</span> : null}
                       </p>
                       <p className="text-xs text-muted-foreground">Recent average</p>
@@ -359,7 +369,9 @@ export default function GoalDetailsPage() {
                   {health.forecast.requiredMonthlyForDeadline ? (
                     <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
                       <span className="text-muted-foreground">To hit the deadline</span>
-                      <span className="font-semibold">{formatCurrency0(health.forecast.requiredMonthlyForDeadline)}/mo</span>
+                      <span className="font-semibold">
+                        <Money amount={health.forecast.requiredMonthlyForDeadline} minimumFractionDigits={0} maximumFractionDigits={0} />/mo
+                      </span>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
@@ -371,7 +383,9 @@ export default function GoalDetailsPage() {
                   {health.forecast.averageMonthlyNet ? (
                     <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
                       <span className="text-muted-foreground">Recent average (net)</span>
-                      <span className="font-semibold">{formatCurrency0(health.forecast.averageMonthlyNet)}/mo</span>
+                      <span className="font-semibold">
+                        <Money amount={health.forecast.averageMonthlyNet} minimumFractionDigits={0} maximumFractionDigits={0} />/mo
+                      </span>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
@@ -420,7 +434,8 @@ export default function GoalDetailsPage() {
                             <li key={c.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                               <div className="min-w-0">
                                 <p className="font-medium">
-                                  {c.amount >= 0 ? "+" : ""}{formatCurrency0(c.amount)}
+                                  {c.amount >= 0 ? "+" : "-"}
+                                  <Money amount={Math.abs(c.amount)} minimumFractionDigits={0} maximumFractionDigits={0} />
                                   <span className="text-muted-foreground font-normal"> · {c.date}</span>
                                 </p>
                                 {c.note ? (
@@ -466,7 +481,8 @@ export default function GoalDetailsPage() {
                         <li key={c.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                           <div className="min-w-0">
                             <p className="font-medium">
-                              {c.amount >= 0 ? "+" : ""}{formatCurrency0(c.amount)}
+                              {c.amount >= 0 ? "+" : "-"}
+                              <Money amount={Math.abs(c.amount)} minimumFractionDigits={0} maximumFractionDigits={0} />
                               <span className="text-muted-foreground font-normal"> · {c.date}</span>
                             </p>
                             {c.note ? (

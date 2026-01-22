@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/dialog";
 import { db, type RecurringTransaction, type Transaction, CATEGORIES } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 interface BillEvent {
   id: string;
@@ -57,6 +59,7 @@ interface BillEvent {
 }
 
 export default function CalendarPage() {
+  const { convertFromAccount } = useMoney();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedBills, setSelectedBills] = useState<BillEvent[]>([]);
@@ -104,6 +107,7 @@ export default function CalendarPage() {
     const findMatchingTransaction = (rec: RecurringTransaction, targetDate: Date) => {
       const recName = rec.name.toLowerCase();
       const recMerchant = (rec.merchant || "").toLowerCase();
+      const recAmount = Math.abs(convertFromAccount(rec.amount, rec.accountId));
       
       return transactions.find((tx) => {
         const txDate = new Date(tx.date);
@@ -118,7 +122,8 @@ export default function CalendarPage() {
         const merchantMatch = recMerchant && (txMerchant.includes(recMerchant) || recMerchant.includes(txMerchant));
         
         // Check amount match (within 20%)
-        const amountMatch = Math.abs(Math.abs(tx.amount) - Math.abs(rec.amount)) / Math.abs(rec.amount) < 0.2;
+        const txAmount = Math.abs(convertFromAccount(tx.amount, tx.accountId));
+        const amountMatch = Math.abs(txAmount - recAmount) / Math.abs(recAmount) < 0.2;
         
         return (nameMatch || merchantMatch) && amountMatch;
       });
@@ -175,7 +180,7 @@ export default function CalendarPage() {
         }
       } else if (rec.frequency === "quarterly") {
         const startDate = new Date(rec.startDate || rec.nextExpected);
-        let checkDate = new Date(startDate);
+        const checkDate = new Date(startDate);
         
         // Find quarterly dates that fall in this month
         for (let i = 0; i < 12; i++) {
@@ -205,7 +210,7 @@ export default function CalendarPage() {
           recurringId: rec.id,
           transactionId: matchingTx?.id,
           name: rec.name,
-          amount: Math.abs(rec.amount),
+          amount: Math.abs(convertFromAccount(rec.amount, rec.accountId)),
           date: matchingTx ? new Date(matchingTx.date) : expectedDate,
           category: rec.category,
           type: isPaid ? "paid" : isOverdue ? "overdue" : "upcoming",
@@ -232,7 +237,7 @@ export default function CalendarPage() {
           id: `tx-${tx.id}`,
           transactionId: tx.id,
           name: tx.merchant,
-          amount: Math.abs(tx.amount),
+          amount: Math.abs(convertFromAccount(tx.amount, tx.accountId)),
           date: txDate,
           category: tx.category,
           type: "paid",
@@ -242,7 +247,7 @@ export default function CalendarPage() {
     });
 
     return billEvents.sort((a, b) => a.date.getTime() - b.date.getTime());
-  }, [recurring, transactions, currentMonth, monthStart, monthEnd, today]);
+  }, [recurring, transactions, currentMonth, monthStart, monthEnd, today, convertFromAccount]);
 
   const isLoading = recurring === undefined || transactions === undefined;
 
@@ -256,15 +261,6 @@ export default function CalendarPage() {
       setSelectedDate(date);
       setSelectedBills(dayBills);
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   const upcomingBills = useMemo(() => {
@@ -329,7 +325,7 @@ export default function CalendarPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">This Month</p>
-                  <p className="text-xl font-bold">{formatCurrency(monthTotal)}</p>
+                  <p className="text-xl font-bold"><Money amount={monthTotal} /></p>
                 </div>
               </div>
             </CardContent>
@@ -342,7 +338,7 @@ export default function CalendarPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Paid</p>
-                  <p className="text-xl font-bold text-emerald-600">{formatCurrency(paidTotal)}</p>
+                  <p className="text-xl font-bold text-emerald-600"><Money amount={paidTotal} /></p>
                 </div>
               </div>
             </CardContent>
@@ -356,7 +352,7 @@ export default function CalendarPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Upcoming</p>
                   <p className="text-xl font-bold text-amber-600">
-                    {formatCurrency(monthTotal - paidTotal)}
+                    <Money amount={monthTotal - paidTotal} />
                   </p>
                 </div>
               </div>
@@ -552,7 +548,7 @@ export default function CalendarPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-sm">
-                            {formatCurrency(bill.amount)}
+                            <Money amount={bill.amount} />
                           </p>
                           {bill.frequency && (
                             <p className="text-xs text-muted-foreground capitalize">
@@ -589,7 +585,7 @@ export default function CalendarPage() {
                           </p>
                         </div>
                         <p className="font-semibold text-red-600">
-                          {formatCurrency(bill.amount)}
+                          <Money amount={bill.amount} />
                         </p>
                       </div>
                     ))}
@@ -652,7 +648,7 @@ export default function CalendarPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-lg">{formatCurrency(bill.amount)}</p>
+                    <p className="font-bold text-lg"><Money amount={bill.amount} /></p>
                     <span
                       className={cn(
                         "text-xs px-2 py-0.5 rounded-full",

@@ -49,7 +49,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GoalCard } from "@/components/goals/goal-card";
-import { formatCurrency0, getGoalHealth } from "@/components/goals/goal-utils";
+import { getGoalHealth } from "@/components/goals/goal-utils";
 import {
   useDashboard,
   useGoalContributionActions,
@@ -59,6 +59,7 @@ import {
 } from "@/hooks/use-data";
 import { type Goal, type GoalContribution } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { Money } from "@/components/ui/money";
 
 const GOAL_COLORS = [
   "#10b981", // emerald
@@ -372,7 +373,9 @@ export default function GoalsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Active target</p>
-                  <p className="text-xl font-bold">{formatCurrency0(kpis.totalTarget)}</p>
+                  <p className="text-xl font-bold">
+                    <Money amount={kpis.totalTarget} minimumFractionDigits={0} maximumFractionDigits={0} />
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -385,7 +388,9 @@ export default function GoalsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Saved</p>
-                  <p className="text-xl font-bold text-emerald-600">{formatCurrency0(kpis.totalSaved)}</p>
+                  <p className="text-xl font-bold text-emerald-600">
+                    <Money amount={kpis.totalSaved} minimumFractionDigits={0} maximumFractionDigits={0} />
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -399,7 +404,8 @@ export default function GoalsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Net funding (30d)</p>
                   <p className={cn("text-xl font-bold", kpis.net30 >= 0 ? "text-violet-700 dark:text-violet-300" : "text-red-600")}>
-                    {kpis.net30 >= 0 ? "+" : "-"}{formatCurrency0(Math.abs(kpis.net30))}
+                    {kpis.net30 >= 0 ? "+" : "-"}
+                    <Money amount={Math.abs(kpis.net30)} minimumFractionDigits={0} maximumFractionDigits={0} />
                   </p>
                 </div>
               </div>
@@ -430,7 +436,13 @@ export default function GoalsPage() {
                   Review transactions, adjust your budget, and validate progress with analytics.
                   {!dashboard.isLoading && dashboard.hasData ? (
                     <span>
-                      {" "}This month’s net savings: <span className="font-medium text-foreground">{formatCurrency0(dashboard.totalIncome - dashboard.totalExpenses)}</span>
+                      {" "}This month’s net savings:{" "}
+                      <Money
+                        amount={dashboard.totalIncome - dashboard.totalExpenses}
+                        className="font-medium text-foreground"
+                        minimumFractionDigits={0}
+                        maximumFractionDigits={0}
+                      />
                       {" "}({dashboard.savingsRate.toFixed(0)}% savings rate)
                     </span>
                   ) : null}
@@ -727,7 +739,8 @@ export default function GoalsPage() {
                       <li key={c.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                         <div className="min-w-0">
                           <p className="font-medium">
-                            {c.amount >= 0 ? "+" : ""}{formatCurrency0(c.amount)}
+                            {c.amount >= 0 ? "+" : "-"}
+                            <Money amount={Math.abs(c.amount)} minimumFractionDigits={0} maximumFractionDigits={0} />
                             <span className="text-muted-foreground font-normal"> · {c.date}</span>
                           </p>
                           {c.note && <p className="text-muted-foreground truncate">{c.note}</p>}

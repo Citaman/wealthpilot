@@ -39,8 +39,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { db, type Account, type Transaction } from "@/lib/db";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { cn } from "@/lib/utils";
+import { useMoney } from "@/hooks/use-money";
+import { Money } from "@/components/ui/money";
 
 const ACCOUNT_TYPES = [
   { value: "checking", label: "Checking", icon: Building2 },
@@ -61,6 +62,7 @@ const ACCOUNT_COLORS = [
 ];
 
 export default function AccountsPage() {
+  const { convertFromAccount } = useMoney();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -163,32 +165,25 @@ export default function AccountsPage() {
   const totals = useMemo(() => {
     const assets = accounts
       .filter((a) => a.type !== "credit" && a.balance > 0)
-      .reduce((sum, a) => sum + a.balance, 0);
+      .reduce((sum, a) => sum + convertFromAccount(a.balance, a.id), 0);
 
     const liabilities = accounts
       .filter((a) => a.type === "credit" || a.balance < 0)
-      .reduce((sum, a) => sum + Math.abs(a.balance), 0);
+      .reduce((sum, a) => sum + Math.abs(convertFromAccount(a.balance, a.id)), 0);
 
     return {
       assets,
       liabilities,
       netWorth: assets - liabilities,
     };
-  }, [accounts]);
+  }, [accounts, convertFromAccount]);
 
   // Get latest balance from transactions if no accounts
   const latestBalance = useMemo(() => {
     if (transactions.length === 0) return 0;
-    return transactions[0]?.balanceAfter || 0;
-  }, [transactions]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
+    const tx = transactions[0];
+    return tx ? convertFromAccount(tx.balanceAfter || 0, tx.accountId) : 0;
+  }, [transactions, convertFromAccount]);
 
   const getAccountIcon = (type: string) => {
     const accountType = ACCOUNT_TYPES.find((t) => t.value === type);
@@ -226,7 +221,7 @@ export default function AccountsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Assets</p>
                   <p className="text-xl font-bold text-emerald-600">
-                    <PrivacyBlur>{formatCurrency(totals.assets || latestBalance)}</PrivacyBlur>
+                    <Money amount={totals.assets || latestBalance} />
                   </p>
                 </div>
               </div>
@@ -241,7 +236,7 @@ export default function AccountsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Liabilities</p>
                   <p className="text-xl font-bold text-red-600">
-                    <PrivacyBlur>{formatCurrency(totals.liabilities)}</PrivacyBlur>
+                    <Money amount={totals.liabilities} />
                   </p>
                 </div>
               </div>
@@ -259,7 +254,7 @@ export default function AccountsPage() {
                     "text-xl font-bold",
                     (totals.netWorth || latestBalance) >= 0 ? "text-blue-600" : "text-red-600"
                   )}>
-                    <PrivacyBlur>{formatCurrency(totals.netWorth || latestBalance)}</PrivacyBlur>
+                    <Money amount={totals.netWorth || latestBalance} />
                   </p>
                 </div>
               </div>
@@ -303,7 +298,7 @@ export default function AccountsPage() {
                     <p className="text-sm text-muted-foreground">
                       Based on your transactions, your current balance is approximately:
                     </p>
-                    <p className="text-xl font-bold mt-1">{formatCurrency(latestBalance)}</p>
+                    <p className="text-xl font-bold mt-1"><Money amount={latestBalance} /></p>
                   </div>
                 )}
               </div>
@@ -346,7 +341,7 @@ export default function AccountsPage() {
                             account.balance < 0 ? "text-red-600" : ""
                           )}
                         >
-                          <PrivacyBlur>{formatCurrency(account.balance)}</PrivacyBlur>
+                          <Money amount={account.balance} currency={account.currency} />
                         </p>
                       </div>
 

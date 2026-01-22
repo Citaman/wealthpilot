@@ -17,9 +17,9 @@ import { cn } from "@/lib/utils";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PrivacyBlur } from "@/components/ui/privacy-blur";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
+import { Money } from "@/components/ui/money";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,12 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-  formatCurrency0,
-  getGoalHealth,
-  getGoalIcon,
-  getGoalProgress,
-} from "@/components/goals/goal-utils";
+import { getGoalHealth, getGoalIcon, getGoalProgress } from "@/components/goals/goal-utils";
 
 export function GoalCard(props: {
   goal: Goal;
@@ -147,10 +142,10 @@ export function GoalCard(props: {
           <div className="min-w-0">
             <p className="text-xs text-muted-foreground">Saved</p>
             <p className="truncate text-2xl font-bold">
-              <PrivacyBlur>{formatCurrency0(goal.currentAmount)}</PrivacyBlur>
+              <Money amount={goal.currentAmount} minimumFractionDigits={0} maximumFractionDigits={0} />
             </p>
             <p className="text-xs text-muted-foreground">
-              of <PrivacyBlur>{formatCurrency0(goal.targetAmount)}</PrivacyBlur> · {summary.progress.toFixed(0)}%
+              of <Money amount={goal.targetAmount} minimumFractionDigits={0} maximumFractionDigits={0} /> · {summary.progress.toFixed(0)}%
             </p>
           </div>
           <CircularProgress progress={summary.progress} color={goal.color} size={78} strokeWidth={6} />
@@ -161,7 +156,7 @@ export function GoalCard(props: {
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Remaining</p>
               <p className="font-semibold">
-                <PrivacyBlur>{formatCurrency0(Math.max(0, summary.remaining))}</PrivacyBlur>
+                <Money amount={Math.max(0, summary.remaining)} minimumFractionDigits={0} maximumFractionDigits={0} />
               </p>
               <p className="text-xs text-muted-foreground">{summary.status.hint}</p>
             </div>
@@ -171,13 +166,13 @@ export function GoalCard(props: {
                   <p>
                     <span className="text-muted-foreground">Need</span>{" "}
                     <span className="font-semibold">
-                      <PrivacyBlur>{formatCurrency0(summary.status.forecast.requiredMonthlyForDeadline)}</PrivacyBlur>/mo
+                      <Money amount={summary.status.forecast.requiredMonthlyForDeadline} minimumFractionDigits={0} maximumFractionDigits={0} />/mo
                     </span>
                   </p>
                 )}
                 {summary.status.forecast.averageMonthlyNet && (
                   <p className="text-muted-foreground">
-                    Pace ~<PrivacyBlur>{formatCurrency0(summary.status.forecast.averageMonthlyNet)}</PrivacyBlur>/mo
+                    Pace ~<Money amount={summary.status.forecast.averageMonthlyNet} minimumFractionDigits={0} maximumFractionDigits={0} />/mo
                   </p>
                 )}
               </div>
@@ -224,7 +219,7 @@ export function GoalCard(props: {
                   </span>
                   <span className={cn("font-medium", c.amount >= 0 ? "text-emerald-600" : "text-red-600")}>
                     {c.amount >= 0 ? "+" : "-"}
-                    <PrivacyBlur>{formatCurrency0(Math.abs(c.amount))}</PrivacyBlur>
+                    <Money amount={Math.abs(c.amount)} minimumFractionDigits={0} maximumFractionDigits={0} />
                   </span>
                 </li>
               ))}
