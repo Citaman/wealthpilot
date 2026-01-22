@@ -256,6 +256,18 @@ export interface Settings {
   value: string;
 }
 
+export interface Notification {
+  id: string;
+  type: "budget" | "subscription" | "system";
+  title: string;
+  body: string;
+  createdAt: string;
+  readAt?: string;
+  dismissedAt?: string;
+  actionHref?: string;
+  payload?: Record<string, unknown>;
+}
+
 export type BudgetRule = {
   id: string;
   name: string;
@@ -411,6 +423,7 @@ class WealthPilotDB extends Dexie {
   importRules!: Table<ImportRule>;
   customCategories!: Table<CustomCategory>;
   balanceCheckpoints!: Table<BalanceCheckpoint>;
+  notifications!: Table<Notification>;
 
   constructor() {
     super('WealthPilotDB');
@@ -604,6 +617,24 @@ class WealthPilotDB extends Dexie {
           await tx.table('accounts').update(acc.id, { currency: 'EUR' });
         }
       }
+    });
+
+    // Version 9: Notifications (v0.15.0)
+    this.version(9).stores({
+      transactions: '++id, date, merchant, category, accountId, [date+accountId], *tags',
+      accounts: '++id, name, type, currency, isActive',
+      budgets: '++id, category, year, [year+month]',
+      goals: '++id, isActive, linkedAccountId',
+      goalContributions: '++id, goalId, date',
+      categoryRules: '++id, pattern, category, priority',
+      recurringTransactions: '++id, status, type, accountId, merchant',
+      detectedSalaries: '++id, transactionId, date, accountId, financialMonthId, [date+accountId]',
+      settings: '++id, key',
+      merchantRules: '++id, pattern, merchantName, category, isActive',
+      importRules: '++id, name, pattern, category, priority, isActive',
+      customCategories: '++id, name, isSystem',
+      balanceCheckpoints: '++id, accountId, date, isActive, [accountId+date]',
+      notifications: 'id, type, createdAt, readAt, dismissedAt'
     });
   }
 }
