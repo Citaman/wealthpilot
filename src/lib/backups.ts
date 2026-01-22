@@ -130,13 +130,20 @@ export async function buildSnapshotV1(): Promise<BackupSnapshotV1> {
   };
 }
 
-export async function createBackupBlob(options?: { gzip?: boolean }) {
+export async function createBackupBlob(options?: { gzip?: boolean; passphrase?: string }) {
   const snapshot = await buildSnapshotV1();
-  const json = JSON.stringify(snapshot, null, 2);
-  const baseBlob = new Blob([json], { type: "application/json" });
+  let json = JSON.stringify(snapshot, null, 2);
+  let extension: "json" | "json.gz" | "wpenc" = options?.gzip ? "json.gz" : "json";
 
-  if (!options?.gzip) {
-    return { blob: baseBlob, extension: "json" as const };
+  if (options?.passphrase) {
+    json = await encryptData(json, options.passphrase);
+    extension = "wpenc";
+  }
+
+  const baseBlob = new Blob([json], { type: options?.passphrase ? "application/octet-stream" : "application/json" });
+
+  if (!options?.gzip || options?.passphrase) {
+    return { blob: baseBlob, extension };
   }
 
   if (typeof CompressionStream === "undefined") {
@@ -446,6 +453,100 @@ export async function setStringSetting(key: string, value: string) {
     await db.settings.update(existing.id, { value });
   } else {
     await db.settings.add({ key, value });
+  }
+}
+
+/**
+ * Encrypts a string using AES-GCM with a PBKDF2 derived key from a passphrase.
+ */
+export async function encryptData(data: string, passphrase: string) {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+
+  // Derive key
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(passphrase),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt"]
+  );
+
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encoder.encode(data)
+  );
+
+  const result = {
+    v: 1,
+    algo: "AES-GCM",
+    iv: btoa(String.fromCharCode(...iv)),
+    salt: btoa(String.fromCharCode(...salt)),
+    data: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
+  };
+
+  return JSON.stringify(result);
+}
+
+/**
+ * Decrypts a string using AES-GCM.
+ */
+export async function decryptData(encryptedJson: string, passphrase: string) {
+  try {
+    const { iv: ivB64, salt: saltB64, data: dataB64 } = JSON.parse(encryptedJson);
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    const iv = new Uint8Array(atob(ivB64).split("").map((c) => c.charCodeAt(0)));
+    const salt = new Uint8Array(atob(saltB64).split("").map((c) => c.charCodeAt(0)));
+    const encryptedData = new Uint8Array(atob(dataB64).split("").map((c) => c.charCodeAt(0)));
+
+    const baseKey = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(passphrase),
+      "PBKDF2",
+      false,
+      ["deriveKey"]
+    );
+
+    const key = await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      baseKey,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["decrypt"]
+    );
+
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encryptedData
+    );
+
+    return decoder.decode(decrypted);
+  } catch (error) {
+    console.error("Decryption failed:", error);
+    throw new Error("Invalid passphrase or corrupted file.");
   }
 }
 
