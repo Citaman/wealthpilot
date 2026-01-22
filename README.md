@@ -2,7 +2,7 @@
 
 > A modern, privacy-first personal finance dashboard built with Next.js
 
-![Version](https://img.shields.io/badge/version-0.13.0-blue)
+![Version](https://img.shields.io/badge/version-0.14.6-blue)
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -149,6 +149,7 @@ See [ROADMAP](./ROADMAP.md) for full version planning.
 | v0.12.0 | Mobile, PWA, Accessibility | ✅ Released |
 | v0.12.1 | Professional Polish | ✅ Released |
 | v0.13.0 | Performance & Consistency | ✅ Released |
+| v0.14.6 | Security & Intelligence Integration | ✅ Released |
 | v0.15.0 | UI Foundation & System | 📋 Planned |
 | v1.0.0 | Production Ready | 🎯 Target |
 

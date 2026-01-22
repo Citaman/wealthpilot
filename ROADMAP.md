@@ -1,7 +1,7 @@
 # WealthPilot - Product Roadmap
 
 **Last Audit Date**: January 21, 2026
-**Last Update**: v0.14.5 Pro Intelligence & Security ✅ (shipped)
+**Last Update**: v0.14.6 Security & Intelligence Integration ✅ (shipped)
 
 ---
 
@@ -122,6 +122,7 @@ flowchart TB
 | v0.12.1 | ✅ Released | Professional Polish | Settings revamp + System integrity + Toasts |
 | v0.13.0 | ✅ Released | Performance & Consistency | Income engine + Goal linking + Testing |
 | v0.14.5 | ✅ DONE | Pro Intelligence & Security | CFO layer + encrypted backups + bulk workbench |
+| v0.14.6 | ✅ DONE | Security & Intelligence Integration | Privacy audit + command palette + multi-currency UI |
 
 ---
 
@@ -169,17 +170,17 @@ flowchart TB
 
 ---
 
-### v0.14.6 - Security & Intelligence Integration (Planned)
+### v0.14.6 - Security & Intelligence Integration ✅ COMPLETED
 
 **Theme**: Close the gaps from v0.14.5 and tighten end-to-end privacy, security, and currency fidelity.
 
 | # | Task | Status | Details |
 |---|------|--------|---------|
-| 1 | Global Privacy Audit & Fix | 📋 TODO | Centralize money rendering + apply `PrivacyBlur` to all currency values (incl. tooltips) |
-| 2 | Power-User Command Palette | 📋 TODO | Natural language search + keyboard shortcuts for core flows |
-| 3 | Multi-Currency UI Integration | 📋 TODO | Use base currency formatter/conversion across all summaries + charts |
-| 4 | Predictions UI Integration | 📋 TODO | Surface predictions card + 3-month outlook in Analytics |
-| 5 | Health Score v2 Polish | 📋 TODO | Add peer benchmark context (e.g., 50/30/20) + explanatory tooltips |
+| 1 | Global Privacy Audit & Fix | ✅ DONE | Centralize money rendering + apply `PrivacyBlur` to all currency values (incl. tooltips) |
+| 2 | Power-User Command Palette | ✅ DONE | Natural language search + keyboard shortcuts for core flows |
+| 3 | Multi-Currency UI Integration | ✅ DONE | Use base currency formatter/conversion across all summaries + charts |
+| 4 | Predictions UI Integration | ✅ DONE | Surface predictions card + 3-month outlook in Analytics |
+| 5 | Health Score v2 Polish | ✅ DONE | Add peer benchmark context (e.g., 50/30/20) + explanatory tooltips |
 
 ---
 
@@ -316,9 +317,8 @@ flowchart TB
 
 1. **v0.15.0** - UI foundation & system (design language + tables + states + search)
 2. **v0.16.0** - Core pages UI revamp
-3. **v0.14.6** - Security & intelligence integration
-4. **v0.17.0** - Premium polish
-5. **v1.0.0** - Production-ready release criteria
+3. **v0.17.0** - Premium polish
+4. **v1.0.0** - Production-ready release criteria
 
 ---
 
