@@ -213,6 +213,9 @@ export default function SubscriptionsPage() {
     } catch (error) {
       console.error("Failed to sync:", error);
       setSyncResult({
+        added: 0,
+        updated: 0,
+        removed: 0,
         recurringUpdated: 0,
         transactionsLinked: 0,
         newRecurringCreated: 0,
@@ -471,21 +474,21 @@ export default function SubscriptionsPage() {
 
         {/* Sync Result Alert */}
         {syncResult && (
-          <Alert variant={syncResult.errors.length > 0 ? "destructive" : "default"}>
-            {syncResult.errors.length > 0 ? (
+          <Alert variant={(syncResult.errors?.length ?? 0) > 0 ? "destructive" : "default"}>
+            {(syncResult.errors?.length ?? 0) > 0 ? (
               <AlertCircle className="h-4 w-4" />
             ) : (
               <CheckCircle className="h-4 w-4" />
             )}
             <AlertTitle>
-              {syncResult.errors.length > 0 ? "Sync completed with errors" : "Sync completed successfully"}
+              {(syncResult.errors?.length ?? 0) > 0 ? "Sync completed with errors" : "Sync completed successfully"}
             </AlertTitle>
             <AlertDescription>
               <div className="mt-2 space-y-1 text-sm">
-                <p>• {syncResult.transactionsLinked} transactions linked to recurring items</p>
-                <p>• {syncResult.recurringUpdated} recurring items updated with payment history</p>
-                {syncResult.errors.length > 0 && (
-                  <p className="text-red-600">• Errors: {syncResult.errors.join(", ")}</p>
+                <p>• {syncResult.transactionsLinked ?? 0} transactions linked to recurring items</p>
+                <p>• {syncResult.recurringUpdated ?? 0} recurring items updated with payment history</p>
+                {(syncResult.errors?.length ?? 0) > 0 && (
+                  <p className="text-red-600">• Errors: {syncResult.errors?.join(", ")}</p>
                 )}
               </div>
               <Button 

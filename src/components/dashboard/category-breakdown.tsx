@@ -20,11 +20,11 @@ interface CategoryBreakdownProps {
 
 export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
   const chartData = data
-    .filter((item) => item.total > 0)
+    .filter((item) => (item.total ?? 0) > 0)
     .slice(0, 8)
     .map((item) => ({
       name: item.category,
-      value: Math.abs(item.total),
+      value: Math.abs(item.total ?? 0),
       color: CATEGORIES[item.category]?.color || "#6b7280",
     }));
 
