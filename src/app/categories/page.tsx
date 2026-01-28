@@ -140,8 +140,8 @@ export default function CategoriesPage() {
   };
 
   const getCategoryIcon = (category: string) => {
-    const catData = CATEGORIES[category];
-    return catData?.icon || HelpCircle;
+    const catData = CATEGORIES[category as keyof typeof CATEGORIES];
+    return catData?.icon;
   };
 
   return (

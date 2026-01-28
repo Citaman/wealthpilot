@@ -67,7 +67,7 @@ describe('Database Operations', () => {
         { name: 'Account 3', type: 'credit', isActive: false, createdAt: now, updatedAt: now },
       ]);
 
-      const activeAccounts = await db.accounts.filter(a => a.isActive).toArray();
+      const activeAccounts = await db.accounts.filter(a => a.isActive === true).toArray();
       expect(activeAccounts).toHaveLength(2);
     });
   });

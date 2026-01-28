@@ -25,7 +25,7 @@ export function RecentTransactions({
   const displayTransactions = transactions.slice(0, limit);
 
   const getCategoryIcon = (category: string) => {
-    const cat = CATEGORIES[category];
+    const cat = CATEGORIES[category as keyof typeof CATEGORIES];
     if (cat?.icon) {
       const IconComponent = cat.icon;
       return <IconComponent className="h-4 w-4" />;
