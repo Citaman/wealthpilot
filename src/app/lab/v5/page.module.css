@@ -1,0 +1,251 @@
+.page {
+  min-height: 100vh;
+  padding: 28px 6vw 140px;
+  background: #f7f4ef;
+  color: #111111;
+  font-family: var(--font-body);
+}
+
+.header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.back {
+  text-decoration: none;
+  color: #111111;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.kicker {
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 4vw, 54px);
+  margin: 8px 0 0;
+}
+
+.headerBlock {
+  background: #111111;
+  color: #ffffff;
+  padding: 14px 18px;
+  text-transform: uppercase;
+  font-size: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  padding: 16px;
+  border: 2px solid #111111;
+  display: grid;
+  gap: 6px;
+}
+
+.statCard p {
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.statCard h3 {
+  font-size: 24px;
+}
+
+.statCard span {
+  font-size: 12px;
+}
+
+.tone0 {
+  background: #ff595e;
+}
+
+.tone1 {
+  background: #ffca3a;
+}
+
+.tone2 {
+  background: #8ac926;
+}
+
+.tone3 {
+  background: #1982c4;
+  color: #ffffff;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.block {
+  border: 2px solid #111111;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.blockHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.blockHeader h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.blockHeader span {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+}
+
+.blockGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.catBlock {
+  border: 2px solid #111111;
+  padding: 14px;
+  min-height: 80px;
+  display: grid;
+  gap: 6px;
+}
+
+.cat0 {
+  background: #f72585;
+  color: #ffffff;
+}
+
+.cat1 {
+  background: #4361ee;
+  color: #ffffff;
+}
+
+.cat2 {
+  background: #4cc9f0;
+}
+
+.cat3 {
+  background: #ffd166;
+}
+
+.cat4 {
+  background: #06d6a0;
+}
+
+.budgetRow,
+.goalRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+  border-top: 2px solid #111111;
+  padding: 10px 0;
+}
+
+.bar,
+.goalBar {
+  height: 10px;
+  background: #eaeaea;
+  border: 1px solid #111111;
+}
+
+.bar div {
+  height: 100%;
+  background: #ff595e;
+}
+
+.goalBar div {
+  height: 100%;
+  background: #1982c4;
+}
+
+.txGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.txCard {
+  border: 2px solid #111111;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.dock {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  width: min(1100px, 90vw);
+  background: #111111;
+  color: #ffffff;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 2px solid #111111;
+}
+
+.dockNav {
+  display: flex;
+  gap: 12px;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.dockCommand input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #ffffff;
+  background: transparent;
+  color: #ffffff;
+  font-family: var(--font-body);
+}
+
+.dockActions {
+  display: flex;
+  gap: 8px;
+}
+
+.dockActions button {
+  border: 2px solid #ffffff;
+  background: transparent;
+  color: #ffffff;
+  padding: 6px 10px;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .header {
+    grid-template-columns: 1fr;
+  }
+
+  .dock {
+    grid-template-columns: 1fr;
+  }
+}

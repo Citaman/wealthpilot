@@ -1,0 +1,138 @@
+.page {
+  min-height: 100vh;
+  padding: 48px 6vw 80px;
+  background: radial-gradient(circle at top, #f6f2ff 0%, #f7f5f1 35%, #eef3f8 100%);
+  color: #12161f;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 40px;
+}
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  font-size: 12px;
+  color: #52616b;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: clamp(32px, 4vw, 56px);
+  line-height: 1.02;
+  margin-bottom: 12px;
+}
+
+.subtitle {
+  max-width: 680px;
+  font-size: 16px;
+  color: #3f4a55;
+}
+
+.metaCard {
+  background: #ffffff;
+  border: 1px solid #dbe4ef;
+  border-radius: 16px;
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+  box-shadow: 0 16px 40px rgba(24, 38, 55, 0.12);
+}
+
+.metaLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #6b7785;
+  margin-bottom: 6px;
+}
+
+.metaValue {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #dae1ea;
+  border-radius: 20px;
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 18px 44px rgba(29, 45, 62, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 56px rgba(29, 45, 62, 0.18);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #718096;
+}
+
+.cardId {
+  font-weight: 700;
+}
+
+.cardNav {
+  font-weight: 600;
+}
+
+.cardTitle {
+  font-size: 20px;
+  margin: 0;
+}
+
+.cardSummary {
+  font-size: 14px;
+  color: #4a5568;
+  min-height: 52px;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  border: 1px solid #cbd5e0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.cardLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b5ccc;
+}
+
+@media (max-width: 900px) {
+  .header {
+    grid-template-columns: 1fr;
+  }
+
+  .metaCard {
+    order: -1;
+  }
+}
