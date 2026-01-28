@@ -1,10 +1,9 @@
 // Analytics calculations and data aggregation
-import { db, type Account, type Transaction, CATEGORIES } from './db';
+import { db, Transaction, CATEGORIES } from './db';
 import { startOfMonth, endOfMonth, subMonths, format, parseISO, startOfYear, endOfYear } from 'date-fns';
 
 export interface MonthlyStats {
   month: string;
-  monthLabel: string;
   income: number;
   expenses: number;
   savings: number;
@@ -15,8 +14,8 @@ export interface MonthlyStats {
 export interface CategoryStats {
   category: string;
   subcategory?: string;
-  total: number;
   amount: number;
+  total?: number;
   count: number;
   percentage: number;
   trend: number; // vs previous period
@@ -33,7 +32,7 @@ export interface MerchantStats {
 
 export interface Insight {
   id: string;
-  type: 'warning' | 'success' | 'info' | 'tip';
+  type: 'warning' | 'success' | 'info';
   title: string;
   description: string;
   icon: string;
@@ -91,7 +90,6 @@ export async function getMonthlyStats(months: number = 12): Promise<MonthlyStats
     
     stats.push({
       month: format(date, 'yyyy-MM'),
-      monthLabel: format(date, 'MMM yyyy'),
       income,
       expenses,
       savings,
@@ -157,7 +155,6 @@ export async function getCategoryStats(
     
     stats.push({
       category,
-      total: amount,
       amount,
       count: txs.length,
       percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
@@ -197,7 +194,6 @@ export async function getSubcategoryStats(
     stats.push({
       category,
       subcategory,
-      total: amount,
       amount,
       count: txs.length,
       percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
@@ -340,11 +336,11 @@ export async function generateInsights(): Promise<Insight[]> {
     });
   }
   
-  // Subscription count - use status instead of isActive (v0.4.0 schema change)
-  const allRecurring = await db.recurringTransactions.where('status').equals('active').toArray();
-  const subscriptions = allRecurring.length;
+  // Subscription count
+  const subscriptions = await db.recurringTransactions.where('isActive').equals(1).count();
   if (subscriptions > 0) {
-    const totalRecurring = allRecurring.reduce((sum, s) => sum + Math.abs(s.amount), 0);
+    const totalRecurring = (await db.recurringTransactions.where('isActive').equals(1).toArray())
+      .reduce((sum, s) => sum + s.amount, 0);
     
     insights.push({
       id: 'subscriptions',
@@ -422,7 +418,7 @@ export async function calculateGoalProgress(): Promise<{
   monthlyContribution: number;
   monthsToGoal: number;
 }[]> {
-  const goals = await db.goals.where('isActive').equals(1 as number).toArray();
+  const goals = await db.goals.where('isActive').equals(1).toArray();
   
   return goals.map(goal => {
     const percentage = goal.targetAmount > 0 
@@ -445,102 +441,221 @@ export async function calculateGoalProgress(): Promise<{
   });
 }
 
-// Alias for generateInsights
-export async function getInsights(startDate?: Date, endDate?: Date): Promise<Insight[]> {
-  return generateInsights();
+// Anomaly detection types
+export interface Anomaly {
+  transaction: Transaction;
+  reason: string;
+  deviation: number;
 }
 
-/**
- * Detects anomalous transactions in the given set based on 6-month historical averages
- */
-export function detectAnomalies(transactions: Transaction[], history: Transaction[]) {
-  const anomalies: Array<{ transaction: Transaction; reason: string; deviation: number }> = [];
+// Detect anomalies in current month transactions compared to historical data
+export function detectAnomalies(
+  currentMonthTx: Transaction[],
+  historyTx: Transaction[]
+): Anomaly[] {
+  const anomalies: Anomaly[] = [];
   
-  // Group history by merchant to calculate averages
-  const merchantHistory = new Map<string, number[]>();
-  history
-    .filter(t => t.direction === 'debit')
-    .forEach(t => {
-      const amounts = merchantHistory.get(t.merchant) || [];
-      amounts.push(Math.abs(t.amount));
-      merchantHistory.set(t.merchant, amounts);
-    });
-
-  // Calculate merchant stats
-  const merchantStats = new Map<string, { avg: number; stdDev: number; count: number }>();
-  merchantHistory.forEach((amounts, merchant) => {
-    if (amounts.length < 3) return; // Need at least 3 samples
-    const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
-    const variance = amounts.reduce((s, a) => s + Math.pow(a - avg, 2), 0) / amounts.length;
-    merchantStats.set(merchant, { avg, stdDev: Math.sqrt(variance), count: amounts.length });
-  });
-
-  // Check current transactions
-  transactions.forEach(t => {
-    if (t.direction !== 'debit') return;
-    const stats = merchantStats.get(t.merchant);
-    if (!stats) return;
-
-    const amount = Math.abs(t.amount);
-    // Anomaly if amount is > 2.5 std deviations from mean OR > 50% different from avg for low variance
-    const deviation = stats.stdDev > 0 ? (amount - stats.avg) / stats.stdDev : 0;
-    const percentageDiff = (amount - stats.avg) / stats.avg;
-
-    if (amount > stats.avg * 1.5 && (deviation > 2.5 || stats.stdDev === 0)) {
-      anomalies.push({
-        transaction: t,
-        reason: `Spending at ${t.merchant} is ${Math.round(percentageDiff * 100)}% higher than usual`,
-        deviation: percentageDiff
-      });
+  if (historyTx.length < 10) return anomalies;
+  
+  // Calculate historical averages by category
+  const categoryStats = new Map<string, { total: number; count: number; amounts: number[] }>();
+  
+  for (const tx of historyTx) {
+    if (tx.direction !== 'debit') continue;
+    
+    const key = tx.category || 'Uncategorized';
+    const stats = categoryStats.get(key) || { total: 0, count: 0, amounts: [] };
+    stats.total += Math.abs(tx.amount);
+    stats.count += 1;
+    stats.amounts.push(Math.abs(tx.amount));
+    categoryStats.set(key, stats);
+  }
+  
+  // Calculate historical averages by merchant
+  const merchantStats = new Map<string, { total: number; count: number; amounts: number[] }>();
+  
+  for (const tx of historyTx) {
+    if (tx.direction !== 'debit') continue;
+    
+    const key = tx.merchant || 'Unknown';
+    const stats = merchantStats.get(key) || { total: 0, count: 0, amounts: [] };
+    stats.total += Math.abs(tx.amount);
+    stats.count += 1;
+    stats.amounts.push(Math.abs(tx.amount));
+    merchantStats.set(key, stats);
+  }
+  
+  // Check current month transactions for anomalies
+  for (const tx of currentMonthTx) {
+    if (tx.direction !== 'debit') continue;
+    
+    const amount = Math.abs(tx.amount);
+    const merchant = tx.merchant || 'Unknown';
+    const category = tx.category || 'Uncategorized';
+    
+    // Check merchant-level anomaly
+    const mStats = merchantStats.get(merchant);
+    if (mStats && mStats.count >= 2) {
+      const avg = mStats.total / mStats.count;
+      const stdDev = calculateStdDev(mStats.amounts);
+      const threshold = avg + 2 * stdDev;
+      
+      if (amount > threshold && amount > avg * 1.5) {
+        const deviation = (amount - avg) / avg;
+        anomalies.push({
+          transaction: tx,
+          reason: `Unusually high for ${merchant} (avg: ${Math.round(avg)})`,
+          deviation,
+        });
+        continue;
+      }
     }
-  });
-
-  return anomalies;
+    
+    // Check category-level anomaly for large transactions
+    const cStats = categoryStats.get(category);
+    if (cStats && cStats.count >= 3) {
+      const avg = cStats.total / cStats.count;
+      const stdDev = calculateStdDev(cStats.amounts);
+      const threshold = avg + 2.5 * stdDev;
+      
+      if (amount > threshold && amount > avg * 2) {
+        const deviation = (amount - avg) / avg;
+        anomalies.push({
+          transaction: tx,
+          reason: `Large ${category} expense (avg: ${Math.round(avg)})`,
+          deviation,
+        });
+      }
+    }
+  }
+  
+  // Sort by deviation (highest first) and limit results
+  return anomalies
+    .sort((a, b) => b.deviation - a.deviation)
+    .slice(0, 5);
 }
 
-/**
- * Calculates advanced health metrics like Debt-to-Income and Net Worth Trend
- */
-export function calculateAdvancedHealthMetrics(
-  transactions: Transaction[], 
-  accounts: Account[],
-  history: Transaction[],
-  referenceDate: Date = new Date()
-) {
-  const now = referenceDate;
-  const threeMonthsAgo = subMonths(now, 3);
-  const sixMonthsAgo = subMonths(now, 6);
-
-  // 1. Debt-to-Income Ratio
-  // Monthly debt payments / Gross monthly income
-  const recentIncome = transactions
-    .filter(t => t.direction === 'credit' && t.date >= format(threeMonthsAgo, 'yyyy-MM-dd'))
-    .reduce((s, t) => s + t.amount, 0) / 3;
-
-  const totalDebt = accounts
-    .filter(a => a.type === 'credit')
-    .reduce((s, a) => s + Math.abs(a.balance), 0);
-
-  const dti = recentIncome > 0 ? (totalDebt / recentIncome) * 100 : 0;
-
-  // 2. Net Worth Trend (6-month)
-  const monthlyStats = new Map<string, number>(); // month -> net flow
-  history.forEach(t => {
-    const month = t.date.slice(0, 7);
-    const flow = t.direction === 'credit' ? t.amount : -Math.abs(t.amount);
-    monthlyStats.set(month, (monthlyStats.get(month) || 0) + flow);
-  });
-
-  const last6Months = Array.from({ length: 6 }, (_, i) => format(subMonths(now, i), 'yyyy-MM'))
-    .reverse();
+// Helper function to calculate standard deviation
+function calculateStdDev(values: number[]): number {
+  if (values.length < 2) return 0;
   
-  const flows = last6Months.map(m => monthlyStats.get(m) || 0);
-  const avgMonthlyGrowth = flows.reduce((a, b) => a + b, 0) / 6;
+  const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+  const squaredDiffs = values.map(v => Math.pow(v - avg, 2));
+  const avgSquaredDiff = squaredDiffs.reduce((sum, v) => sum + v, 0) / values.length;
+  
+  return Math.sqrt(avgSquaredDiff);
+}
 
+// Advanced health metrics for financial health score
+export interface AdvancedHealthMetrics {
+  savingsRate: number;
+  debtToIncomeRatio: number;
+  expenseVolatility: number;
+  emergencyFundMonths: number;
+  budgetAdherence: number;
+  incomeStability: number;
+  recentIncome: number;
+  avgMonthlyGrowth: number;
+  totalDebt: number;
+}
+
+export function calculateAdvancedHealthMetrics(
+  transactions?: Transaction[],
+  accounts?: { balance: number }[],
+  allTransactions?: Transaction[]
+): AdvancedHealthMetrics {
+  // If no transactions provided, return defaults
+  if (!transactions || transactions.length === 0) {
+    return {
+      savingsRate: 0,
+      debtToIncomeRatio: 0,
+      expenseVolatility: 0,
+      emergencyFundMonths: 0,
+      budgetAdherence: 50,
+      incomeStability: 0,
+      recentIncome: 0,
+      avgMonthlyGrowth: 0,
+      totalDebt: 0,
+    };
+  }
+  
+  // Calculate metrics from provided transactions
+  const incomeTransactions = transactions.filter(t => t.direction === 'credit');
+  const expenseTransactions = transactions.filter(t => t.direction === 'debit');
+  
+  const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  
+  // Monthly averages (assuming 3 months of data)
+  const avgIncome = totalIncome / 3;
+  const avgExpenses = totalExpenses / 3;
+  
+  // Savings rate
+  const savingsRate = avgIncome > 0 ? ((avgIncome - avgExpenses) / avgIncome) * 100 : 0;
+  
+  // Expense volatility - group by month and calculate variance
+  const monthlyExpenses = new Map<string, number>();
+  expenseTransactions.forEach(t => {
+    const month = t.date.substring(0, 7);
+    monthlyExpenses.set(month, (monthlyExpenses.get(month) || 0) + Math.abs(t.amount));
+  });
+  const expenseValues = Array.from(monthlyExpenses.values());
+  const expenseStdDev = calculateStdDev(expenseValues);
+  const expenseVolatility = avgExpenses > 0 ? (expenseStdDev / avgExpenses) * 100 : 0;
+  
+  // Income stability
+  const monthlyIncome = new Map<string, number>();
+  incomeTransactions.forEach(t => {
+    const month = t.date.substring(0, 7);
+    monthlyIncome.set(month, (monthlyIncome.get(month) || 0) + t.amount);
+  });
+  const incomeValues = Array.from(monthlyIncome.values());
+  const incomeStdDev = calculateStdDev(incomeValues);
+  const incomeStability = avgIncome > 0 ? Math.max(0, 100 - (incomeStdDev / avgIncome) * 100) : 0;
+  
+  // Emergency fund months - use account balances if available
+  const totalBalance = accounts?.reduce((sum, a) => sum + (a.balance || 0), 0) || 0;
+  const emergencyFundMonths = avgExpenses > 0 ? totalBalance / avgExpenses : 0;
+  
+  // Budget adherence (simplified)
+  const budgetAdherence = savingsRate > 0 ? Math.min(100, savingsRate * 5) : 50;
+  
+  // Average monthly growth
+  const monthlyBalances = new Map<string, number>();
+  if (allTransactions) {
+    allTransactions.forEach(t => {
+      const month = t.date.substring(0, 7);
+      const dateKey = month + '_date';
+      const existingDate = monthlyBalances.get(dateKey);
+      if (!monthlyBalances.has(month) || t.date > (typeof existingDate === 'number' ? '' : existingDate || '')) {
+        monthlyBalances.set(month, t.balanceAfter);
+        monthlyBalances.set(dateKey, 0); // Just a marker, we use t.date comparison above
+      }
+    });
+  }
+  const balanceValues = Array.from(monthlyBalances.entries())
+    .filter(([k]) => !k.endsWith('_date'))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, v]) => v);
+  
+  let avgMonthlyGrowth = 0;
+  if (balanceValues.length >= 2) {
+    const growths = [];
+    for (let i = 1; i < balanceValues.length; i++) {
+      growths.push(balanceValues[i] - balanceValues[i - 1]);
+    }
+    avgMonthlyGrowth = growths.reduce((a, b) => a + b, 0) / growths.length;
+  }
+  
   return {
-    debtToIncomeRatio: dti,
-    avgMonthlyGrowth,
-    recentIncome,
-    totalDebt
+    savingsRate: Math.round(savingsRate * 10) / 10,
+    debtToIncomeRatio: 0, // Would need debt data
+    expenseVolatility: Math.round(expenseVolatility * 10) / 10,
+    emergencyFundMonths: Math.round(emergencyFundMonths * 10) / 10,
+    budgetAdherence: Math.round(budgetAdherence),
+    incomeStability: Math.round(incomeStability),
+    recentIncome: Math.round(avgIncome),
+    avgMonthlyGrowth: Math.round(avgMonthlyGrowth),
+    totalDebt: 0, // Would need debt data
   };
 }
