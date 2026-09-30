@@ -1,7 +1,7 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type Account } from "@/lib/db";
+import { db, type Account, type Goal, type Transaction } from "@/lib/db";
 import { useMemo, useEffect, useState } from "react";
 import {
   endOfDay,
@@ -15,6 +15,7 @@ import {
   subWeeks,
 } from "date-fns";
 import { useMoney } from "@/hooks/use-money";
+import { APP_ROUTES } from "@/components/layout/route-registry";
 
 export interface SearchResult {
   type: "transaction" | "account" | "goal" | "navigation" | "merchant" | "category";
@@ -27,71 +28,13 @@ export interface SearchResult {
   accountId?: number;
 }
 
-const NAV_ITEMS = [
-  {
-    id: "dashboard",
-    title: "Dashboard",
-    subtitle: "Go to dashboard",
-    href: "/",
-    keywords: ["home", "overview"],
-  },
-  {
-    id: "transactions",
-    title: "Transactions",
-    subtitle: "Review activity",
-    href: "/transactions",
-    keywords: ["payments", "spend", "income"],
-  },
-  {
-    id: "budgets",
-    title: "Budgets",
-    subtitle: "Plan spending",
-    href: "/budgets",
-    keywords: ["plan", "limits", "allocations"],
-  },
-  {
-    id: "analytics",
-    title: "Analytics",
-    subtitle: "Insights and trends",
-    href: "/analytics",
-    keywords: ["reports", "insights", "trends"],
-  },
-  {
-    id: "goals",
-    title: "Goals",
-    subtitle: "Track savings",
-    href: "/goals",
-    keywords: ["targets", "savings"],
-  },
-  {
-    id: "subscriptions",
-    title: "Subscriptions",
-    subtitle: "Recurring payments",
-    href: "/subscriptions",
-    keywords: ["recurring", "bills"],
-  },
-  {
-    id: "accounts",
-    title: "Accounts",
-    subtitle: "Manage accounts",
-    href: "/accounts",
-    keywords: ["banks", "cards"],
-  },
-  {
-    id: "import",
-    title: "Import",
-    subtitle: "Upload CSV",
-    href: "/import",
-    keywords: ["csv", "upload"],
-  },
-  {
-    id: "settings",
-    title: "Settings",
-    subtitle: "Preferences",
-    href: "/settings",
-    keywords: ["preferences", "config"],
-  },
-];
+const NAV_ITEMS = APP_ROUTES.map((route) => ({
+  id: route.href === "/" ? "dashboard" : route.href.slice(1),
+  title: route.title,
+  subtitle: route.subtitle,
+  href: route.href,
+  keywords: route.keywords,
+}));
 
 const DEBOUNCE_MS = 200;
 
@@ -99,6 +42,13 @@ type AmountFilter = {
   op: "gt" | "gte" | "lt" | "lte" | "eq";
   value: number;
 };
+
+export function matchesTransactionDirection(
+  transaction: { direction: "credit" | "debit" },
+  direction: "credit" | "debit" | null
+) {
+  return direction === null || transaction.direction === direction;
+}
 
 const parseAmount = (raw: string) => {
   const cleaned = raw.replace(/,/g, "").trim();
@@ -137,12 +87,13 @@ const scoreForTerms = (value: string, terms: string[]) => {
 export function useCommandSearch(query: string) {
   const { convertFromAccount } = useMoney();
   const [debouncedQuery, setDebouncedQuery] = useState(query);
+  const searchActive = debouncedQuery.trim().length >= 2;
 
-  const transactions = useLiveQuery(() =>
-    db.transactions.orderBy("date").reverse().limit(2000).toArray()
-  );
-  const accounts = useLiveQuery(() => db.accounts.toArray());
-  const goals = useLiveQuery(() => db.goals.toArray());
+  const transactions = useLiveQuery<Transaction[]>(() => searchActive
+    ? db.transactions.orderBy("date").reverse().limit(2000).toArray()
+    : Promise.resolve([] as Transaction[]), [searchActive]);
+  const accounts = useLiveQuery<Account[]>(() => searchActive ? db.accounts.toArray() : Promise.resolve([] as Account[]), [searchActive]);
+  const goals = useLiveQuery<Goal[]>(() => searchActive ? db.goals.toArray() : Promise.resolve([] as Goal[]), [searchActive]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => setDebouncedQuery(query), DEBOUNCE_MS);
@@ -354,8 +305,7 @@ export function useCommandSearch(query: string) {
           if (!hasTag) return;
         }
         if (filters.direction) {
-          if (filters.direction === "credit" && tx.amount < 0) return;
-          if (filters.direction === "debit" && tx.amount > 0) return;
+          if (!matchesTransactionDirection(tx, filters.direction)) return;
         }
         if (filters.dateRange) {
           const date = new Date(tx.date);
@@ -470,7 +420,10 @@ export function useCommandSearch(query: string) {
     return scoredResults
       .sort((a, b) => b.score - a.score)
       .slice(0, 15)
-      .map(({ score, ...rest }) => rest);
+      .map(({ score, ...rest }) => {
+        void score;
+        return rest;
+      });
   }, [debouncedQuery, transactions, accounts, goals, convertFromAccount]);
 
   return results;

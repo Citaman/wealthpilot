@@ -120,7 +120,7 @@ export function TransactionsSkeleton() {
 
       {/* Table header */}
       <div className="border rounded-lg">
-        <div className="flex items-center gap-4 p-4 border-b bg-muted/50">
+        <div className="flex items-center gap-4 p-4 border-b bg-muted">
           <Skeleton className="h-4 w-4" />
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-32" />

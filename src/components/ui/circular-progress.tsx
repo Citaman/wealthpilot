@@ -23,8 +23,11 @@ export function CircularProgress({
     <div
       className={cn("relative", className)}
       style={{ width: size, height: size }}
-      aria-label={`Progress ${Math.round(progress)}%`}
-      role="img"
+      aria-label={`Progression : ${Math.round(progress)} %`}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.max(0, Math.min(100, Math.round(progress)))}
     >
       <svg width={size} height={size} className="transform -rotate-90">
         <circle
@@ -46,7 +49,7 @@ export function CircularProgress({
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="transition-all duration-500"
+          className="transition-all duration-500 motion-reduce:transition-none"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">

@@ -16,7 +16,7 @@ type FilterBarProps = {
 export function FilterBar({
   search,
   onSearchChange,
-  placeholder = "Search...",
+  placeholder = "Rechercher…",
   children,
   actions,
   className,
@@ -24,7 +24,7 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/90 p-4 md:flex-row md:items-center",
+        "flex flex-col gap-3 rounded-[var(--radius-surface)] border bg-card p-4 shadow-sm md:flex-row md:items-center",
         className
       )}
     >
@@ -34,6 +34,7 @@ export function FilterBar({
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={placeholder}
           icon={<Search className="h-4 w-4" />}
+          aria-label="Rechercher"
         />
       </div>
       <div className="flex flex-1 flex-wrap items-center gap-2">{children}</div>

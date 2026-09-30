@@ -29,7 +29,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-3xl border border-border/70 bg-card/80 px-6 py-12 text-center shadow-[0_20px_60px_-40px_rgba(11,17,24,0.4)]",
+        "flex flex-col items-center justify-center rounded-[var(--radius-surface)] border bg-card px-6 py-12 text-center shadow-sm",
         className
       )}
     >
@@ -38,7 +38,7 @@ export function EmptyState({
       </div>
       <h2 className="text-xl font-semibold text-foreground">{title}</h2>
       {description && (
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">
+        <p className="mt-2 max-w-md text-base text-muted-foreground">
           {description}
         </p>
       )}

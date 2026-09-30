@@ -3,30 +3,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  ArrowLeftRight,
   Bell,
-  Calendar,
-  Command,
-  CreditCard,
-  LayoutDashboard,
-  PieChart,
-  Search,
-  Settings,
-  Sparkles,
-  Target,
-  Upload,
-  Wallet,
-  Wrench,
-  Sun,
-  Moon,
   Check,
+  Ellipsis,
+  Eye,
+  EyeOff,
+  Moon,
+  Search,
+  Sun,
   X,
-  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/contexts";
+import { useTheme } from "@/contexts/theme-context";
+import { usePrivacy } from "@/contexts/privacy-context";
 import { useAccount } from "@/contexts/account-context";
 import { useCommandSearch, type SearchResult } from "@/hooks/use-command-search";
+import { useNotifications } from "@/hooks/use-notifications";
 import { useMoney } from "@/hooks/use-money";
 import { Money } from "@/components/ui/money";
 import { Button } from "@/components/ui/button";
@@ -34,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -46,594 +39,273 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { PilotOrb } from "@/components/brand/pilot-orb";
-import { useNotifications } from "@/hooks/use-notifications";
+  APP_ROUTES,
+  MOBILE_PRIMARY_ROUTES,
+  ROUTE_GROUP_LABELS,
+  getRouteMeta,
+  searchRoutes,
+  type AppRoute,
+  type RouteGroup,
+} from "./route-registry";
 
-type DockItem = {
-  label: string;
-  href: string;
-  icon: React.ElementType;
-};
-
-const primaryNav: DockItem[] = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Transactions", href: "/transactions", icon: ArrowLeftRight },
-  { label: "Analytics", href: "/analytics", icon: PieChart },
-  { label: "Budgets", href: "/budgets", icon: Wallet },
-  { label: "Goals", href: "/goals", icon: Target },
-];
-
-const secondaryNav: DockItem[] = [
-  { label: "Subscriptions", href: "/subscriptions", icon: RefreshCw },
-  { label: "Calendar", href: "/calendar", icon: Calendar },
-  { label: "Accounts", href: "/accounts", icon: CreditCard },
-  { label: "Import", href: "/import", icon: Upload },
-  { label: "Settings", href: "/settings", icon: Settings },
-];
-
-type CommandItem = {
-  key: string;
-  label: string;
-  subtitle?: string;
-  href?: string;
-  amount?: number;
-  type?: SearchResult["type"];
-  accountId?: number;
-  shortcut?: string;
-};
+const groups: RouteGroup[] = ["pilotage", "organisation", "système"];
 
 export function CommandDock() {
   const pathname = usePathname();
   const router = useRouter();
-  const { toggleTheme, resolvedTheme } = useTheme();
-  const { accounts, selectedAccountId, selectedAccount, setSelectedAccountId, totalBalance } = useAccount();
-  const { baseCurrency, getAccountCurrency } = useMoney();
-  const { notifications, markAllRead, markRead, dismissNotification } = useNotifications();
-
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const searchResults = useCommandSearch(searchQuery);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const chordRef = useRef<"g" | null>(null);
-  const chordTimerRef = useRef<number | null>(null);
+  const searchReturnFocusRef = useRef<HTMLElement | null>(null);
+  const chordRef = useRef(false);
+  const chordTimer = useRef<number | null>(null);
 
-  const quickActions = useMemo(() => ([
-    { id: "dashboard", label: "Dashboard", subtitle: "Go to dashboard", href: "/", shortcut: "G D" },
-    { id: "transactions", label: "Transactions", subtitle: "Review activity", href: "/transactions", shortcut: "G T" },
-    { id: "budgets", label: "Budgets", subtitle: "Plan spending", href: "/budgets", shortcut: "G B" },
-    { id: "analytics", label: "Analytics", subtitle: "Insights & trends", href: "/analytics", shortcut: "G A" },
-    { id: "goals", label: "Goals", subtitle: "Track savings", href: "/goals", shortcut: "G G" },
-    { id: "subscriptions", label: "Subscriptions", subtitle: "Recurring payments", href: "/subscriptions", shortcut: "G S" },
-    { id: "import", label: "Import CSV", subtitle: "Upload a bank file", href: "/import", shortcut: "G I" },
-  ]), []);
-
-  const commandItems = useMemo<CommandItem[]>(() => {
-    if (searchQuery) {
-      return searchResults.map((result) => ({
-        key: `${result.type}-${result.id}`,
-        label: result.title,
-        subtitle: result.subtitle,
-        href: result.href,
-        amount: result.amount,
-        type: result.type,
-        accountId: result.accountId,
-      }));
+  const navigate = useCallback((href: string) => router.push(href), [router]);
+  const openSearch = useCallback(() => {
+    searchReturnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    setSearchOpen(true);
+  }, []);
+  const handleSearchOpenChange = useCallback((open: boolean) => {
+    setSearchOpen(open);
+    if (!open) {
+      window.requestAnimationFrame(() => searchReturnFocusRef.current?.focus());
     }
-
-    return quickActions.map((action) => ({
-      key: action.id,
-      label: action.label,
-      subtitle: action.subtitle,
-      href: action.href,
-      shortcut: action.shortcut,
-      type: "navigation",
-    }));
-  }, [searchQuery, searchResults, quickActions]);
-
-  const shortcutMap = useMemo(() => ({
-    d: "/",
-    t: "/transactions",
-    b: "/budgets",
-    a: "/analytics",
-    g: "/goals",
-    s: "/subscriptions",
-    i: "/import",
-  }), []);
-
-  const isEditableTarget = useCallback((target: EventTarget | null) => {
-    if (!(target instanceof HTMLElement)) return false;
-    const tag = target.tagName.toLowerCase();
-    return target.isContentEditable || tag === "input" || tag === "textarea" || tag === "select";
   }, []);
 
   useEffect(() => {
     const clearChord = () => {
-      chordRef.current = null;
-      if (chordTimerRef.current) {
-        window.clearTimeout(chordTimerRef.current);
-        chordTimerRef.current = null;
-      }
+      chordRef.current = false;
+      if (chordTimer.current) window.clearTimeout(chordTimer.current);
+      chordTimer.current = null;
     };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      if ((e.metaKey || e.ctrlKey) && key === "k") {
-        e.preventDefault();
-        setSearchOpen(true);
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const editing = target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "");
+      const key = event.key.toLocaleLowerCase("fr");
+      if ((event.metaKey || event.ctrlKey) && key === "k") {
+        event.preventDefault();
+        openSearch();
         return;
       }
-      if (key === "escape") {
-        setSearchOpen(false);
-        setSearchQuery("");
-        clearChord();
-        return;
-      }
-
-      if (isEditableTarget(e.target)) return;
-
-      if (chordRef.current === "g") {
-        const target = shortcutMap[key as keyof typeof shortcutMap];
-        if (target) {
-          e.preventDefault();
-          router.push(target);
+      if (editing) return;
+      if (chordRef.current) {
+        const route = APP_ROUTES.find((item) => item.shortcut?.toLocaleLowerCase("fr") === `g ${key}`);
+        if (route) {
+          event.preventDefault();
+          navigate(route.href);
         }
         clearChord();
         return;
       }
-
-      if (!e.metaKey && !e.ctrlKey && !e.altKey && key === "g") {
-        chordRef.current = "g";
-        if (chordTimerRef.current) window.clearTimeout(chordTimerRef.current);
-        chordTimerRef.current = window.setTimeout(() => {
-          chordRef.current = null;
-          chordTimerRef.current = null;
-        }, 900);
+      if (!event.metaKey && !event.ctrlKey && !event.altKey && key === "g") {
+        chordRef.current = true;
+        chordTimer.current = window.setTimeout(clearChord, 900);
       }
     };
-
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handler);
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handler);
       clearChord();
     };
-  }, [router, shortcutMap, isEditableTarget]);
-
-  useEffect(() => {
-    if (!searchOpen) setSearchQuery("");
-  }, [searchOpen]);
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [searchQuery, commandItems.length]);
-
-  const handleSelectItem = useCallback((item?: CommandItem) => {
-    if (!item?.href) return;
-    router.push(item.href);
-    setSearchOpen(false);
-  }, [router]);
-
-  const handleInputKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (commandItems.length === 0) return;
-
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveIndex((prev) => Math.min(prev + 1, commandItems.length - 1));
-      return;
-    }
-
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveIndex((prev) => Math.max(prev - 1, 0));
-      return;
-    }
-
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleSelectItem(commandItems[activeIndex]);
-    }
-  }, [commandItems, activeIndex, handleSelectItem]);
-
-  const unreadCount = notifications.filter((item) => !item.readAt && !item.dismissedAt).length;
+  }, [navigate, openSearch]);
 
   return (
     <>
-      <TooltipProvider delayDuration={0}>
-        <div className="fixed bottom-4 left-1/2 z-50 w-[min(1120px,calc(100%-1.5rem))] -translate-x-1/2">
-          <div className="glass-panel dock-shadow flex items-center gap-2 rounded-[28px] px-2 py-2 md:gap-3 md:px-3">
-            <div className="hidden md:flex items-center gap-1 pr-1">
-              <PilotOrb className="h-7 w-7" />
-            </div>
-
-            <div className="flex items-center gap-1">
-              {primaryNav.map((item) => (
-                <DockNavItem
-                  key={item.href}
-                  item={item}
-                  active={pathname === item.href}
-                  onClick={() => router.push(item.href)}
-                />
-              ))}
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={cn(
-                      "relative flex h-10 w-10 items-center justify-center rounded-2xl text-muted-foreground transition",
-                      "hover:text-foreground hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    )}
-                    aria-label="More navigation"
-                  >
-                    <Wrench className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-52">
-                  <DropdownMenuLabel>More</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {secondaryNav.map((item) => (
-                    <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {item.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            <div className="flex-1 px-2">
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-4 py-2 text-sm text-muted-foreground",
-                  "transition hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                )}
-                aria-label="Open command search"
-              >
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="hidden md:inline">Ask WealthPilot or search...</span>
-                <span className="md:hidden">Ask or search</span>
-                <span className="ml-auto hidden items-center gap-1 rounded-full border border-border/70 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground md:inline-flex">
-                  <Command className="h-3 w-3" />
-                  K
-                </span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={cn(
-                      "relative flex h-10 w-10 items-center justify-center rounded-2xl text-muted-foreground transition",
-                      "hover:text-foreground hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    )}
-                    aria-label="Quick tools"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Quick Tools</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push("/transactions")}>Add transaction</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/import")}>Import CSV</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/budgets")}>Adjust budget</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/goals")}>New goal</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={cn(
-                      "relative flex h-10 w-10 items-center justify-center rounded-2xl text-muted-foreground transition",
-                      "hover:text-foreground hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    )}
-                    aria-label="Notifications"
-                  >
-                    <Bell className="h-4 w-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  <DropdownMenuLabel className="flex items-center justify-between">
-                    Notifications
-                    {unreadCount > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto px-2 py-1 text-xs"
-                        onClick={() => markAllRead()}
-                      >
-                        Mark all read
-                      </Button>
-                    )}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {notifications.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      No notifications yet
-                    </div>
-                  ) : (
-                    notifications.map((notification) => (
-                      <DropdownMenuItem
-                        key={notification.id}
-                        className="flex items-start gap-3 py-3"
-                        onClick={() => {
-                          void markRead(notification.id);
-                          if (notification.actionHref) router.push(notification.actionHref);
-                        }}
-                      >
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{notification.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {notification.body}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            dismissNotification(notification.id);
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuItem>
-                    ))
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-2xl text-muted-foreground transition",
-                  "hover:text-foreground hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                )}
-                aria-label="Toggle theme"
-              >
-                {resolvedTheme === "dark" ? (
-                  <Moon className="h-4 w-4" />
-                ) : (
-                  <Sun className="h-4 w-4" />
-                )}
-              </button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={cn(
-                      "flex h-10 items-center gap-2 rounded-2xl border border-border/70 bg-background/80 px-3 text-xs font-medium",
-                      "text-foreground transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    )}
-                    aria-label="Account switcher"
-                  >
-                    <span
-                      className="h-2 w-2 rounded-full"
-                      style={{ backgroundColor: selectedAccount?.color || "rgb(44,177,188)" }}
-                    />
-                    <span className="hidden sm:inline">
-                      {selectedAccount?.name || "All Accounts"}
-                    </span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuLabel>Accounts</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setSelectedAccountId("all")}
-                    className="flex items-center justify-between"
-                  >
-                    <span>All Accounts</span>
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        <Money amount={totalBalance} />
-                      </span>
-                      {selectedAccountId === "all" && <Check className="h-4 w-4" />}
-                    </span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {accounts.map((account) => (
-                    <DropdownMenuItem
-                      key={account.id}
-                      onClick={() => setSelectedAccountId(account.id!)}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: account.color }}
-                        />
-                        <span className="truncate">{account.name}</span>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          <Money amount={account.balance} currency={account.currency} />
-                        </span>
-                        {selectedAccountId === account.id && <Check className="h-4 w-4" />}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </TooltipProvider>
-
-      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <DialogContent className="max-w-2xl p-0">
-          <DialogHeader className="px-4 pt-4">
-            <DialogTitle className="sr-only">Command Center</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center border-b px-4 pb-4">
-            <Search className="mr-3 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Ask WealthPilot or search transactions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleInputKeyDown}
-              className="border-0 bg-transparent p-0 focus-visible:ring-0"
-              autoFocus
-            />
-          </div>
-          <div className="max-h-96 overflow-y-auto p-2">
-            {searchQuery ? (
-              commandItems.length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground">
-                  No results found for "{searchQuery}"
-                </p>
-              ) : (
-                <div className="space-y-1">
-                  {commandItems.map((item, index) => {
-                    const isActive = index === activeIndex;
-                    const amountClass = item.amount !== undefined
-                      ? cn(
-                        "font-semibold tabular-nums",
-                        item.amount < 0
-                          ? "text-destructive"
-                          : item.type === "goal"
-                            ? "text-info"
-                            : "text-success"
-                      )
-                      : "";
-                    const currency = item.type === "transaction" || item.type === "account"
-                      ? getAccountCurrency(item.accountId)
-                      : baseCurrency;
-                    const hasAmount = item.amount !== undefined;
-                    const fractionDigits = item.type === "goal" ? 0 : 2;
-
-                    return (
-                      <button
-                        key={item.key}
-                        className={cn(
-                          "flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm text-left transition",
-                          isActive ? "bg-accent" : "hover:bg-accent"
-                        )}
-                        onMouseEnter={() => setActiveIndex(index)}
-                        onClick={() => handleSelectItem(item)}
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium">{item.label}</span>
-                          {item.subtitle && (
-                            <span className="text-xs text-muted-foreground">{item.subtitle}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {hasAmount && (
-                            <Money
-                              amount={item.amount as number}
-                              currency={currency}
-                              className={amountClass}
-                              minimumFractionDigits={fractionDigits}
-                              maximumFractionDigits={fractionDigits}
-                            />
-                          )}
-                          {item.shortcut && (
-                            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                              {item.shortcut}
-                            </kbd>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )
-            ) : (
-              <div className="space-y-4 p-4">
-                <div className="flex flex-wrap gap-2">
-                  {["Search", "Transfer", "Import", "Budget"].map((chip) => (
-                    <span
-                      key={chip}
-                      className="rounded-full border border-border/80 bg-background/80 px-3 py-1 text-xs font-semibold text-muted-foreground"
-                    >
-                      {chip}
-                    </span>
-                  ))}
-                </div>
-                <div>
-                  <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                    Quick Actions
-                  </p>
-                  <div className="space-y-1">
-                    {commandItems.map((item, index) => (
-                      <button
-                        key={item.key}
-                        className={cn(
-                          "flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm text-left",
-                          index === activeIndex ? "bg-accent" : "hover:bg-accent"
-                        )}
-                        onMouseEnter={() => setActiveIndex(index)}
-                        onClick={() => handleSelectItem(item)}
-                      >
-                        <span>{item.label}</span>
-                        {item.shortcut && (
-                          <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                            {item.shortcut}
-                          </kbd>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-xl border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  Try: <span className="font-medium text-foreground">last month</span>,{" "}
-                  <span className="font-medium text-foreground">&gt; 200</span>,{" "}
-                  <span className="font-medium text-foreground">merchant:netflix</span>,{" "}
-                  <span className="font-medium text-foreground">tag:travel</span>.
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DesktopRail pathname={pathname} navigate={navigate} openSearch={openSearch} />
+      <MobileShell pathname={pathname} navigate={navigate} openSearch={openSearch} />
+      {searchOpen ? <CommandSearchDialog open onOpenChange={handleSearchOpenChange} navigate={navigate} /> : null}
     </>
   );
 }
 
-function DockNavItem({
-  item,
-  active,
-  onClick,
-}: {
-  item: DockItem;
-  active: boolean;
-  onClick: () => void;
-}) {
+function Brand() {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          onClick={onClick}
-          className={cn(
-            "relative flex h-10 w-10 items-center justify-center rounded-2xl text-muted-foreground transition",
-            "hover:text-foreground hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            active && "bg-primary/15 text-primary"
-          )}
-          aria-label={item.label}
-        >
-          <item.icon className="h-4 w-4" />
-          {active && (
-            <span className="absolute -bottom-1 h-1 w-6 rounded-full bg-primary" />
-          )}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top">{item.label}</TooltipContent>
-    </Tooltip>
+    <div className="flex items-center gap-3 px-3 py-2">
+      <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm" aria-hidden="true">W</div>
+      <div className="min-w-0">
+        <p className="font-semibold tracking-tight">WealthPilot</p>
+        <p className="text-sm text-muted-foreground">Pilotage du foyer</p>
+      </div>
+    </div>
   );
+}
+
+function DesktopRail({ pathname, navigate, openSearch }: { pathname: string; navigate: (href: string) => void; openSearch: () => void }) {
+  return (
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[var(--shell-sidebar-width)] flex-col border-r bg-card px-3 py-4 lg:flex" aria-label="Navigation principale">
+      <Brand />
+      <Button variant="outline" className="mt-4 w-full justify-start gap-3" onClick={openSearch}>
+        <Search className="h-4 w-4" /> Rechercher <kbd className="ml-auto text-xs text-muted-foreground">⌘K</kbd>
+      </Button>
+      <nav className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
+        {groups.map((group) => (
+          <div key={group} className="mb-5">
+            <p className="mb-1 px-3 text-sm font-semibold text-muted-foreground">{ROUTE_GROUP_LABELS[group]}</p>
+            <div className="space-y-1">
+              {APP_ROUTES.filter((route) => route.group === group).map((route) => (
+                <RouteButton key={route.href} route={route} active={isActive(pathname, route.href)} onClick={() => navigate(route.href)} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+      <div className="border-t pt-3">
+        <AccountMenu align="start" showLabel />
+        <div className="mt-2 grid grid-cols-3 gap-1">
+          <PrivacyButton />
+          <NotificationsMenu align="center" />
+          <ThemeButton />
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function RouteButton({ route, active, onClick }: { route: AppRoute; active: boolean; onClick: () => void }) {
+  const Icon = route.icon;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors",
+        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+      )}
+    >
+      <Icon className="h-5 w-5 shrink-0" />
+      <span className="truncate">{route.label}</span>
+    </button>
+  );
+}
+
+function MobileShell({ pathname, navigate, openSearch }: { pathname: string; navigate: (href: string) => void; openSearch: () => void }) {
+  const meta = getRouteMeta(pathname);
+  const secondary = APP_ROUTES.filter((route) => !route.mobilePrimary);
+  return (
+    <>
+      <header className="safe-top fixed inset-x-0 top-0 z-40 flex h-[calc(var(--shell-mobile-header-height)+env(safe-area-inset-top))] items-center gap-2 border-b bg-card/95 px-3 backdrop-blur lg:hidden">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold">{meta?.title ?? "WealthPilot"}</p>
+          <ScopeLabel compact />
+        </div>
+        <IconControl label="Rechercher" onClick={openSearch}><Search className="h-5 w-5" /></IconControl>
+        <PrivacyButton />
+        <NotificationsMenu align="end" />
+      </header>
+
+      <nav className="safe-bottom fixed inset-x-2 bottom-2 z-40 grid min-h-[var(--shell-mobile-nav-height)] grid-cols-5 items-start rounded-2xl border bg-card/96 px-1 pt-1 shadow-lg backdrop-blur lg:hidden" aria-label="Navigation mobile">
+        {MOBILE_PRIMARY_ROUTES.map((route) => {
+          const Icon = route.icon;
+          const active = isActive(pathname, route.href);
+          return (
+            <button key={route.href} type="button" onClick={() => navigate(route.href)} aria-current={active ? "page" : undefined} className={cn("flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium", active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground")}>
+              <Icon className="h-5 w-5" /><span className="max-w-full truncate">{route.mobileLabel}</span>
+            </button>
+          );
+        })}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground" aria-label="Plus de destinations">
+              <Ellipsis className="h-5 w-5" /><span>Plus</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side="top" className="max-h-[70dvh] w-[min(21rem,calc(100vw-1rem))] overflow-y-auto">
+            <DropdownMenuLabel>Organisation et système</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {secondary.map((route) => <DropdownMenuItem key={route.href} onClick={() => navigate(route.href)}><route.icon className="mr-3 h-5 w-5" />{route.label}{isActive(pathname, route.href) ? <Check className="ml-auto h-4 w-4" /> : null}</DropdownMenuItem>)}
+            <DropdownMenuSeparator />
+            <div className="grid grid-cols-2 gap-1 p-1"><ThemeButton showLabel /><AccountMenu align="end" showLabel /></div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </nav>
+    </>
+  );
+}
+
+function ScopeLabel({ compact = false }: { compact?: boolean }) {
+  const { selectedAccountId, selectedAccount } = useAccount();
+  const label = selectedAccountId === "all" ? "Foyer" : selectedAccount?.name ?? "Compte";
+  return <span className={cn("block truncate text-muted-foreground", compact ? "text-xs" : "text-sm")}>Périmètre : {label}</span>;
+}
+
+function AccountMenu({ align, showLabel = false }: { align: "start" | "end"; showLabel?: boolean }) {
+  const { accounts, selectedAccountId, selectedAccount, setSelectedAccountId, totalBalance } = useAccount();
+  const label = selectedAccountId === "all" ? "Foyer" : selectedAccount?.name ?? "Compte";
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" className={cn("flex min-h-11 items-center rounded-xl px-3 text-sm hover:bg-accent", showLabel ? "w-full gap-3 text-left" : "min-w-11 justify-center")} aria-label={`Changer de compte. Périmètre actuel : ${label}`}>
+          <span className="h-3 w-3 shrink-0 rounded-full border" style={{ backgroundColor: selectedAccount?.color || "rgb(var(--balance))" }} />
+          {showLabel ? <span className="min-w-0 flex-1"><span className="block truncate font-medium">{label}</span><span className="block text-xs text-muted-foreground"><Money amount={selectedAccountId === "all" ? totalBalance : selectedAccount?.balance ?? 0} /></span></span> : null}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={align} className="w-[min(20rem,calc(100vw-1rem))]">
+        <DropdownMenuLabel>Choisir le périmètre</DropdownMenuLabel><DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setSelectedAccountId("all")}><span className="flex-1">Foyer</span><Money amount={totalBalance} className="text-sm text-muted-foreground" />{selectedAccountId === "all" ? <Check className="ml-2 h-4 w-4" /> : null}</DropdownMenuItem>
+        {accounts.map((account) => <DropdownMenuItem key={account.id} onClick={() => setSelectedAccountId(account.id!)}><span className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: account.color }} /><span className="min-w-0 flex-1 truncate">{account.name}</span><Money amount={account.balance} currency={account.currency} className="text-sm text-muted-foreground" />{selectedAccountId === account.id ? <Check className="ml-2 h-4 w-4" /> : null}</DropdownMenuItem>)}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function IconControl({ label, onClick, children, pressed }: { label: string; onClick: () => void; children: React.ReactNode; pressed?: boolean }) {
+  return <button type="button" onClick={onClick} aria-label={label} aria-pressed={pressed} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-accent-foreground">{children}</button>;
+}
+
+function PrivacyButton() {
+  const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
+  return <IconControl label={isPrivacyMode ? "Afficher les montants" : "Masquer les montants"} onClick={togglePrivacyMode} pressed={isPrivacyMode}>{isPrivacyMode ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</IconControl>;
+}
+
+function ThemeButton({ showLabel = false }: { showLabel?: boolean }) {
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const label = resolvedTheme === "dark" ? "Activer le thème clair" : "Activer le thème sombre";
+  if (!showLabel) return <IconControl label={label} onClick={toggleTheme}>{resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}</IconControl>;
+  return <Button variant="ghost" className="justify-start" onClick={toggleTheme}>{resolvedTheme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}{resolvedTheme === "dark" ? "Clair" : "Sombre"}</Button>;
+}
+
+function NotificationsMenu({ align }: { align: "start" | "center" | "end" }) {
+  const router = useRouter();
+  const { notifications, markAllRead, markRead, dismissNotification } = useNotifications();
+  const visible = notifications.filter((item) => !item.dismissedAt);
+  const unread = visible.filter((item) => !item.readAt).length;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild><button type="button" className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-accent-foreground" aria-label={`Notifications${unread ? `, ${unread} non lues` : ""}`}><Bell className="h-5 w-5" />{unread ? <span className="absolute right-1 top-1 min-w-5 rounded-full bg-destructive px-1 text-center text-xs font-bold text-destructive-foreground">{unread > 9 ? "9+" : unread}</span> : null}</button></DropdownMenuTrigger>
+      <DropdownMenuContent align={align} className="w-[min(22rem,calc(100vw-1rem))]">
+        <DropdownMenuLabel className="flex items-center justify-between">Notifications{unread ? <Button variant="ghost" size="sm" onClick={() => markAllRead()}>Tout marquer comme lu</Button> : null}</DropdownMenuLabel><DropdownMenuSeparator />
+        {visible.length === 0 ? <p className="px-3 py-6 text-center text-sm text-muted-foreground">Aucune notification pour le moment</p> : visible.map((notification) => <div key={notification.id} className="flex items-start gap-1"><DropdownMenuItem className="min-w-0 flex-1 items-start py-3" onClick={() => { void markRead(notification.id); if (notification.actionHref) router.push(notification.actionHref); }}><div className="min-w-0"><p className="font-medium">{notification.title}</p><p className="text-sm text-muted-foreground">{notification.body}</p></div></DropdownMenuItem><Button variant="ghost" size="icon" className="mt-1 shrink-0" aria-label={`Masquer la notification ${notification.title}`} onClick={() => { void dismissNotification(notification.id); }}><X className="h-4 w-4" /></Button></div>)}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+type CommandItem = { key: string; label: string; subtitle?: string; href?: string; amount?: number; type?: SearchResult["type"]; accountId?: number; shortcut?: string };
+
+function CommandSearchDialog({ open, onOpenChange, navigate }: { open: boolean; onOpenChange: (open: boolean) => void; navigate: (href: string) => void }) {
+  const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const results = useCommandSearch(query);
+  const { baseCurrency, getAccountCurrency } = useMoney();
+  const routeItems = useMemo<CommandItem[]>(() => searchRoutes(query).map((route) => ({ key: `route-${route.href}`, label: route.label, subtitle: route.subtitle, href: route.href, type: "navigation", shortcut: route.shortcut })), [query]);
+  const dataItems = useMemo<CommandItem[]>(() => query.trim() ? results.filter((result) => result.type !== "navigation").map((result) => ({ key: `${result.type}-${result.id}`, label: result.title, subtitle: result.subtitle, href: result.href, amount: result.amount, type: result.type, accountId: result.accountId })) : [], [query, results]);
+  const items = [...routeItems, ...dataItems];
+  useEffect(() => setActiveIndex(0), [query]);
+  const select = (item?: CommandItem) => { if (!item?.href) return; navigate(item.href); onOpenChange(false); };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl overflow-hidden p-0">
+        <DialogHeader className="border-b px-5 py-4"><DialogTitle>Rechercher dans WealthPilot</DialogTitle><DialogDescription>Pages, comptes, transactions et objectifs. Raccourci : ⌘K.</DialogDescription></DialogHeader>
+        <div className="px-4 pt-4"><Input aria-label="Recherche globale" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="command-search-results" aria-activedescendant={items[activeIndex] ? `command-result-${activeIndex}` : undefined} placeholder="Rechercher une page, un marchand, un compte…" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "ArrowDown") { event.preventDefault(); setActiveIndex((index) => Math.min(index + 1, Math.max(0, items.length - 1))); } if (event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((index) => Math.max(index - 1, 0)); } if (event.key === "Enter") { event.preventDefault(); select(items[activeIndex]); } }} autoFocus /></div>
+        <div id="command-search-results" className="max-h-[55dvh] overflow-y-auto p-2" role="listbox" aria-label="Résultats de recherche">
+          {items.length === 0 ? <p className="p-6 text-center text-sm text-muted-foreground">Aucun résultat. Essayez un autre terme.</p> : items.map((item, index) => { const currency = item.type === "transaction" || item.type === "account" ? getAccountCurrency(item.accountId) : baseCurrency; return <button id={`command-result-${index}`} key={item.key} type="button" role="option" aria-selected={index === activeIndex} className={cn("flex min-h-11 w-full items-center justify-between rounded-xl px-3 py-2 text-left", index === activeIndex ? "bg-accent text-accent-foreground" : "hover:bg-muted")} onMouseEnter={() => setActiveIndex(index)} onClick={() => select(item)}><span className="min-w-0"><span className="block truncate font-medium">{item.label}</span>{item.subtitle ? <span className="block truncate text-sm text-muted-foreground">{item.subtitle}</span> : null}</span><span className="ml-3 flex shrink-0 items-center gap-2">{item.amount !== undefined ? <Money amount={item.amount} currency={currency} className="font-semibold" /> : null}{item.shortcut ? <kbd className="rounded border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{item.shortcut}</kbd> : null}</span></button>; })}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function isActive(pathname: string, href: string): boolean {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }

@@ -15,9 +15,9 @@ export function DatabaseStatusBanner() {
       <div className="mb-4">
         <Alert>
           <Database className="h-4 w-4" />
-          <AlertTitle>Loading your local data…</AlertTitle>
+          <AlertTitle>Chargement de vos données locales…</AlertTitle>
           <AlertDescription>
-            If this takes more than a few seconds, the database upgrade may be waiting on another tab.
+            Si cela dure plus de quelques secondes, fermez les autres onglets WealthPilot puis réessayez.
           </AlertDescription>
         </Alert>
       </div>
@@ -29,22 +29,22 @@ export function DatabaseStatusBanner() {
       <div className="mb-4">
         <Alert>
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Database is blocked</AlertTitle>
+          <AlertTitle>La base locale est bloquée</AlertTitle>
           <AlertDescription>
             <p className="mb-2">
-              WealthPilot stores your data in your browser (IndexedDB). A schema upgrade may be waiting on another open tab.
+              WealthPilot conserve les données dans ce navigateur. Une mise à niveau attend peut-être la fermeture d’un autre onglet.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" size="sm" onClick={() => retry()} className="gap-2">
                 <RefreshCw className="h-4 w-4" />
-                Retry
+                Réessayer
               </Button>
               <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-                Reload
+                Recharger
               </Button>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              Tip: close other WealthPilot tabs/windows (and the PWA) then retry.
+              Fermez les autres fenêtres WealthPilot, puis réessayez.
             </p>
           </AlertDescription>
         </Alert>
@@ -56,17 +56,17 @@ export function DatabaseStatusBanner() {
     <div className="mb-4">
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Couldn’t open the local database</AlertTitle>
+        <AlertTitle>Impossible d’ouvrir la base locale</AlertTitle>
         <AlertDescription>
-          <p className="mb-2">Your data may still be present, but the app can’t access it right now.</p>
-          {error ? <p className="mb-2 text-xs">Error: {error}</p> : null}
+          <p className="mb-2">Vos données sont probablement toujours présentes, mais l’application ne peut pas y accéder pour le moment.</p>
+          {error ? <details className="mb-2 text-sm"><summary>Détail technique</summary><p className="mt-1 break-words">{error}</p></details> : null}
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={() => retry()} className="gap-2">
               <RefreshCw className="h-4 w-4" />
-              Retry
+              Réessayer
             </Button>
             <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-              Reload
+              Recharger
             </Button>
           </div>
         </AlertDescription>

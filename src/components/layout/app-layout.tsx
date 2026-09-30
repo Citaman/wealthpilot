@@ -1,57 +1,35 @@
 "use client";
 
-import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { CommandDock } from "./command-dock";
-import { cn } from "@/lib/utils";
+import { getRouteMeta } from "./route-registry";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { DatabaseStatusBanner } from "./database-status-banner";
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-const pageMeta: Record<string, { title: string; subtitle?: string }> = {
-  "/": { title: "Dashboard", subtitle: "Your financial command center" },
-  "/transactions": { title: "Transactions", subtitle: "Review and tune your activity" },
-  "/analytics": { title: "Analytics", subtitle: "Trends, forecasts, and signals" },
-  "/budgets": { title: "Budgets", subtitle: "Plan with confidence" },
-  "/goals": { title: "Goals", subtitle: "Build toward the future" },
-  "/subscriptions": { title: "Subscriptions", subtitle: "Recurring commitments" },
-  "/accounts": { title: "Accounts", subtitle: "Balances and checkpoints" },
-  "/import": { title: "Import", subtitle: "Bring your transactions in" },
-  "/settings": { title: "Settings", subtitle: "Preferences and system status" },
-  "/calendar": { title: "Calendar", subtitle: "Bills and cash flow timing" },
-  "/categories": { title: "Categories", subtitle: "Organize how you spend" },
-};
-
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
-  const meta = useMemo(() => pageMeta[pathname || "/"], [pathname]);
+  const meta = getRouteMeta(pathname || "/");
 
   return (
-    <div className="relative min-h-screen">
-      <div className="relative">
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(44,177,188,0.12),_transparent_55%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_rgba(107,182,255,0.12),_transparent_45%)]" />
-        </div>
-        <div className="relative z-10 mx-auto w-full max-w-[1400px] px-4 pb-32 pt-6 sm:px-6">
-          {meta && pathname !== "/" && (
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  WealthPilot
-                </p>
-                <h1 className="mt-2 text-2xl font-semibold text-foreground">{meta.title}</h1>
-                {meta.subtitle && (
-                  <p className="mt-1 text-sm text-muted-foreground">{meta.subtitle}</p>
-                )}
-              </div>
-            </div>
-          )}
-          <main className={cn("animate-float-in")}>{children}</main>
-        </div>
-      </div>
+    <div className="min-h-dvh lg:pl-[var(--shell-sidebar-width)]">
+      <a href="#contenu-principal" className="fixed left-3 top-3 z-[100] -translate-y-24 rounded-lg bg-foreground px-4 py-2 text-sm font-semibold text-background focus:translate-y-0">Aller au contenu</a>
       <CommandDock />
+      <div className="mx-auto w-full max-w-[1600px] px-4 pb-[calc(var(--shell-mobile-nav-height)+2rem+env(safe-area-inset-bottom))] pt-[calc(var(--shell-mobile-header-height)+1.25rem+env(safe-area-inset-top))] sm:px-6 lg:px-10 lg:pb-12 lg:pt-8">
+        {meta && pathname !== "/" && (
+          <header className="mb-8 hidden lg:block">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">{meta.title}</h1>
+            <p className="mt-1 max-w-3xl text-base text-muted-foreground">{meta.subtitle}</p>
+          </header>
+        )}
+        <DatabaseStatusBanner />
+        <main id="contenu-principal" tabIndex={-1} className="animate-float-in outline-none">
+          <ErrorBoundary key={pathname}>{children}</ErrorBoundary>
+        </main>
+      </div>
     </div>
   );
 }

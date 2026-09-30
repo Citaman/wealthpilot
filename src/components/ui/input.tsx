@@ -10,7 +10,10 @@ export interface InputProps
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, icon, error, ...props }, ref) => {
+  ({ className, type, icon, error, id, "aria-describedby": ariaDescribedBy, ...props }, ref) => {
+    const generatedId = React.useId();
+    const inputId = id ?? generatedId;
+    const errorId = `${inputId}-error`;
     return (
       <div className="relative">
         {icon && (
@@ -21,16 +24,19 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           type={type}
           className={cn(
-            "flex h-10 w-full rounded-2xl border border-border/70 bg-background/70 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            "flex min-h-11 w-full rounded-[var(--radius-control)] border border-input bg-card px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35 transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-65 sm:text-sm",
             icon && "pl-10",
             error && "border-destructive focus-visible:ring-destructive",
             className
           )}
           ref={ref}
+          id={inputId}
+          aria-invalid={error ? true : props["aria-invalid"]}
+          aria-describedby={[ariaDescribedBy, error ? errorId : undefined].filter(Boolean).join(" ") || undefined}
           {...props}
         />
         {error && (
-          <p className="mt-1 text-xs text-destructive">{error}</p>
+          <p id={errorId} className="mt-1.5 text-sm font-medium text-destructive" role="alert">{error}</p>
         )}
       </div>
     );

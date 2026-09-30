@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type ThemeMode = "light" | "dark" | "system";
-type ResolvedTheme = "light" | "dark";
+export type ThemeMode = "light" | "dark" | "system";
+export type ResolvedTheme = "light" | "dark";
 
 type ThemeContextValue = {
   theme: ThemeMode;
@@ -16,44 +16,51 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 const STORAGE_KEY = "theme";
 
+export const isThemeMode = (value: unknown): value is ThemeMode =>
+  value === "light" || value === "dark" || value === "system";
+
 const resolveTheme = (mode: ThemeMode, prefersDark: boolean): ResolvedTheme => {
   if (mode === "system") return prefersDark ? "dark" : "light";
   return mode;
 };
+
+function applyTheme(mode: ThemeMode, prefersDark: boolean): ResolvedTheme {
+  const resolved = resolveTheme(mode, prefersDark);
+  document.documentElement.classList.toggle("dark", resolved === "dark");
+  document.documentElement.dataset.theme = mode;
+  document.documentElement.style.colorScheme = resolved;
+  return resolved;
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>("system");
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
+    const rawStored = localStorage.getItem(STORAGE_KEY);
+    const stored = isThemeMode(rawStored) ? rawStored : null;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const initialTheme = stored || "system";
-    const resolved = resolveTheme(initialTheme, prefersDark);
     setThemeState(initialTheme);
-    setResolvedTheme(resolved);
-    document.documentElement.classList.toggle("dark", resolved === "dark");
+    setResolvedTheme(applyTheme(initialTheme, prefersDark));
   }, []);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (event: MediaQueryListEvent) => {
       if (theme !== "system") return;
-      const resolved = resolveTheme(theme, event.matches);
-      setResolvedTheme(resolved);
-      document.documentElement.classList.toggle("dark", resolved === "dark");
+      setResolvedTheme(applyTheme(theme, event.matches));
     };
     media.addEventListener("change", handleChange);
     return () => media.removeEventListener("change", handleChange);
   }, [theme]);
 
   const setTheme = (mode: ThemeMode) => {
+    if (!isThemeMode(mode)) return;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const resolved = resolveTheme(mode, prefersDark);
     setThemeState(mode);
-    setResolvedTheme(resolved);
     localStorage.setItem(STORAGE_KEY, mode);
-    document.documentElement.classList.toggle("dark", resolved === "dark");
+    setResolvedTheme(applyTheme(mode, prefersDark));
   };
 
   const value = useMemo<ThemeContextValue>(() => ({
