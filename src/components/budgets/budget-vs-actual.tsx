@@ -6,18 +6,21 @@ import {
   Bar,
   XAxis,
   YAxis,
-  ResponsiveContainer,
   Cell,
-  ReferenceLine,
   Tooltip,
 } from "recharts";
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { ClientOnly } from "@/components/ui/client-only";
 import { Money } from "@/components/ui/money";
+import { MeasuredChart } from "@/components/ui/measured-chart";
 import { useMoney } from "@/hooks/use-money";
+
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; name: string; color?: string; dataKey?: string; payload?: Record<string, unknown> }>;
+  label?: string;
+}
 
 interface BudgetVsActualProps {
   budgets: {
@@ -30,39 +33,37 @@ interface BudgetVsActualProps {
     wants: number;
     savings: number;
   };
-  income: number;
   className?: string;
 }
 
 export function BudgetVsActual({
   budgets,
   actuals,
-  income,
   className,
 }: BudgetVsActualProps) {
   const { formatCompactCurrency } = useMoney();
   const data = useMemo(() => {
     return [
       {
-        name: "Needs",
+        name: "Besoins",
         budget: budgets.needs,
         actual: actuals.needs,
-        color: "#3b82f6",
-        budgetColor: "#93c5fd",
+        color: "rgb(var(--chart-1))",
+        budgetColor: "rgb(var(--muted-foreground))",
       },
       {
-        name: "Wants",
+        name: "Envies",
         budget: budgets.wants,
         actual: actuals.wants,
-        color: "#8b5cf6",
-        budgetColor: "#c4b5fd",
+        color: "rgb(var(--chart-2))",
+        budgetColor: "rgb(var(--muted-foreground))",
       },
       {
-        name: "Savings",
+        name: "Épargne",
         budget: budgets.savings,
         actual: actuals.savings,
-        color: "#10b981",
-        budgetColor: "#6ee7b7",
+        color: "rgb(var(--chart-4))",
+        budgetColor: "rgb(var(--muted-foreground))",
       },
     ];
   }, [budgets, actuals]);
@@ -72,10 +73,10 @@ export function BudgetVsActual({
   const totalSpent = actuals.needs + actuals.wants;
   const overallStatus = totalSpent <= totalBudget * 0.8 ? "good" : totalSpent <= totalBudget ? "warning" : "danger";
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
     if (!active || !payload) return null;
 
-    const item = payload[0]?.payload;
+    const item = payload[0]?.payload as unknown as { name: string; budget: number; actual: number; color: string; budgetColor: string } | undefined;
     if (!item) return null;
 
     const diff = item.budget - item.actual;
@@ -86,22 +87,19 @@ export function BudgetVsActual({
         <p className="font-semibold mb-2">{label}</p>
         <div className="space-y-1">
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Budget:</span>
+            <span className="text-muted-foreground">Budget :</span>
             <span className="font-medium"><Money amount={item.budget} /></span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Actual:</span>
+            <span className="text-muted-foreground">Réalisé :</span>
             <span className="font-medium"><Money amount={item.actual} /></span>
           </div>
-          <div className={cn(
-            "flex justify-between gap-4 pt-1 border-t",
-            diff >= 0 ? "text-emerald-500" : "text-red-500"
-          )}>
-            <span>{diff >= 0 ? "Under by:" : "Over by:"}</span>
+          <div className="flex justify-between gap-4 pt-1 border-t text-foreground">
+            <span>{diff >= 0 ? "Reste :" : "Dépassement :"}</span>
             <span className="font-bold"><Money amount={Math.abs(diff)} /></span>
           </div>
           <p className="text-xs text-muted-foreground text-center pt-1">
-            {percent}% of budget used
+            {percent} % du budget utilisé
           </p>
         </div>
       </div>
@@ -112,40 +110,37 @@ export function BudgetVsActual({
     <Card className={className}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Budget vs Actual</CardTitle>
-          <Badge 
-            variant={overallStatus === "good" ? "default" : overallStatus === "warning" ? "secondary" : "destructive"}
-            className={cn(
-              overallStatus === "good" && "bg-emerald-500",
-              overallStatus === "warning" && "bg-amber-500 text-white"
-            )}
+          <CardTitle className="text-base">Budget et réalisé</CardTitle>
+          <Badge
+            variant={overallStatus === "good" ? "default" : "secondary"}
           >
             {overallStatus === "good" && (
               <>
                 <CheckCircle className="h-3 w-3 mr-1" />
-                On Track
+                Dans les limites
               </>
             )}
             {overallStatus === "warning" && (
               <>
                 <AlertTriangle className="h-3 w-3 mr-1" />
-                Caution
+                À surveiller
               </>
             )}
             {overallStatus === "danger" && (
               <>
                 <AlertTriangle className="h-3 w-3 mr-1" />
-                Over Budget
+                Dépassé
               </>
             )}
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[200px]">
-          <ClientOnly>
-            <ResponsiveContainer width="100%" height="100%">
+        <MeasuredChart className="h-[200px]" ariaLabel="Budget prévu et réalisé">
+          {({ width, height }) => (
               <BarChart
+                width={width}
+                height={height}
                 data={data}
                 layout="vertical"
                 margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
@@ -172,7 +167,7 @@ export function BudgetVsActual({
                   dataKey="budget"
                   radius={[0, 4, 4, 0]}
                   barSize={24}
-                  fill="#e5e7eb"
+                  fill="rgb(var(--muted-foreground))"
                 >
                   {data.map((entry, index) => (
                     <Cell key={`budget-${index}`} fill={entry.budgetColor} opacity={0.4} />
@@ -187,28 +182,23 @@ export function BudgetVsActual({
                   {data.map((entry, index) => (
                     <Cell
                       key={`actual-${index}`}
-                      fill={entry.actual > entry.budget ? "#ef4444" : entry.color}
+                      fill={entry.color}
                     />
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
-          </ClientOnly>
-        </div>
+          )}
+        </MeasuredChart>
 
         {/* Legend */}
-        <div className="flex justify-center gap-6 mt-2 text-xs">
+        <div className="mt-2 flex flex-wrap justify-center gap-6 text-xs">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-gray-300 opacity-60" />
+            <div className="h-3 w-3 rounded bg-muted-foreground opacity-40" />
             <span className="text-muted-foreground">Budget</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-blue-500" />
-            <span className="text-muted-foreground">Actual</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-red-500" />
-            <span className="text-muted-foreground">Over</span>
+            <div className="h-3 w-3 rounded" style={{ backgroundColor: "rgb(var(--chart-1))" }} />
+            <span className="text-muted-foreground">Réalisé</span>
           </div>
         </div>
 
@@ -220,16 +210,22 @@ export function BudgetVsActual({
             return (
               <div key={item.name} className="text-center">
                 <p className="text-xs text-muted-foreground">{item.name}</p>
-                <p className={cn(
-                  "text-sm font-semibold",
-                  isOver ? "text-red-500" : "text-emerald-500"
-                )}>
+                <p className="text-sm font-semibold text-foreground">
                   {isOver ? "-" : "+"}<Money amount={Math.abs(diff)} />
                 </p>
               </div>
             );
           })}
         </div>
+        <details className="mt-4 rounded-lg border px-3 py-2 text-sm">
+          <summary className="cursor-pointer font-medium">Données du budget</summary>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[420px] tabular-nums">
+              <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2">Type</th><th className="text-right">Budget</th><th className="text-right">Réalisé</th><th className="text-right">Écart</th></tr></thead>
+              <tbody>{data.map((item) => <tr key={item.name} className="border-b last:border-0"><th scope="row" className="py-2 text-left font-medium">{item.name}</th><td className="text-right"><Money amount={item.budget} /></td><td className="text-right"><Money amount={item.actual} /></td><td className="text-right">{item.budget - item.actual >= 0 ? "+" : "−"}<Money amount={Math.abs(item.budget - item.actual)} /></td></tr>)}</tbody>
+            </table>
+          </div>
+        </details>
       </CardContent>
     </Card>
   );

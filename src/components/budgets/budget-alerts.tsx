@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { AlertTriangle, Bell, CheckCircle, XCircle, TrendingUp } from "lucide-react";
+import { AlertTriangle, Bell, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -75,35 +75,35 @@ export function BudgetAlerts({ categoryData, className }: BudgetAlertsProps) {
 
   const severityConfig = {
     warning: {
-      bg: "bg-amber-500/10",
-      border: "border-amber-500/30",
+      bg: "bg-muted/30",
+      border: "border-muted",
       icon: AlertTriangle,
-      iconColor: "text-amber-500",
-      label: "Approaching",
-      labelBg: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
+      iconColor: "text-muted-foreground",
+      label: "À surveiller",
+      labelBg: "bg-muted text-foreground",
     },
     danger: {
-      bg: "bg-orange-500/10",
-      border: "border-orange-500/30",
+      bg: "bg-muted/30",
+      border: "border-muted",
       icon: AlertTriangle,
-      iconColor: "text-orange-500",
-      label: "Near Limit",
-      labelBg: "bg-orange-500/20 text-orange-700 dark:text-orange-400",
+      iconColor: "text-foreground",
+      label: "Proche de la limite",
+      labelBg: "bg-muted text-foreground",
     },
     critical: {
-      bg: "bg-red-500/10",
-      border: "border-red-500/30",
+      bg: "bg-muted/30",
+      border: "border-[#FF6B4A]/30",
       icon: XCircle,
-      iconColor: "text-red-500",
-      label: "Over Budget",
-      labelBg: "bg-red-500/20 text-red-700 dark:text-red-400",
+      iconColor: "text-foreground",
+      label: "Budget dépassé",
+      labelBg: "bg-[#FF6B4A]/10 text-foreground",
     },
   };
 
   const typeLabels = {
-    needs: "Needs",
-    wants: "Wants",
-    savings: "Savings",
+    needs: "Besoins",
+    wants: "Envies",
+    savings: "Épargne",
   };
 
   return (
@@ -112,28 +112,28 @@ export function BudgetAlerts({ categoryData, className }: BudgetAlertsProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <Bell className="h-5 w-5" />
-            Budget Alerts
+            Alertes budget
           </CardTitle>
           {alerts.length > 0 ? (
-            <Badge variant="destructive" className="text-xs">
-              {alerts.length} alert{alerts.length > 1 ? "s" : ""}
+            <Badge variant="secondary" className="text-xs">
+              {alerts.length} alerte{alerts.length > 1 ? "s" : ""}
             </Badge>
           ) : (
-            <Badge className="bg-emerald-500 text-xs">All Good</Badge>
+            <Badge variant="secondary" className="text-xs">Aucune alerte</Badge>
           )}
         </div>
       </CardHeader>
       <CardContent>
         {alerts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 mb-3">
-              <CheckCircle className="h-6 w-6 text-emerald-500" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 mb-3">
+              <CheckCircle className="h-6 w-6 text-foreground" />
             </div>
-            <p className="font-medium text-emerald-600 dark:text-emerald-400">
-              All budgets on track!
+            <p className="font-medium text-foreground">
+              Tous les budgets sont dans les limites
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              No categories approaching their limits
+              Aucune catégorie n’approche de sa limite
             </p>
           </div>
         ) : (
@@ -162,7 +162,7 @@ export function BudgetAlerts({ categoryData, className }: BudgetAlertsProps) {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      <Money amount={alert.spent} /> of <Money amount={alert.budget} />
+                      <Money amount={alert.spent} /> sur <Money amount={alert.budget} />
                     </p>
                   </div>
                   <div className="text-right shrink-0">
@@ -182,7 +182,7 @@ export function BudgetAlerts({ categoryData, className }: BudgetAlertsProps) {
             })}
             {alerts.length > 5 && (
               <p className="text-xs text-muted-foreground text-center pt-2">
-                +{alerts.length - 5} more alert{alerts.length - 5 > 1 ? "s" : ""}
+                +{alerts.length - 5} autre{alerts.length - 5 > 1 ? "s" : ""} alerte{alerts.length - 5 > 1 ? "s" : ""}
               </p>
             )}
           </div>

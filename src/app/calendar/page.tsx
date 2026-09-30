@@ -12,8 +12,8 @@ import {
   addMonths,
   subMonths,
   getDay,
-  addWeeks,
 } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
   ChevronLeft,
   ChevronRight,
@@ -39,10 +39,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { db, type RecurringTransaction, type Transaction, CATEGORIES } from "@/lib/db";
+import { db, CATEGORIES } from "@/lib/db";
+import { buildRecurringTimeline } from "@/lib/recurring";
 import { cn } from "@/lib/utils";
 import { useMoney } from "@/hooks/use-money";
 import { Money } from "@/components/ui/money";
+import { useAccount } from "@/contexts/account-context";
 
 interface BillEvent {
   id: string;
@@ -56,10 +58,12 @@ interface BillEvent {
   isRecurring: boolean;
   frequency?: string;
   recurringType?: string;
+  direction: "income" | "expense";
 }
 
 export default function CalendarPage() {
   const { convertFromAccount } = useMoney();
+  const { selectedAccountId } = useAccount();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedBills, setSelectedBills] = useState<BillEvent[]>([]);
@@ -68,17 +72,20 @@ export default function CalendarPage() {
   const monthEnd = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startDayOfWeek = getDay(monthStart);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const value = new Date();
+    value.setHours(0, 0, 0, 0);
+    return value;
+  }, []);
 
   // Live query for recurring transactions - auto-updates when data changes
   const recurring = useLiveQuery(
     async () => {
       return db.recurringTransactions
-        .filter((r) => r.status === "active" && !r.isExcluded)
+        .filter((r) => r.status === "active" && !r.isExcluded && (selectedAccountId === "all" || r.accountId === selectedAccountId))
         .toArray();
     },
-    [], // dependencies - empty means it updates on any change to the table
+    [selectedAccountId],
     [] // default value
   );
 
@@ -90,164 +97,26 @@ export default function CalendarPage() {
       return db.transactions
         .where("date")
         .between(startStr, endStr, true, true)
-        .filter((tx) => !tx.isExcluded)
+        .filter((tx) => !tx.isExcluded && (selectedAccountId === "all" || tx.accountId === selectedAccountId))
         .toArray();
     },
-    [currentMonth.getMonth(), currentMonth.getFullYear()], // re-run when month changes
+    [currentMonth.getMonth(), currentMonth.getFullYear(), selectedAccountId],
     [] // default value
   );
 
-  // Compute bill events from recurring and transactions
+  // Shared recurring engine: the same schedule and matching contract can feed subscriptions and Dashboard.
   const bills = useMemo(() => {
     if (!recurring || !transactions) return [];
-
-    const billEvents: BillEvent[] = [];
-
-    // Helper to check if a transaction matches a recurring item
-    const findMatchingTransaction = (rec: RecurringTransaction, targetDate: Date) => {
-      const recName = rec.name.toLowerCase();
-      const recMerchant = (rec.merchant || "").toLowerCase();
-      const recAmount = Math.abs(convertFromAccount(rec.amount, rec.accountId));
-      
-      return transactions.find((tx) => {
-        const txDate = new Date(tx.date);
-        const txMerchant = tx.merchant.toLowerCase();
-        
-        // Check if within 5 days of expected date
-        const dateDiff = Math.abs(txDate.getTime() - targetDate.getTime());
-        if (dateDiff > 5 * 24 * 60 * 60 * 1000) return false;
-        
-        // Check merchant match (partial)
-        const nameMatch = txMerchant.includes(recName) || recName.includes(txMerchant);
-        const merchantMatch = recMerchant && (txMerchant.includes(recMerchant) || recMerchant.includes(txMerchant));
-        
-        // Check amount match (within 20%)
-        const txAmount = Math.abs(convertFromAccount(tx.amount, tx.accountId));
-        const amountMatch = Math.abs(txAmount - recAmount) / Math.abs(recAmount) < 0.2;
-        
-        return (nameMatch || merchantMatch) && amountMatch;
-      });
-    };
-
-    // Process each recurring item
-    recurring.forEach((rec) => {
-      // Skip income for calendar display (they're not "bills")
-      if (rec.type === "income") return;
-
-      const expectedDates: Date[] = [];
-
-      // Calculate expected dates based on frequency
-      if (rec.frequency === "monthly") {
-        const day = rec.expectedDay || rec.dayOfMonth || new Date(rec.startDate || rec.nextExpected).getDate();
-        const lastDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-        const actualDay = Math.min(day, lastDayOfMonth);
-        const expectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), actualDay);
-        
-        if (expectedDate >= monthStart && expectedDate <= monthEnd) {
-          expectedDates.push(expectedDate);
-        }
-      } else if (rec.frequency === "weekly") {
-        // Calculate all weekly occurrences in the month
-        let checkDate = new Date(rec.startDate || rec.nextExpected);
-        // Align to the first occurrence in or before the month
-        while (checkDate > monthEnd) {
-          checkDate = addWeeks(checkDate, -1);
-        }
-        while (checkDate < monthStart) {
-          checkDate = addWeeks(checkDate, 1);
-        }
-        
-        while (checkDate <= monthEnd) {
-          if (checkDate >= monthStart) {
-            expectedDates.push(new Date(checkDate));
-          }
-          checkDate = addWeeks(checkDate, 1);
-        }
-      } else if (rec.frequency === "biweekly") {
-        let checkDate = new Date(rec.startDate || rec.nextExpected);
-        while (checkDate > monthEnd) {
-          checkDate = addWeeks(checkDate, -2);
-        }
-        while (checkDate < monthStart) {
-          checkDate = addWeeks(checkDate, 2);
-        }
-        
-        while (checkDate <= monthEnd) {
-          if (checkDate >= monthStart) {
-            expectedDates.push(new Date(checkDate));
-          }
-          checkDate = addWeeks(checkDate, 2);
-        }
-      } else if (rec.frequency === "quarterly") {
-        const startDate = new Date(rec.startDate || rec.nextExpected);
-        const checkDate = new Date(startDate);
-        
-        // Find quarterly dates that fall in this month
-        for (let i = 0; i < 12; i++) {
-          const quarterDate = new Date(checkDate.getFullYear(), checkDate.getMonth() + (i * 3), checkDate.getDate());
-          if (quarterDate >= monthStart && quarterDate <= monthEnd) {
-            expectedDates.push(quarterDate);
-          }
-        }
-      } else if (rec.frequency === "yearly") {
-        const startDate = new Date(rec.startDate || rec.nextExpected);
-        if (startDate.getMonth() === currentMonth.getMonth()) {
-          const yearlyDate = new Date(currentMonth.getFullYear(), startDate.getMonth(), startDate.getDate());
-          if (yearlyDate >= monthStart && yearlyDate <= monthEnd) {
-            expectedDates.push(yearlyDate);
-          }
-        }
-      }
-
-      // Create bill events for each expected date
-      expectedDates.forEach((expectedDate, idx) => {
-        const matchingTx = findMatchingTransaction(rec, expectedDate);
-        const isPaid = !!matchingTx;
-        const isOverdue = !isPaid && expectedDate < today;
-        
-        billEvents.push({
-          id: `rec-${rec.id}-${idx}`,
-          recurringId: rec.id,
-          transactionId: matchingTx?.id,
-          name: rec.name,
-          amount: Math.abs(convertFromAccount(rec.amount, rec.accountId)),
-          date: matchingTx ? new Date(matchingTx.date) : expectedDate,
-          category: rec.category,
-          type: isPaid ? "paid" : isOverdue ? "overdue" : "upcoming",
-          isRecurring: true,
-          frequency: rec.frequency,
-          recurringType: rec.type,
-        });
-      });
-    });
-
-    // Also add transactions marked as recurring that don't match any recurring item
-    // This catches one-off recurring transactions or those not yet linked
-    transactions.forEach((tx) => {
-      if (!tx.isRecurring) return;
-      
-      const txDate = new Date(tx.date);
-      const alreadyTracked = billEvents.some(
-        (b) => b.transactionId === tx.id || 
-              (isSameDay(b.date, txDate) && b.name.toLowerCase() === tx.merchant.toLowerCase())
-      );
-      
-      if (!alreadyTracked) {
-        billEvents.push({
-          id: `tx-${tx.id}`,
-          transactionId: tx.id,
-          name: tx.merchant,
-          amount: Math.abs(convertFromAccount(tx.amount, tx.accountId)),
-          date: txDate,
-          category: tx.category,
-          type: "paid",
-          isRecurring: true,
-        });
-      }
-    });
-
-    return billEvents.sort((a, b) => a.date.getTime() - b.date.getTime());
-  }, [recurring, transactions, currentMonth, monthStart, monthEnd, today, convertFromAccount]);
+    return buildRecurringTimeline({ recurring, transactions, rangeStart: monthStart, rangeEnd: monthEnd, today })
+      .map((event): BillEvent => ({
+        ...event,
+        amount: Math.abs(convertFromAccount(event.amount, event.accountId)),
+        date: new Date(`${event.date}T12:00:00`),
+        type: event.status,
+        isRecurring: true,
+        recurringType: event.recurringType,
+      }));
+  }, [recurring, transactions, monthStart, monthEnd, today, convertFromAccount]);
 
   const isLoading = recurring === undefined || transactions === undefined;
 
@@ -273,13 +142,9 @@ export default function CalendarPage() {
     return bills.filter((b) => b.type === "overdue");
   }, [bills]);
 
-  const monthTotal = useMemo(() => {
-    return bills.reduce((sum, b) => sum + b.amount, 0);
-  }, [bills]);
-
-  const paidTotal = useMemo(() => {
-    return bills.filter((b) => b.type === "paid").reduce((sum, b) => sum + b.amount, 0);
-  }, [bills]);
+  const expenseTotal = useMemo(() => bills.filter((b) => b.direction === "expense").reduce((sum, b) => sum + b.amount, 0), [bills]);
+  const incomeTotal = useMemo(() => bills.filter((b) => b.direction === "income").reduce((sum, b) => sum + b.amount, 0), [bills]);
+  const paidTotal = useMemo(() => bills.filter((b) => b.direction === "expense" && b.type === "paid").reduce((sum, b) => sum + b.amount, 0), [bills]);
 
   const getCategoryIcon = (category: string) => {
     const cat = CATEGORIES[category as keyof typeof CATEGORIES];
@@ -292,19 +157,28 @@ export default function CalendarPage() {
 
   const getTypeLabel = (type?: string) => {
     switch (type) {
-      case "subscription": return "Subscription";
-      case "bill": return "Bill";
-      case "loan": return "Loan";
-      default: return "Recurring";
+      case "subscription": return "Abonnement";
+      case "bill": return "Facture";
+      case "loan": return "Crédit";
+      case "income": return "Revenu";
+      default: return "Récurrent";
     }
   };
+
+  const getFrequencyLabel = (frequency?: string) => ({
+    weekly: "Hebdomadaire",
+    biweekly: "Toutes les deux semaines",
+    monthly: "Mensuel",
+    quarterly: "Trimestriel",
+    yearly: "Annuel",
+  }[frequency || ""] || frequency || "");
 
   return (
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Track upcoming bills and recurring payments
+            Revenus et dépenses récurrents, prévus et réalisés
           </p>
           {isLoading && (
             <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -316,12 +190,12 @@ export default function CalendarPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-info/10">
-                  <CalendarIcon className="h-5 w-5 text-info" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
+                  <CalendarIcon className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">This Month</p>
-                  <p className="text-xl font-bold"><Money amount={monthTotal} /></p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Dépenses prévues</p>
+                  <p className="text-2xl font-semibold"><Money amount={expenseTotal} /></p>
                 </div>
               </div>
             </CardContent>
@@ -329,12 +203,12 @@ export default function CalendarPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
-                  <CheckCircle className="h-5 w-5 text-success" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
+                  <CheckCircle className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Paid</p>
-                  <p className="text-xl font-semibold text-success"><Money amount={paidTotal} /></p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Dépenses réalisées</p>
+                  <p className="text-2xl font-semibold"><Money amount={paidTotal} /></p>
                 </div>
               </div>
             </CardContent>
@@ -342,14 +216,12 @@ export default function CalendarPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/10">
-                  <Clock className="h-5 w-5 text-warning" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
+                  <Clock className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Upcoming</p>
-                  <p className="text-xl font-semibold text-warning">
-                    <Money amount={monthTotal - paidTotal} />
-                  </p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Revenus prévus</p>
+                  <p className="text-2xl font-semibold"><Money amount={incomeTotal} /></p>
                 </div>
               </div>
             </CardContent>
@@ -357,21 +229,12 @@ export default function CalendarPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-full",
-                  overdueBills.length > 0 ? "bg-destructive/10" : "bg-muted"
-                )}>
-                  <AlertCircle className={cn(
-                    "h-5 w-5",
-                    overdueBills.length > 0 ? "text-destructive" : "text-muted-foreground"
-                  )} />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
+                  <AlertCircle className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Overdue</p>
-                  <p className={cn(
-                    "text-xl font-semibold",
-                    overdueBills.length > 0 ? "text-destructive" : ""
-                  )}>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">En retard</p>
+                  <p className="text-2xl font-semibold">
                     {overdueBills.length}
                   </p>
                 </div>
@@ -385,11 +248,12 @@ export default function CalendarPage() {
           <Card className="lg:col-span-2">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle>{format(currentMonth, "MMMM yyyy")}</CardTitle>
+                <CardTitle>{format(currentMonth, "MMMM yyyy", { locale: fr })}</CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="icon"
+                    aria-label="Mois précédent"
                     onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -399,11 +263,12 @@ export default function CalendarPage() {
                     size="sm"
                     onClick={() => setCurrentMonth(new Date())}
                   >
-                    Today
+                    Aujourd’hui
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
+                    aria-label="Mois suivant"
                     onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -412,9 +277,20 @@ export default function CalendarPage() {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="space-y-2 md:hidden" aria-label="Agenda du mois">
+                {bills.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">Aucun mouvement récurrent pour ce mois.</p>
+                ) : bills.map((bill) => (
+                  <button key={bill.id} type="button" onClick={() => handleDayClick(bill.date)} className="flex min-h-12 w-full items-center justify-between rounded-lg border p-3 text-left">
+                    <span><span className="block font-medium">{bill.name}</span><span className="text-sm text-muted-foreground">{format(bill.date, "dd/MM")} · {bill.type === "paid" ? "Réalisé" : bill.type === "overdue" ? "En retard" : "Prévu"}</span></span>
+                    <span className="font-semibold"><Money amount={bill.direction === "income" ? bill.amount : -bill.amount} /></span>
+                  </button>
+                ))}
+              </div>
+
               {/* Day names */}
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+              <div className="mb-2 hidden grid-cols-7 gap-1 md:grid">
+                {["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"].map((day) => (
                   <div
                     key={day}
                     className="p-2 text-center text-xs font-medium text-muted-foreground"
@@ -425,7 +301,7 @@ export default function CalendarPage() {
               </div>
 
               {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-1">
+              <div className="hidden grid-cols-7 gap-1 md:grid">
                 {/* Empty cells for days before month start */}
                 {Array.from({ length: startDayOfWeek }).map((_, index) => (
                   <div key={`empty-${index}`} className="p-2 min-h-[80px]" />
@@ -437,21 +313,20 @@ export default function CalendarPage() {
                   const hasBills = dayBills.length > 0;
 
                   return (
-                    <button
+                    hasBills ? <button
                       key={day.toISOString()}
+                      type="button"
+                      aria-label={`${format(day, "dd/MM/yyyy")} — ${dayBills.length} mouvement${dayBills.length > 1 ? "s" : ""}`}
                       onClick={() => handleDayClick(day)}
                       className={cn(
-                        "p-2 min-h-[80px] rounded-lg border text-left transition-colors hover:bg-muted/50",
-                        isToday(day) && "border-primary bg-primary/5",
+                        "p-2 min-h-[80px] rounded-lg border text-left transition-colors hover:bg-muted",
+                        isToday(day) && "ring-1 ring-primary",
                         hasBills && "cursor-pointer",
                         !hasBills && "cursor-default"
                       )}
                     >
                       <div
-                        className={cn(
-                          "text-sm font-medium mb-1",
-                          isToday(day) && "text-primary"
-                        )}
+                        className="text-sm font-medium mb-1"
                       >
                         {format(day, "d")}
                       </div>
@@ -460,24 +335,19 @@ export default function CalendarPage() {
                           {dayBills.slice(0, 2).map((bill) => (
                             <div
                               key={bill.id}
-                              className={cn(
-                                "text-xs px-1.5 py-0.5 rounded truncate",
-                                bill.type === "paid" && "bg-success/10 text-success",
-                                bill.type === "upcoming" && "bg-info/10 text-info",
-                                bill.type === "overdue" && "bg-destructive/10 text-destructive"
-                              )}
+                              className="text-xs px-1.5 py-0.5 rounded truncate bg-primary/10 text-primary"
                             >
                               {bill.name}
                             </div>
                           ))}
                           {dayBills.length > 2 && (
                             <div className="text-xs text-muted-foreground px-1.5">
-                              +{dayBills.length - 2} more
+                              +{dayBills.length - 2} autre{dayBills.length - 2 > 1 ? "s" : ""}
                             </div>
                           )}
                         </div>
                       )}
-                    </button>
+                    </button> : <div key={day.toISOString()} className={cn("min-h-[80px] rounded-lg border p-2", isToday(day) && "ring-1 ring-primary")}><div className="mb-1 text-sm font-medium">{format(day, "d")}</div></div>
                   );
                 })}
               </div>
@@ -485,16 +355,8 @@ export default function CalendarPage() {
               {/* Legend */}
               <div className="flex items-center gap-4 mt-4 pt-4 border-t text-xs">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-success/10 border border-success/30" />
-                  <span>Paid</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-info/10 border border-info/30" />
-                  <span>Upcoming</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-destructive/10 border border-destructive/30" />
-                  <span>Overdue</span>
+                  <div className="w-3 h-3 rounded bg-primary/20 border border-primary/30" />
+                  <span>Prévu, réalisé ou en retard (détail dans l’événement)</span>
                 </div>
               </div>
             </CardContent>
@@ -504,8 +366,8 @@ export default function CalendarPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Upcoming Bills</CardTitle>
-                <CardDescription>Next 5 payments due</CardDescription>
+                <CardTitle className="text-lg">Prochains mouvements</CardTitle>
+                <CardDescription>Les 5 prochaines entrées ou sorties</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -516,7 +378,7 @@ export default function CalendarPage() {
                   </div>
                 ) : upcomingBills.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No upcoming bills this month
+                    Aucun mouvement à venir ce mois-ci. Lancez la détection depuis Récurrents si nécessaire.
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -527,18 +389,14 @@ export default function CalendarPage() {
                       >
                         <div className="flex items-center gap-3">
                           <div
-                            className="flex h-8 w-8 items-center justify-center rounded-full"
-                            style={{
-                              backgroundColor: `${CATEGORIES[bill.category as keyof typeof CATEGORIES]?.color}20`,
-                              color: CATEGORIES[bill.category as keyof typeof CATEGORIES]?.color,
-                            }}
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/50 text-muted-foreground"
                           >
                             {getCategoryIcon(bill.category)}
                           </div>
                           <div>
                             <p className="font-medium text-sm">{bill.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {format(bill.date, "MMM d")}
+                              {format(bill.date, "d MMM", { locale: fr })}
                             </p>
                           </div>
                         </div>
@@ -548,7 +406,7 @@ export default function CalendarPage() {
                           </p>
                           {bill.frequency && (
                             <p className="text-xs text-muted-foreground capitalize">
-                              {bill.frequency}
+                              {getFrequencyLabel(bill.frequency)}
                             </p>
                           )}
                         </div>
@@ -560,11 +418,11 @@ export default function CalendarPage() {
             </Card>
 
             {overdueBills.length > 0 && (
-              <Card className="border-destructive/30 bg-destructive/5">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2 text-destructive">
-                    <AlertCircle className="h-5 w-5" />
-                    Overdue Bills
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                    Factures en retard
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -572,15 +430,15 @@ export default function CalendarPage() {
                     {overdueBills.map((bill) => (
                       <div
                         key={bill.id}
-                        className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/80 p-3"
+                        className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
                       >
                         <div>
                           <p className="text-sm font-medium">{bill.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            Due {format(bill.date, "MMM d")}
+                            Échéance le {format(bill.date, "d MMM", { locale: fr })}
                           </p>
                         </div>
-                        <p className="font-semibold text-destructive">
+                        <p className="font-semibold">
                           <Money amount={bill.amount} />
                         </p>
                       </div>
@@ -597,30 +455,21 @@ export default function CalendarPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {selectedDate && format(selectedDate, "EEEE, MMMM d, yyyy")}
+                {selectedDate && format(selectedDate, "EEEE d MMMM yyyy", { locale: fr })}
               </DialogTitle>
               <DialogDescription>
-                {selectedBills.length} bill{selectedBills.length !== 1 ? "s" : ""} on this day
+                {selectedBills.length} mouvement{selectedBills.length !== 1 ? "s" : ""} ce jour-là
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 max-h-[400px] overflow-y-auto">
               {selectedBills.map((bill) => (
                 <div
                   key={bill.id}
-                  className={cn(
-                    "flex items-center justify-between rounded-2xl border p-4",
-                    bill.type === "paid" && "bg-success/5 border-success/20",
-                    bill.type === "upcoming" && "bg-info/5 border-info/20",
-                    bill.type === "overdue" && "bg-destructive/5 border-destructive/20"
-                  )}
+                  className="flex items-center justify-between rounded-lg border p-4"
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="flex h-10 w-10 items-center justify-center rounded-full"
-                      style={{
-                        backgroundColor: `${CATEGORIES[bill.category as keyof typeof CATEGORIES]?.color}20`,
-                        color: CATEGORIES[bill.category as keyof typeof CATEGORIES]?.color,
-                      }}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 text-muted-foreground"
                     >
                       {getCategoryIcon(bill.category)}
                     </div>
@@ -637,7 +486,7 @@ export default function CalendarPage() {
                         {bill.frequency && (
                           <>
                             <span>•</span>
-                            <span className="capitalize">{bill.frequency}</span>
+                            <span>{getFrequencyLabel(bill.frequency)}</span>
                           </>
                         )}
                       </div>
@@ -648,12 +497,10 @@ export default function CalendarPage() {
                     <span
                       className={cn(
                         "rounded-full px-2 py-0.5 text-xs",
-                        bill.type === "paid" && "bg-success/15 text-success",
-                        bill.type === "upcoming" && "bg-info/15 text-info",
-                        bill.type === "overdue" && "bg-destructive/15 text-destructive"
+                        bill.type === "paid" ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
                       )}
                     >
-                      {bill.type === "paid" ? "Paid" : bill.type === "upcoming" ? "Upcoming" : "Overdue"}
+                      {bill.type === "paid" ? "Réalisé" : bill.type === "upcoming" ? "À venir" : "En retard"}
                     </span>
                   </div>
                 </div>

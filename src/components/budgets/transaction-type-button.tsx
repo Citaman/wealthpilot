@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Check, Tags } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ import {
   setTransactionTypeOverride,
   getCategoryBudgetType,
 } from "@/lib/budget-types";
+import { logger } from "@/lib/logger";
 
 interface TransactionTypeButtonProps {
   transactionId: number;
@@ -63,17 +64,17 @@ export function TransactionTypeButton({
       await setTransactionTypeOverride(transactionId, newType);
       onChange?.();
     } catch (error) {
-      console.error("Failed to save transaction type override:", error);
+      logger.error("Failed to save transaction type override:", error);
     } finally {
       setSaving(false);
     }
   };
 
   const typeConfig: Record<BudgetType, { color: string; bgColor: string; label: string }> = {
-    needs: { color: "text-info", bgColor: "bg-info", label: "Need" },
-    wants: { color: "text-warning", bgColor: "bg-warning", label: "Want" },
-    savings: { color: "text-success", bgColor: "bg-success", label: "Saving" },
-    income: { color: "text-primary", bgColor: "bg-primary", label: "Income" },
+    needs: { color: "text-info", bgColor: "bg-info", label: "Besoin" },
+    wants: { color: "text-warning", bgColor: "bg-warning", label: "Envie" },
+    savings: { color: "text-success", bgColor: "bg-success", label: "Épargne" },
+    income: { color: "text-primary", bgColor: "bg-primary", label: "Revenu" },
   };
 
   const config = typeConfig[effectiveType];
@@ -122,9 +123,9 @@ export function TransactionTypeButton({
           <TooltipContent side="top">
             <p className="text-xs">
               {isOverridden ? (
-                <span>Custom: <span className={config.color}>{config.label}</span></span>
+                <span>Personnalisé : <span className={config.color}>{config.label}</span></span>
               ) : (
-                <span>Default ({defaultType}): <span className={config.color}>{config.label}</span></span>
+                <span>Par défaut : <span className={config.color}>{config.label}</span></span>
               )}
             </p>
           </TooltipContent>
@@ -132,7 +133,7 @@ export function TransactionTypeButton({
 
         <DropdownMenuContent align="end" className="w-36">
           <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-            Budget Type
+            Type de budget
           </div>
           
           {(["needs", "wants", "savings"] as const).map((type) => {
@@ -149,7 +150,7 @@ export function TransactionTypeButton({
                 <div className={cn("h-2 w-2 rounded-full", tc.bgColor)} />
                 <span>{tc.label}</span>
                 {isDefault && (
-                  <span className="text-xs text-muted-foreground ml-auto">(default)</span>
+                  <span className="text-xs text-muted-foreground ml-auto">(défaut)</span>
                 )}
                 {isSelected && <Check className="h-3 w-3 ml-auto" />}
               </DropdownMenuItem>
@@ -163,7 +164,7 @@ export function TransactionTypeButton({
                 onClick={() => handleTypeChange(null)}
                 className="text-muted-foreground"
               >
-                Reset to default
+                Rétablir la valeur par défaut
               </DropdownMenuItem>
             </>
           )}
@@ -202,9 +203,9 @@ export function TransactionTypeBadge({
   }
 
   const typeConfig: Record<string, { variant: "default" | "secondary" | "outline"; label: string }> = {
-    needs: { variant: "default", label: "Need" },
-    wants: { variant: "secondary", label: "Want" },
-    savings: { variant: "outline", label: "Saving" },
+    needs: { variant: "default", label: "Besoin" },
+    wants: { variant: "secondary", label: "Envie" },
+    savings: { variant: "outline", label: "Épargne" },
   };
 
   const config = typeConfig[effectiveType] || typeConfig.wants;

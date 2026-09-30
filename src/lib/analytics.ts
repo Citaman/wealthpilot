@@ -1,6 +1,6 @@
 // Analytics calculations and data aggregation
 import { db, Transaction, CATEGORIES } from './db';
-import { startOfMonth, endOfMonth, subMonths, format, parseISO, startOfYear, endOfYear } from 'date-fns';
+import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
 
 export interface MonthlyStats {
   month: string;

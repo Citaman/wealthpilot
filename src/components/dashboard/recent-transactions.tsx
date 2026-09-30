@@ -1,11 +1,9 @@
 "use client";
 
 import { format, formatDistanceToNow } from "date-fns";
-import { ArrowUpRight, ArrowDownRight, MoreHorizontal, ArrowRight } from "lucide-react";
+import { fr } from "date-fns/locale";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { CATEGORIES, type Transaction } from "@/lib/db";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useMoney } from "@/hooks/use-money";
 import { Money } from "@/components/ui/money";
@@ -16,10 +14,10 @@ interface RecentTransactionsProps {
   showViewAll?: boolean;
 }
 
-export function RecentTransactions({ 
-  transactions, 
+export function RecentTransactions({
+  transactions,
   limit = 5,
-  showViewAll = true 
+  showViewAll = true,
 }: RecentTransactionsProps) {
   const { getAccountCurrency } = useMoney();
   const displayTransactions = transactions.slice(0, limit);
@@ -28,7 +26,7 @@ export function RecentTransactions({
     const cat = CATEGORIES[category as keyof typeof CATEGORIES];
     if (cat?.icon) {
       const IconComponent = cat.icon;
-      return <IconComponent className="h-4 w-4" />;
+      return <IconComponent className="h-4 w-4 text-muted-foreground" />;
     }
     return null;
   };
@@ -38,77 +36,55 @@ export function RecentTransactions({
     const date = new Date(dateStr);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
-    
+
     if (isToday) {
-      return formatDistanceToNow(date, { addSuffix: true });
+      return formatDistanceToNow(date, { addSuffix: true, locale: fr });
     }
-    return format(date, "MMM d, h:mm a");
+    return format(date, "d MMM, HH:mm", { locale: fr });
   };
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <CardTitle className="text-base font-medium">Recent Transactions</CardTitle>
+        <CardTitle className="text-base font-medium">Transactions récentes</CardTitle>
         {showViewAll && (
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/transactions" className="text-xs">
-              View all
-              <ArrowRight className="ml-1 h-3 w-3" />
-            </Link>
-          </Button>
+          <Link href="/transactions" className="text-xs text-primary hover:underline">
+            Tout voir &rarr;
+          </Link>
         )}
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 px-6 pb-6">
         {displayTransactions.length === 0 ? (
-          <div className="flex h-48 items-center justify-center text-muted-foreground px-6">
-            No transactions yet. Import your data to get started.
+          <div className="flex h-48 items-center justify-center text-muted-foreground">
+            Aucune transaction. Importez un relevé pour commencer.
           </div>
         ) : (
-          <div className="divide-y">
+          <div>
             {displayTransactions.map((tx) => {
               const isCredit = tx.direction === "credit";
-              const categoryInfo = CATEGORIES[tx.category];
-              
+
               return (
-                <div
+                <Link
                   key={tx.id}
-                  className="flex items-center gap-4 px-6 py-3 transition-colors hover:bg-muted/30"
+                  href={tx.id ? `/transactions?editId=${tx.id}` : "/transactions"}
+                  className="flex items-center gap-3 py-3 hover:bg-muted/30 rounded-lg px-2 -mx-2 transition-colors"
                 >
                   {/* Icon */}
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full shrink-0",
-                      isCredit ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-muted"
-                    )}
-                    style={{
-                      color: isCredit ? "#10b981" : categoryInfo?.color || "#6b7280",
-                    }}
-                  >
+                  <div className="h-9 w-9 rounded-xl bg-muted/50 flex items-center justify-center flex-shrink-0">
                     {getCategoryIcon(tx.category)}
                   </div>
 
                   {/* Details */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium truncate">{tx.merchant}</p>
-                      <span
-                        className="h-1.5 w-1.5 rounded-full shrink-0"
-                        style={{ backgroundColor: categoryInfo?.color || "#6b7280" }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {formatTime(tx.date)}
+                    <p className="text-sm font-medium truncate">{tx.merchant || tx.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {tx.category} &middot; {formatTime(tx.date)}
                     </p>
                   </div>
 
                   {/* Amount */}
-                  <div className="text-right shrink-0">
-                    <p
-                      className={cn(
-                        "font-semibold tabular-nums",
-                        isCredit ? "text-emerald-600" : "text-foreground"
-                      )}
-                    >
+                  <div className="text-right">
+                    <p className="text-sm font-medium tabular-nums">
                       {isCredit ? "+" : "-"}
                       <Money
                         amount={Math.abs(tx.amount)}
@@ -117,11 +93,8 @@ export function RecentTransactions({
                         maximumFractionDigits={2}
                       />
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {tx.category}
-                    </p>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

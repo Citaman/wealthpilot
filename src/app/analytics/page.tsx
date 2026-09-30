@@ -1,60 +1,35 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  subMonths,
-  startOfYear,
-} from "date-fns";
-import {
-  TrendingUp,
-  TrendingDown,
-  ArrowUpRight,
-  ArrowDownRight,
-  BarChart3,
-  Wallet,
-  PiggyBank,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { endOfMonth, format, startOfMonth, startOfYear, subMonths } from "date-fns";
+import { fr } from "date-fns/locale";
+import { ArrowDownRight, ArrowUpRight, BarChart3, CircleDollarSign, PiggyBank } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Money } from "@/components/ui/money";
 import {
-  // Core Analytics
-  BalanceTimeline,
-  SpendingTrends,
-  MonthComparison,
-  // v0.7.0 Overhaul
-  SpendingCalendar,
-  PersonalInsights,
   RecurringExpenses,
-  SpendingForecast,
-  CategoryTrends,
-  SavingsPotential,
-  FinancialHealthScore,
-  SpendingVelocity,
+  SpendingCalendar,
   TopMerchants,
-  Predictions,
 } from "@/components/analytics";
+import { FinancialHistory } from "@/components/analytics/financial-history";
 import { useTransactions } from "@/hooks/use-data";
 import { useAccount } from "@/contexts/account-context";
-import { cn } from "@/lib/utils";
 import { useMoney } from "@/hooks/use-money";
+import { buildMonthlyFinancialHistory, summarizeFinancialHistory } from "@/lib/monthly-analysis";
+import { calculateFinancialMetrics } from "@/lib/financial-metrics";
+import Link from "next/link";
 
 type Period = "1m" | "3m" | "6m" | "12m" | "ytd";
 
 export default function AnalyticsPage() {
-  const { selectedAccountId, accounts, totalBalance, selectedAccount } = useAccount();
+  const { selectedAccountId, accounts } = useAccount();
   const { convertFromAccount } = useMoney();
-  const [period, setPeriod] = useState<Period>("6m");
-  const now = new Date();
+  const [period, setPeriod] = useState<Period>("ytd");
+  const now = useMemo(() => new Date(), []);
 
-  // Calculate date range based on period
   const dateRange = useMemo(() => {
     switch (period) {
       case "1m":
@@ -67,10 +42,8 @@ export default function AnalyticsPage() {
         return { start: subMonths(startOfMonth(now), 11), end: endOfMonth(now) };
       case "ytd":
         return { start: startOfYear(now), end: endOfMonth(now) };
-      default:
-        return { start: subMonths(startOfMonth(now), 5), end: endOfMonth(now) };
     }
-  }, [period]);
+  }, [period, now]);
 
   const { transactions, isLoading } = useTransactions({
     startDate: dateRange.start,
@@ -78,256 +51,96 @@ export default function AnalyticsPage() {
     accountId: selectedAccountId,
     excludeExcluded: true,
   });
-
-  // Calculate summary stats
-  const stats = useMemo(() => {
-    const totalIncome = transactions
-      .filter((t) => t.direction === "credit")
-      .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
-
-    const totalExpenses = Math.abs(
-      transactions
-        .filter((t) => t.direction === "debit")
-        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
-    );
-
-    // Get unique months
-    const months = new Set(transactions.map((t) => format(new Date(t.date), "yyyy-MM")));
-    const monthCount = months.size || 1;
-
-    const avgIncome = totalIncome / monthCount;
-    const avgExpenses = totalExpenses / monthCount;
-    const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
-    const netSavings = totalIncome - totalExpenses;
-
-    // Calculate current balance from most recent transaction
-    const sortedTx = [...transactions].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-    const currentBalance = selectedAccountId === "all"
-      ? totalBalance
-      : convertFromAccount(selectedAccount?.balance || 0, selectedAccount?.id);
-
-    // Calculate month-over-month change
-    const thisMonthExpenses = transactions
-      .filter(
-        (t) =>
-          t.direction === "debit" &&
-          format(new Date(t.date), "yyyy-MM") === format(now, "yyyy-MM")
-      )
-      .reduce((sum, t) => sum + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
-
-    const lastMonthExpenses = transactions
-      .filter(
-        (t) =>
-          t.direction === "debit" &&
-          format(new Date(t.date), "yyyy-MM") === format(subMonths(now, 1), "yyyy-MM")
-      )
-      .reduce((sum, t) => sum + Math.abs(convertFromAccount(t.amount, t.accountId)), 0);
-
-    const momChange = lastMonthExpenses !== 0
-      ? ((thisMonthExpenses - lastMonthExpenses) / lastMonthExpenses) * 100
-      : 0;
-
-    return {
-      totalIncome,
-      totalExpenses,
-      avgIncome,
-      avgExpenses,
-      savingsRate,
-      netSavings,
-      currentBalance,
-      transactionCount: transactions.length,
-      momChange,
-    };
-  }, [transactions, convertFromAccount, selectedAccountId, selectedAccount, totalBalance, now]);
-
-  const periodLabels: Record<Period, string> = {
-    "1m": "This Month",
-    "3m": "Last 3 Months",
-    "6m": "Last 6 Months",
-    "12m": "Last 12 Months",
-    ytd: "Year to Date",
-  };
+  const history = useMemo(
+    () => buildMonthlyFinancialHistory(transactions, dateRange.start, dateRange.end, convertFromAccount, now),
+    [transactions, dateRange, convertFromAccount, now]
+  );
+  const stats = useMemo(() => summarizeFinancialHistory(history), [history]);
+  const quality = useMemo(() => calculateFinancialMetrics(transactions, convertFromAccount), [transactions, convertFromAccount]);
+  const scopeLabel = selectedAccountId === "all"
+    ? "Foyer · tous les comptes"
+    : accounts.find((account) => account.id === selectedAccountId)?.name || "Compte sélectionné";
+  const periodLabel = `${format(dateRange.start, "dd MMM yyyy", { locale: fr })} – ${format(dateRange.end, "dd MMM yyyy", { locale: fr })}`;
 
   return (
     <AppLayout>
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Deep insights into your financial patterns
-          </p>
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-            <TabsList>
-              <TabsTrigger value="1m">1M</TabsTrigger>
-              <TabsTrigger value="3m">3M</TabsTrigger>
-              <TabsTrigger value="6m">6M</TabsTrigger>
-              <TabsTrigger value="12m">1Y</TabsTrigger>
-              <TabsTrigger value="ytd">YTD</TabsTrigger>
+          <div>
+            <h1 className="text-2xl font-semibold">Analyse financière</h1>
+            <p className="text-sm text-muted-foreground">{scopeLabel} · {periodLabel}</p>
+            <p className="text-xs text-muted-foreground">Remboursements déduits · transferts internes appariés neutralisés · mois en cours exclu des moyennes</p>
+          </div>
+          <Tabs value={period} onValueChange={(value) => setPeriod(value as Period)} className="w-full sm:w-auto">
+            <TabsList className="grid w-full grid-cols-5 sm:w-auto">
+              <TabsTrigger className="min-h-11" value="1m">1M</TabsTrigger>
+              <TabsTrigger className="min-h-11" value="3m">3M</TabsTrigger>
+              <TabsTrigger className="min-h-11" value="6m">6M</TabsTrigger>
+              <TabsTrigger className="min-h-11" value="12m">12M</TabsTrigger>
+              <TabsTrigger className="min-h-11" value="ytd">Année</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
-        {/* Summary Stats - 5 cards */}
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
-          <Card>
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-                  <ArrowUpRight className="h-5 w-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Income</p>
-                  <p className="text-xl font-bold"><Money amount={stats.totalIncome} /></p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
-                  <ArrowDownRight className="h-5 w-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Expenses</p>
-                  <p className="text-xl font-bold"><Money amount={stats.totalExpenses} /></p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-lg",
-                  stats.netSavings >= 0 ? "bg-success/10" : "bg-destructive/10"
-                )}>
-                  <PiggyBank className={cn(
-                    "h-5 w-5",
-                    stats.netSavings >= 0 ? "text-success" : "text-destructive"
-                  )} />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Net Savings</p>
-                  <p className={cn(
-                    "text-xl font-bold",
-                    stats.netSavings >= 0 ? "text-success" : "text-destructive"
-                  )}><Money amount={stats.netSavings} /></p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
-                  <BarChart3 className="h-5 w-5 text-info" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg. Monthly</p>
-                  <p className="text-xl font-bold"><Money amount={stats.avgExpenses} /></p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-lg",
-                    stats.momChange <= 0 ? "bg-success/10" : "bg-destructive/10"
-                  )}
-                >
-                  {stats.momChange <= 0 ? (
-                    <TrendingDown className="h-5 w-5 text-success" />
-                  ) : (
-                    <TrendingUp className="h-5 w-5 text-destructive" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">vs Last Month</p>
-                  <p
-                    className={cn(
-                      "text-xl font-bold",
-                      stats.momChange <= 0 ? "text-success" : "text-destructive"
-                    )}
-                  >
-                    {stats.momChange > 0 ? "+" : ""}{stats.momChange.toFixed(1)}%
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <SummaryCard label="Revenus reconnus" amount={stats.totalIncome} detail="Total sur la période" icon={<ArrowUpRight className="h-5 w-5" />} />
+          <SummaryCard label="Dépenses réelles" amount={stats.totalExpenses} detail="Total net des remboursements" icon={<ArrowDownRight className="h-5 w-5" />} />
+          <SummaryCard label="Flux net" amount={stats.net} detail={stats.net >= 0 ? "Excédent sur la période" : "Déficit sur la période"} icon={<PiggyBank className="h-5 w-5" />} />
+          <SummaryCard label="Dépenses mensuelles moyennes" amount={stats.averageMonthlyExpenses} detail="Mois complets uniquement" icon={<BarChart3 className="h-5 w-5" />} />
+          <SummaryCard label="Revenus mensuels moyens" amount={stats.averageMonthlyIncome} detail="Mois complets uniquement" icon={<CircleDollarSign className="h-5 w-5" />} />
         </div>
 
         {isLoading ? (
           <div className="space-y-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[400px] rounded-lg bg-muted animate-pulse" />
-            ))}
+            {[1, 2, 3].map((index) => <div key={index} className="h-[360px] animate-pulse rounded-lg bg-muted" />)}
           </div>
+        ) : transactions.length === 0 ? (
+          <Card><CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 py-8 text-center"><p className="text-sm text-muted-foreground">Aucune transaction sur cette période.</p><div className="flex flex-wrap justify-center gap-2"><Button variant="outline" onClick={() => setPeriod("12m")}>Voir les 12 derniers mois</Button><Button asChild><Link href="/import">Importer un relevé</Link></Button></div></CardContent></Card>
         ) : (
           <>
-            {/* Personal Insights Carousel - Full width prominent */}
-            <PersonalInsights transactions={transactions} />
+            <FinancialHistory history={history} accounts={accounts} />
 
-            {/* Row 1: Financial Health Score + Spending Velocity + Top Merchants */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                          <FinancialHealthScore 
-                            transactions={transactions} 
-                            currentBalance={totalBalance}
-                            accounts={accounts}
-                          />              <SpendingVelocity transactions={transactions} />
-              <TopMerchants transactions={transactions} />
-            </div>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                  <div><h2 className="font-semibold">Détail mensuel accessible</h2><p className="text-sm text-muted-foreground">Chaque ligne ouvre les transactions de la période.</p></div>
+                  <p className="text-sm text-muted-foreground">Qualité : {quality.unrecognizedCredits ? `${quality.unrecognizedCredits.toFixed(2)} € de crédits à vérifier` : "aucun crédit non reconnu"}</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[620px] text-sm">
+                    <thead><tr className="border-b text-left text-xs uppercase text-muted-foreground"><th className="py-2">Mois</th><th className="text-right">Revenus</th><th className="text-right">Dépenses</th><th className="text-right">Net</th><th className="text-right">Détail</th></tr></thead>
+                    <tbody>{history.map((point) => <tr key={point.month} className="border-b last:border-0"><th scope="row" className="py-3 text-left font-medium">{point.label}{point.isPartial ? " (en cours)" : ""}</th><td className="text-right"><Money amount={point.income} /></td><td className="text-right"><Money amount={point.expenses} /></td><td className="text-right font-semibold"><Money amount={point.net} /></td><td className="text-right"><Link className="font-medium text-primary underline-offset-4 hover:underline" href={`/transactions?start=${point.month}-01&end=${point.month}-${new Date(Number(point.month.slice(0,4)), Number(point.month.slice(5,7)), 0).getDate()}`}>Voir</Link></td></tr>)}</tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Row 2: Spending Calendar (Large) - Full width for prominence */}
-            <SpendingCalendar
-              transactions={transactions}
-              className="col-span-full"
-            />
-
-            {/* Row 3: Spending Forecast + Savings Potential */}
             <div className="grid gap-6 lg:grid-cols-2">
-              <Predictions
-                transactions={transactions}
-                currentBalance={stats.currentBalance}
-              />
-              <SpendingForecast
-                transactions={transactions}
-                currentBalance={stats.currentBalance}
-              />
+              <TopMerchants transactions={transactions} />
+              <RecurringExpenses transactions={transactions} />
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-1">
-              <SavingsPotential transactions={transactions} />
-            </div>
-
-            {/* Row 4: Balance Timeline - Full width */}
-            <BalanceTimeline
-              transactions={transactions}
-              startDate={dateRange.start}
-              endDate={dateRange.end}
-            />
-
-            {/* Row 5: Month Analysis + Spending Trends + Category Trends */}
-            <div className="grid gap-6 lg:grid-cols-3">
-              <MonthComparison transactions={transactions} />
-              <SpendingTrends
-                transactions={transactions}
-                startDate={dateRange.start}
-                endDate={dateRange.end}
-              />
-              <CategoryTrends transactions={transactions} />
-            </div>
-
-            {/* Row 6: Recurring Expenses (Full width) */}
-            <RecurringExpenses transactions={transactions} />
+            <SpendingCalendar transactions={transactions} className="col-span-full" />
           </>
         )}
       </div>
     </AppLayout>
+  );
+}
+
+function SummaryCard({ label, amount, detail, icon }: { label: string; amount: number; detail: string; icon: React.ReactNode }) {
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">{icon}</div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+            <p className="text-2xl font-semibold"><Money amount={amount} /></p>
+            <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

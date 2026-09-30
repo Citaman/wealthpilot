@@ -32,8 +32,6 @@ function ProgressRing({
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (Math.min(progress, 100) / 100) * circumference;
-  const isOver = progress > 100;
-
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
@@ -53,7 +51,7 @@ function ProgressRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={isOver ? "#ef4444" : color}
+          stroke={color}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -62,10 +60,7 @@ function ProgressRing({
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className={cn(
-          "text-xs font-bold",
-          isOver && "text-red-500"
-        )}>
+        <span className="text-xs font-bold text-foreground">
           {Math.round(Math.min(progress, 999))}%
         </span>
       </div>
@@ -116,7 +111,7 @@ export function CategoryBudgetCard({
     <div className={cn(
       "flex items-center gap-4 p-4 rounded-xl border transition-all",
       "hover:shadow-sm hover:border-primary/20",
-      isOver && "border-red-500/30 bg-red-500/5"
+      isOver && "border-muted bg-muted/30"
     )}>
       {/* Category Icon */}
       <div
@@ -137,12 +132,7 @@ export function CategoryBudgetCard({
         <div className="flex items-center gap-2">
           <span className="font-semibold truncate">{category}</span>
           {change !== undefined && (
-            <Badge variant="outline" className={cn(
-              "text-[10px] px-1.5 py-0",
-              change > 10 ? "text-red-500 border-red-500/30" :
-              change < -10 ? "text-emerald-500 border-emerald-500/30" :
-              "text-muted-foreground"
-            )}>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
               {change > 0 ? (
                 <TrendingUp className="h-2.5 w-2.5 mr-0.5" />
               ) : change < 0 ? (
@@ -155,16 +145,13 @@ export function CategoryBudgetCard({
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          <Money amount={spent} /> spent
+          <Money amount={spent} /> dépensé
         </p>
-        <p className={cn(
-          "text-xs",
-          isOver ? "text-red-500 font-medium" : "text-muted-foreground"
-        )}>
+        <p className="text-xs text-muted-foreground">
           {isOver ? (
-            <>Over by <Money amount={Math.abs(remaining)} /></>
+            <>Dépassé de <Money amount={Math.abs(remaining)} /></>
           ) : (
-            <><Money amount={remaining} /> left</>
+            <><Money amount={remaining} /> restant</>
           )}
         </p>
       </div>
@@ -179,6 +166,8 @@ export function CategoryBudgetCard({
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               autoFocus
+              aria-label={`Budget pour ${category}`}
+              min="0"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSave();
                 if (e.key === "Escape") handleCancel();
@@ -190,16 +179,18 @@ export function CategoryBudgetCard({
               className="h-8 w-8 p-0"
               onClick={handleSave}
               disabled={isSaving}
+              aria-label={`Enregistrer le budget de ${category}`}
             >
-              <Check className="h-4 w-4 text-emerald-500" />
+              <Check className="h-4 w-4 text-foreground" />
             </Button>
             <Button
               size="sm"
               variant="ghost"
               className="h-8 w-8 p-0"
               onClick={handleCancel}
+              aria-label="Annuler la modification"
             >
-              <X className="h-4 w-4 text-red-500" />
+              <X className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         ) : (
@@ -218,6 +209,7 @@ export function CategoryBudgetCard({
                 setEditValue(budget.toString());
                 setIsEditing(true);
               }}
+              aria-label={`Modifier le budget de ${category}`}
             >
               <Edit2 className="h-4 w-4" />
             </Button>

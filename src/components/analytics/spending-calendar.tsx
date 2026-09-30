@@ -10,11 +10,11 @@ import {
   isSameDay,
   addMonths,
   subMonths,
-  getDay,
   isToday,
   startOfWeek,
   endOfWeek,
 } from "date-fns";
+import { fr } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,10 @@ import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
 import { useMoney } from "@/hooks/use-money";
 import { Money } from "@/components/ui/money";
+import {
+  calculateFinancialMetrics,
+  classifyFinancialTransaction,
+} from "@/lib/financial-metrics";
 
 interface SpendingCalendarProps {
   transactions: Transaction[];
@@ -35,7 +39,7 @@ interface DayData {
   transactions: Transaction[];
 }
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
 export function SpendingCalendar({ transactions, className }: SpendingCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -67,9 +71,10 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
       const dayData = dayMap.get(tx.date);
       if (dayData) {
         dayData.transactions.push(tx);
-        if (tx.direction === "credit") {
+        const kind = classifyFinancialTransaction(tx);
+        if (kind === "income") {
           dayData.income += Math.abs(convertFromAccount(tx.amount, tx.accountId));
-        } else {
+        } else if (kind === "expense") {
           dayData.expenses += Math.abs(convertFromAccount(tx.amount, tx.accountId));
         }
       }
@@ -82,29 +87,30 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
     });
 
     // Monthly totals
-    const monthlyIncome = Array.from(dayMap.values())
-      .filter((d) => isSameMonth(d.date, currentMonth))
-      .reduce((sum, d) => sum + d.income, 0);
-    const monthlyExpenses = Array.from(dayMap.values())
-      .filter((d) => isSameMonth(d.date, currentMonth))
-      .reduce((sum, d) => sum + d.expenses, 0);
+    const monthlyTransactions = transactions.filter((transaction) =>
+      transaction.date.startsWith(format(currentMonth, "yyyy-MM"))
+    );
+    const monthlyMetrics = calculateFinancialMetrics(
+      monthlyTransactions,
+      convertFromAccount
+    );
 
     return {
       days: Array.from(dayMap.values()),
       maxExpense,
-      monthlyIncome,
-      monthlyExpenses,
+      monthlyIncome: monthlyMetrics.income,
+      monthlyExpenses: monthlyMetrics.expenses,
     };
   }, [transactions, currentMonth, convertFromAccount]);
 
   const getIntensityClass = (expenses: number) => {
     if (expenses === 0) return "";
     const ratio = calendarData.maxExpense > 0 ? expenses / calendarData.maxExpense : 0;
-    if (ratio < 0.2) return "bg-red-100 dark:bg-red-950/30";
-    if (ratio < 0.4) return "bg-red-200 dark:bg-red-900/40";
-    if (ratio < 0.6) return "bg-red-300 dark:bg-red-800/50";
-    if (ratio < 0.8) return "bg-red-400 dark:bg-red-700/60";
-    return "bg-red-500 dark:bg-red-600/70";
+    if (ratio < 0.2) return "bg-[#FFCBBC]/40";
+    if (ratio < 0.4) return "bg-[#FFAB96]/50";
+    if (ratio < 0.6) return "bg-[#FF8B70]/50";
+    if (ratio < 0.8) return "bg-[#FF6B4A]/50";
+    return "bg-[#FF6B4A]/70";
   };
 
   const selectedDayData = selectedDay
@@ -114,10 +120,10 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
   return (
     <Card className={cn("col-span-2", className)}>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Spending Calendar
+            Calendrier des dépenses
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
@@ -125,40 +131,39 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
               size="icon"
               className="h-8 w-8"
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              aria-label="Mois précédent"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="font-medium min-w-[120px] text-center">
-              {format(currentMonth, "MMMM yyyy")}
+              {format(currentMonth, "MMMM yyyy", { locale: fr })}
             </span>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8"
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              aria-label="Mois suivant"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
         {/* Monthly summary */}
-        <div className="flex gap-4 mt-2 text-sm">
+        <div className="grid gap-2 mt-2 text-sm sm:grid-cols-3 sm:gap-4">
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-muted-foreground">Income:</span>
-            <span className="font-semibold text-emerald-600"><Money amount={calendarData.monthlyIncome} /></span>
+            <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+            <span className="text-muted-foreground">Revenus :</span>
+            <span className="font-semibold text-foreground"><Money amount={calendarData.monthlyIncome} /></span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-red-500" />
-            <span className="text-muted-foreground">Expenses:</span>
-            <span className="font-semibold text-red-600"><Money amount={calendarData.monthlyExpenses} /></span>
+            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: "#FF6B4A" }} />
+            <span className="text-muted-foreground">Dépenses :</span>
+            <span className="font-semibold text-foreground"><Money amount={calendarData.monthlyExpenses} /></span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Net:</span>
-            <span className={cn(
-              "font-semibold",
-              calendarData.monthlyIncome - calendarData.monthlyExpenses >= 0 ? "text-emerald-600" : "text-red-600"
-            )}>
+            <span className="text-muted-foreground">Net :</span>
+            <span className="font-semibold text-foreground">
               <Money amount={calendarData.monthlyIncome - calendarData.monthlyExpenses} />
             </span>
           </div>
@@ -187,9 +192,11 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
               <button
                 key={format(dayData.date, "yyyy-MM-dd")}
                 onClick={() => setSelectedDay(isSelected ? null : dayData.date)}
+                aria-label={`${format(dayData.date, "EEEE d MMMM", { locale: fr })} : ${dayData.transactions.length} transaction(s), ${formatCompactCurrency(dayData.expenses)} dépensés`}
+                aria-pressed={Boolean(isSelected)}
                 className={cn(
                   "relative h-16 p-1 rounded-lg border transition-all text-left",
-                  isCurrentMonth ? "bg-card" : "bg-muted/30 opacity-50",
+                  isCurrentMonth ? "bg-card" : "bg-muted/50 opacity-50",
                   isSelected && "ring-2 ring-primary",
                   isToday(dayData.date) && "border-primary",
                   !isSelected && "hover:bg-accent/50",
@@ -205,12 +212,12 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
                 {isCurrentMonth && (hasIncome || hasExpenses) && (
                   <div className="mt-0.5 space-y-0.5">
                     {hasIncome && (
-                      <div className="text-[10px] text-emerald-600 font-medium truncate">
+                      <div className="text-[10px] text-muted-foreground font-medium truncate">
                         +{formatCompactCurrency(dayData.income)}
                       </div>
                     )}
                     {hasExpenses && (
-                      <div className="text-[10px] text-red-600 font-medium truncate">
+                      <div className="text-[10px] text-foreground font-medium truncate">
                         -{formatCompactCurrency(dayData.expenses)}
                       </div>
                     )}
@@ -228,15 +235,15 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
 
         {/* Selected day detail */}
         {selectedDayData && selectedDayData.transactions.length > 0 && (
-          <div className="mt-4 p-4 rounded-lg bg-muted/50 border">
+          <div className="mt-4 p-4 rounded-lg bg-muted border">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold">{format(selectedDayData.date, "EEEE, MMMM d")}</h4>
+              <h4 className="font-semibold">{format(selectedDayData.date, "EEEE d MMMM", { locale: fr })}</h4>
               <div className="flex gap-3 text-sm">
                 {selectedDayData.income > 0 && (
-                  <span className="text-emerald-600">+<Money amount={selectedDayData.income} /></span>
+                  <span className="text-foreground">+<Money amount={selectedDayData.income} /></span>
                 )}
                 {selectedDayData.expenses > 0 && (
-                  <span className="text-red-600">-<Money amount={selectedDayData.expenses} /></span>
+                  <span className="text-foreground">-<Money amount={selectedDayData.expenses} /></span>
                 )}
               </div>
             </div>
@@ -249,13 +256,10 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
                     className="flex items-center justify-between py-1.5 px-2 rounded bg-background"
                   >
                     <div>
-                      <p className="text-sm font-medium">{tx.merchant || "Unknown"}</p>
+                      <p className="text-sm font-medium">{tx.merchant || "Inconnu"}</p>
                       <p className="text-xs text-muted-foreground">{tx.category}</p>
                     </div>
-                    <span className={cn(
-                      "font-semibold",
-                      tx.direction === "credit" ? "text-emerald-600" : "text-red-600"
-                    )}>
+                    <span className="font-semibold text-foreground">
                       {tx.direction === "credit" ? "+" : "-"}
                       <Money amount={Math.abs(convertFromAccount(tx.amount, tx.accountId))} />
                     </span>
@@ -267,14 +271,14 @@ export function SpendingCalendar({ transactions, className }: SpendingCalendarPr
 
         {/* Legend */}
         <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
-          <span>Spending intensity:</span>
+          <span>Intensité des dépenses :</span>
           <div className="flex items-center gap-1">
-            <div className="h-3 w-3 rounded bg-red-100 dark:bg-red-950/30" />
-            <div className="h-3 w-3 rounded bg-red-200 dark:bg-red-900/40" />
-            <div className="h-3 w-3 rounded bg-red-300 dark:bg-red-800/50" />
-            <div className="h-3 w-3 rounded bg-red-400 dark:bg-red-700/60" />
-            <div className="h-3 w-3 rounded bg-red-500 dark:bg-red-600/70" />
-            <span className="ml-1">High</span>
+            <div className="h-3 w-3 rounded bg-[#FFCBBC]/40" />
+            <div className="h-3 w-3 rounded bg-[#FFAB96]/50" />
+            <div className="h-3 w-3 rounded bg-[#FF8B70]/50" />
+            <div className="h-3 w-3 rounded bg-[#FF6B4A]/50" />
+            <div className="h-3 w-3 rounded bg-[#FF6B4A]/70" />
+            <span className="ml-1">Élevée</span>
           </div>
         </div>
       </CardContent>

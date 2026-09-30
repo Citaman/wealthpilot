@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { format, subMonths, parseISO, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
-import { Repeat, ChevronDown, TrendingUp, TrendingDown, Calendar, BarChart3 } from "lucide-react";
+import { format, subMonths, parseISO, eachMonthOfInterval } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Repeat, ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
 import {
-  ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
@@ -12,7 +12,6 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import { ClientOnly } from "@/components/ui/client-only";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +25,13 @@ import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/db";
 import { useMoney } from "@/hooks/use-money";
 import { Money } from "@/components/ui/money";
+import { MeasuredChart } from "@/components/ui/measured-chart";
+
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; name: string; color?: string; dataKey?: string; payload?: Record<string, unknown> }>;
+  label?: string;
+}
 
 interface RecurringExpensesProps {
   transactions: Transaction[];
@@ -43,11 +49,9 @@ interface RecurringPattern {
   trend: number; // % change recent vs older
 }
 
-type ViewMode = "list" | "chart";
 type SortBy = "frequency" | "amount" | "total";
 
 export function RecurringExpenses({ transactions, className }: RecurringExpensesProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [sortBy, setSortBy] = useState<SortBy>("frequency");
   const [selectedMerchant, setSelectedMerchant] = useState<string | null>(null);
   const { convertFromAccount } = useMoney();
@@ -73,7 +77,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
     >();
 
     expenses.forEach((tx) => {
-      const merchant = tx.merchant || "Unknown";
+      const merchant = tx.merchant || "Inconnu";
       if (!merchantMap.has(merchant)) {
         merchantMap.set(merchant, { transactions: [], monthlyMap: new Map() });
       }
@@ -105,7 +109,7 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
           const key = format(m, "yyyy-MM");
           const monthTx = data.monthlyMap.get(key) || [];
           return {
-            month: format(m, "MMM"),
+            month: format(m, "MMM", { locale: fr }),
             count: monthTx.length,
             total: monthTx.reduce((s, t) => s + Math.abs(convertFromAccount(t.amount, t.accountId)), 0),
           };
@@ -153,13 +157,14 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
   const totalRecurring = patterns.reduce((s, p) => s + p.totalSpent, 0);
   const selectedPattern = selectedMerchant ? patterns.find((p) => p.merchant === selectedMerchant) : null;
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: ChartTooltipProps) => {
     if (!active || !payload || !payload.length) return null;
-    const data = payload[0].payload;
+    const data = payload[0].payload as unknown as { month: string; count: number; total: number } | undefined;
+    if (!data) return null;
     return (
       <div className="rounded-lg border border-border bg-popover text-popover-foreground p-2 shadow-lg">
         <p className="font-medium">{data.month}</p>
-        <p className="text-sm">{data.count} visits</p>
+        <p className="text-sm">{data.count} occurrence(s)</p>
         <p className="text-sm font-semibold"><Money amount={data.total} /></p>
       </div>
     );
@@ -168,54 +173,46 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
   return (
     <Card className={cn("col-span-1", className)}>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Repeat className="h-5 w-5" />
-              Recurring Expenses
+              Dépenses récurrentes
             </CardTitle>
-            <CardDescription>Non-subscription spending habits</CardDescription>
+            <CardDescription>Habitudes répétées hors abonnements identifiés</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setViewMode("list")}
-            >
-              <BarChart3 className="h-4 w-4" />
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1">
-                  Sort by
+                  Trier par
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setSortBy("frequency")}>
-                  Frequency {sortBy === "frequency" && "✓"}
+                  Fréquence {sortBy === "frequency" && "✓"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortBy("amount")}>
-                  Avg Amount {sortBy === "amount" && "✓"}
+                  Montant moyen {sortBy === "amount" && "✓"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortBy("total")}>
-                  Total Spent {sortBy === "total" && "✓"}
+                  Total dépensé {sortBy === "total" && "✓"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
         <div className="text-sm text-muted-foreground mt-1">
-          Total: <span className="font-semibold text-foreground"><Money amount={totalRecurring} /></span> over 6 months
+          Total : <span className="font-semibold text-foreground"><Money amount={totalRecurring} /></span> sur 6 mois
         </div>
       </CardHeader>
       <CardContent>
         {patterns.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground">
             <Repeat className="h-8 w-8 mb-2 opacity-50" />
-            <p>No recurring patterns detected</p>
-            <p className="text-sm">Keep tracking for insights</p>
+            <p>Aucune habitude récurrente détectée</p>
+            <p className="text-sm">Davantage d’historique affinera cette analyse.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -241,12 +238,12 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
                     <p className="font-semibold"><Money amount={pattern.avgAmount} /></p>
                     <div className="flex items-center gap-1 text-xs">
                       {pattern.trend > 10 ? (
-                        <TrendingUp className="h-3 w-3 text-red-500" />
+                        <TrendingUp className="h-3 w-3 text-foreground" />
                       ) : pattern.trend < -10 ? (
-                        <TrendingDown className="h-3 w-3 text-emerald-500" />
+                        <TrendingDown className="h-3 w-3 text-foreground" />
                       ) : null}
                       <span className="text-muted-foreground">
-                        {pattern.frequency.toFixed(1)}x/month
+                        {pattern.frequency.toFixed(1)} fois/mois
                       </span>
                     </div>
                   </div>
@@ -260,12 +257,11 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
 
             {/* Selected merchant chart */}
             {selectedPattern && (
-              <div className="mt-4 p-4 rounded-lg bg-muted/50 border">
-                <h4 className="font-semibold mb-2">{selectedPattern.merchant} - Last 6 Months</h4>
-                <div className="h-[120px]">
-                    <ClientOnly>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={selectedPattern.monthlyData}>
+              <div className="mt-4 p-4 rounded-lg bg-muted border">
+                <h4 className="font-semibold mb-2">{selectedPattern.merchant} – 6 derniers mois</h4>
+                <MeasuredChart className="h-[120px]" ariaLabel={`Évolution de ${selectedPattern.merchant} sur six mois`}>
+                  {({ width, height }) => (
+                    <BarChart width={width} height={height} data={selectedPattern.monthlyData}>
                       <XAxis
                         dataKey="month"
                         tick={{ fontSize: 10 }}
@@ -277,16 +273,15 @@ export function RecurringExpenses({ transactions, className }: RecurringExpenses
                       <Tooltip content={<CustomTooltip />} />
                       <Bar dataKey="total" radius={[4, 4, 0, 0]}>
                         {selectedPattern.monthlyData.map((_, index) => (
-                          <Cell key={index} fill={index === selectedPattern.monthlyData.length - 1 ? "#3b82f6" : "#94a3b8"} />
+                          <Cell key={`cell-${index}`} fill={index === selectedPattern.monthlyData.length - 1 ? "rgb(var(--chart-1))" : "rgb(var(--muted-foreground))"} opacity={index === selectedPattern.monthlyData.length - 1 ? 1 : 0.35} />
                         ))}
                       </Bar>
                     </BarChart>
-                  </ResponsiveContainer>
-                    </ClientOnly>
-                </div>
+                  )}
+                </MeasuredChart>
                 <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                  <span>{selectedPattern.occurrences} total visits</span>
-                  <span>Total: <Money amount={selectedPattern.totalSpent} /></span>
+                  <span>{selectedPattern.occurrences} occurrence(s)</span>
+                  <span>Total : <Money amount={selectedPattern.totalSpent} /></span>
                 </div>
               </div>
             )}
