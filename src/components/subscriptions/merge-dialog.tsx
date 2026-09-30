@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { format } from "date-fns";
 import { ArrowRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,18 +79,17 @@ export function MergeRecurringDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Merge Recurring Items</DialogTitle>
+          <DialogTitle>Fusionner des éléments récurrents</DialogTitle>
           <DialogDescription>
-            Select the target item to merge "{sourceItem.name}" into. The source
-            item will be deleted after merging.
+            Choisissez l’élément qui recevra « {sourceItem.name} ». La source sera supprimée après la fusion.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Source item preview */}
-          <div className="bg-muted/50 rounded-lg p-3">
+          <div className="bg-muted rounded-lg p-3">
             <Label className="text-xs text-muted-foreground mb-2 block">
-              Merging from:
+              Source de la fusion :
             </Label>
             <div className="flex items-center gap-3">
               <div
@@ -119,7 +117,7 @@ export function MergeRecurringDialog({
               </div>
               {sourceItem.occurrences && sourceItem.occurrences.length > 0 && (
                 <Badge variant="secondary">
-                  {sourceItem.occurrences.length} payments
+                  {sourceItem.occurrences.length} paiements
                 </Badge>
               )}
             </div>
@@ -131,11 +129,11 @@ export function MergeRecurringDialog({
 
           {/* Search */}
           <div>
-            <Label>Select Target Item</Label>
+            <Label>Sélectionner la cible</Label>
             <div className="relative mt-1.5">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name or merchant..."
+                placeholder="Rechercher par nom ou marchand…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -147,7 +145,7 @@ export function MergeRecurringDialog({
           <ScrollArea className="h-[250px] border rounded-lg p-2">
             {availableItems.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                No other recurring items found
+                Aucun autre élément récurrent
               </div>
             ) : (
               <div className="space-y-2">
@@ -155,14 +153,16 @@ export function MergeRecurringDialog({
                   const categoryInfo = CATEGORIES[item.category];
                   const isSelected = selectedTargetId === item.id;
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={item.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      className={`w-full p-3 rounded-lg border text-left cursor-pointer transition-colors ${
                         isSelected
                           ? "border-primary bg-primary/5"
-                          : "hover:bg-muted/50"
+                          : "hover:bg-muted"
                       }`}
                       onClick={() => setSelectedTargetId(item.id!)}
+                      aria-pressed={isSelected}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -202,11 +202,11 @@ export function MergeRecurringDialog({
                       </div>
                       {item.occurrences && item.occurrences.length > 0 && (
                         <p className="text-xs text-muted-foreground mt-2">
-                          {item.occurrences.length} payment
-                          {item.occurrences.length !== 1 ? "s" : ""} tracked
+                          {item.occurrences.length} paiement
+                          {item.occurrences.length !== 1 ? "s" : ""} suivi{item.occurrences.length !== 1 ? "s" : ""}
                         </p>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -215,13 +215,10 @@ export function MergeRecurringDialog({
 
           {/* Summary */}
           {selectedTargetId && (
-            <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-sm">
-              <p className="text-blue-900 dark:text-blue-100">
-                <strong>After merge:</strong> All{" "}
-                {sourceItem.occurrences?.length || 0} payment
-                {(sourceItem.occurrences?.length || 0) !== 1 ? "s" : ""} from "
-                {sourceItem.name}" will be added to the target. "{sourceItem.name}"
-                will be deleted.
+            <div className="bg-muted/30 rounded-lg p-3 text-sm">
+              <p className="text-foreground">
+                <strong>Après la fusion :</strong> les {sourceItem.occurrences?.length || 0} paiement
+                {(sourceItem.occurrences?.length || 0) !== 1 ? "s" : ""} de « {sourceItem.name} » seront ajoutés à la cible, puis la source sera supprimée.
               </p>
             </div>
           )}
@@ -229,10 +226,10 @@ export function MergeRecurringDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            Annuler
           </Button>
           <Button onClick={handleMerge} disabled={!selectedTargetId}>
-            Merge Items
+            Fusionner
           </Button>
         </DialogFooter>
       </DialogContent>

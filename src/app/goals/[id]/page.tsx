@@ -11,16 +11,14 @@ import {
   Pencil,
   PieChart,
   Plus,
-  Target,
   Trash2,
-  TrendingUp,
   Wallet,
 } from "lucide-react";
 import { format, parseISO, subDays } from "date-fns";
+import { fr } from "date-fns/locale";
 
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -38,7 +36,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CircularProgress } from "@/components/ui/circular-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGoalContributionActions, useGoalContributions, useGoals, useAccounts } from "@/hooks/use-data";
 import { cn } from "@/lib/utils";
@@ -46,12 +43,11 @@ import { getGoalHealth, getGoalIcon } from "@/components/goals/goal-utils";
 import { Money } from "@/components/ui/money";
 
 const GOAL_COLORS = [
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
+  "#FF6B4A",
+  "#FF8B70",
+  "#FFAB96",
+  "#FFCBBC",
+  "#E8E8EC",
 ];
 
 export default function GoalDetailsPage() {
@@ -64,15 +60,21 @@ export default function GoalDetailsPage() {
   const { contributions } = useGoalContributions(Number.isFinite(goalId) ? goalId : undefined);
   const { addContribution, deleteContribution } = useGoalContributionActions();
 
-  const goal = useMemo(() => goals.find((g) => g.id === goalId) || null, [goals, goalId]);
+  const storedGoal = useMemo(() => goals.find((g) => g.id === goalId) || null, [goals, goalId]);
 
   const linkedAccount = useMemo(() => {
-    if (!goal?.linkedAccountId) return null;
-    return accounts.find(a => a.id === goal.linkedAccountId);
-  }, [goal, accounts]);
+    if (!storedGoal?.linkedAccountId) return null;
+    return accounts.find(a => a.id === storedGoal.linkedAccountId) || null;
+  }, [storedGoal, accounts]);
+
+  const goal = useMemo(() => {
+    if (!storedGoal || !linkedAccount) return storedGoal;
+    return { ...storedGoal, currentAmount: linkedAccount.balance };
+  }, [storedGoal, linkedAccount]);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [amount, setAmount] = useState("");
+  const [contributionKind, setContributionKind] = useState<"deposit" | "withdrawal">("deposit");
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +99,7 @@ export default function GoalDetailsPage() {
     });
   }, [contributions]);
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
 
   const net30 = useMemo(() => {
     const cutoff = subDays(now, 30);
@@ -110,8 +112,8 @@ export default function GoalDetailsPage() {
     return (
       <AppLayout>
         <div className="space-y-4">
-          <Button variant="outline" onClick={() => router.push("/goals")}>Back</Button>
-          <p>Invalid goal id.</p>
+          <Button variant="outline" onClick={() => router.push("/goals")}>Retour</Button>
+          <p>Identifiant d’objectif invalide.</p>
         </div>
       </AppLayout>
     );
@@ -123,12 +125,12 @@ export default function GoalDetailsPage() {
         <div className="space-y-4">
           <Link href="/goals" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
             <ArrowLeft className="h-4 w-4" />
-            Back to goals
+            Retour aux objectifs
           </Link>
           <Card>
             <CardContent className="py-10 text-center">
-              <p className="font-medium">Goal not found</p>
-              <p className="text-sm text-muted-foreground">It may have been deleted.</p>
+              <p className="font-medium">Objectif introuvable</p>
+              <p className="text-sm text-muted-foreground">Il a peut-être été supprimé.</p>
             </CardContent>
           </Card>
         </div>
@@ -167,155 +169,123 @@ export default function GoalDetailsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Hero */}
-        <div className="relative overflow-hidden rounded-2xl border bg-card">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-emerald-500/10" />
-          <div className="relative p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-2">
-                <Link href="/goals" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to goals
-                </Link>
+        {/* Page Header */}
+        <div className="space-y-4">
+          <Link href="/goals" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+            Retour aux objectifs
+          </Link>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="inline-flex items-center gap-2 rounded-xl border bg-background/70 px-3 py-2">
-                    <span
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg"
-                      style={{ backgroundColor: `${goal.color}20` }}
-                    >
-                      <GoalIcon className="h-4.5 w-4.5" style={{ color: goal.color }} />
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-muted/50">
+                <GoalIcon className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="truncate text-2xl font-semibold">{goal.name}</h2>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{health.label}</span>
+                  <span className="text-xs text-muted-foreground">{health.hint}</span>
+                  {goal.deadline ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Échéance {format(parseISO(goal.deadline), "d MMM yyyy", { locale: fr })}
                     </span>
-                    <div className="min-w-0">
-                      <h2 className="truncate text-xl font-semibold tracking-tight">{goal.name}</h2>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <Badge className={cn("border", health.badgeClassName)}>{health.label}</Badge>
-                        <span className="text-xs text-muted-foreground">{health.hint}</span>
-                        {goal.deadline ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                            <Calendar className="h-3.5 w-3.5" />
-                            Deadline {format(parseISO(goal.deadline), "MMM d, yyyy")}
-                          </span>
-                        ) : null}
-                        {linkedAccount ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                            <Wallet className="h-3.5 w-3.5" />
-                            Linked to {linkedAccount.name}
-                          </span>
-                        ) : null}
-                        {lastActivityDate ? (
-                          <span className="text-xs text-muted-foreground">Last activity {lastActivityDate}</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
+                  ) : null}
+                  {linkedAccount ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      <Wallet className="h-3.5 w-3.5" />
+                      Lié à {linkedAccount.name}
+                    </span>
+                  ) : null}
+                  {lastActivityDate ? (
+                    <span className="text-xs text-muted-foreground">Dernière activité {lastActivityDate}</span>
+                  ) : null}
                 </div>
               </div>
+            </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              {!linkedAccount && (
                 <Button onClick={openAdd}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Add contribution
+                  Ajouter un mouvement virtuel
                 </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="justify-between">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem onClick={openEdit}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit goal
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600 focus:text-red-600"
-                      onClick={() => setDeleteGoalConfirm(true)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete goal
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-background/70">
-                <CardContent className="py-4">
-                  <div className="flex items-center gap-3">
-                    <CircularProgress progress={Math.min(progress, 100)} color={goal.color} size={52} strokeWidth={4} />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Saved</p>
-                      <p className="text-xl font-bold">
-                        <Money amount={goal.currentAmount} minimumFractionDigits={0} maximumFractionDigits={0} />
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        of <Money amount={goal.targetAmount} minimumFractionDigits={0} maximumFractionDigits={0} />
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-background/70">
-                <CardContent className="py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                      <Target className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Remaining</p>
-                      <p className="text-xl font-bold">
-                        <Money amount={Math.max(0, remaining)} minimumFractionDigits={0} maximumFractionDigits={0} />
-                      </p>
-                      <p className="text-xs text-muted-foreground">{Math.max(0, (100 - Math.min(progress, 100))).toFixed(0)}% left</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-background/70">
-                <CardContent className="py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
-                      <TrendingUp className="h-5 w-5 text-violet-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Net funding (30d)</p>
-                      <p className={cn("text-xl font-bold", net30 >= 0 ? "text-violet-700 dark:text-violet-300" : "text-red-600")}>
-                        {net30 >= 0 ? "+" : "-"}
-                        <Money amount={Math.abs(net30)} minimumFractionDigits={0} maximumFractionDigits={0} />
-                      </p>
-                      <p className="text-xs text-muted-foreground">Based on contributions</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-background/70">
-                <CardContent className="py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                      <TrendingUp className="h-5 w-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Monthly pace</p>
-                      <p className="text-xl font-bold">
-                        {health.forecast.averageMonthlyNet ? (
-                          <Money amount={health.forecast.averageMonthlyNet} minimumFractionDigits={0} maximumFractionDigits={0} />
-                        ) : "—"}
-                        {health.forecast.averageMonthlyNet ? <span className="text-sm font-medium text-muted-foreground">/mo</span> : null}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Recent average</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="justify-between" aria-label="Actions de l’objectif">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={openEdit}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Modifier l’objectif
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => setDeleteGoalConfirm(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Supprimer l’objectif
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardContent className="py-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {linkedAccount ? "Solde du compte" : "Progression virtuelle"}
+              </p>
+              <p className="text-2xl font-semibold">
+                <Money amount={goal.currentAmount} minimumFractionDigits={0} maximumFractionDigits={0} />
+              </p>
+              <p className="text-xs text-muted-foreground">
+                sur <Money amount={goal.targetAmount} minimumFractionDigits={0} maximumFractionDigits={0} /> ({Math.min(progress, 100).toFixed(0)} %)
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="py-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Reste à atteindre</p>
+              <p className="text-2xl font-semibold">
+                <Money amount={Math.max(0, remaining)} minimumFractionDigits={0} maximumFractionDigits={0} />
+              </p>
+              <p className="text-xs text-muted-foreground">{Math.max(0, (100 - Math.min(progress, 100))).toFixed(0)} % restants</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="py-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Versements nets (30 j)</p>
+              <p className="text-2xl font-semibold">
+                {net30 >= 0 ? "+" : "-"}
+                <Money amount={Math.abs(net30)} minimumFractionDigits={0} maximumFractionDigits={0} />
+              </p>
+              <p className="text-xs text-muted-foreground">D’après les mouvements enregistrés</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="py-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Rythme mensuel</p>
+              <p className="text-2xl font-semibold">
+                {health.forecast.averageMonthlyNet ? (
+                  <Money amount={health.forecast.averageMonthlyNet} minimumFractionDigits={0} maximumFractionDigits={0} />
+                ) : "—"}
+                {health.forecast.averageMonthlyNet ? <span className="text-sm font-medium text-muted-foreground">/mois</span> : null}
+              </p>
+              <p className="text-xs text-muted-foreground">Moyenne récente</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Connections */}
@@ -323,9 +293,9 @@ export default function GoalDetailsPage() {
           <CardContent className="py-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-semibold">Connect this goal</p>
+                <p className="text-sm font-semibold">Relier cet objectif au reste du budget</p>
                 <p className="text-sm text-muted-foreground">
-                  Use Transactions to fund it, Budgets to plan it, and Analytics to validate your pace.
+                  Utilisez les transactions pour l’alimenter, les budgets pour le planifier et les analyses pour vérifier le rythme.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -344,7 +314,7 @@ export default function GoalDetailsPage() {
                 <Button variant="outline" size="sm" asChild>
                   <Link href="/analytics">
                     <PieChart className="mr-2 h-4 w-4" />
-                    Analytics
+                    Analyses
                   </Link>
                 </Button>
               </div>
@@ -354,56 +324,56 @@ export default function GoalDetailsPage() {
 
         <Tabs defaultValue="overview">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="overview">Vue d’ensemble</TabsTrigger>
+            <TabsTrigger value="activity">Activité</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
             <div className="grid gap-4 lg:grid-cols-3">
               <Card className="lg:col-span-2">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Forecast</CardTitle>
-                  <CardDescription>Deadline pace + estimated reach</CardDescription>
+                  <CardTitle className="text-base">Projection</CardTitle>
+                  <CardDescription>Rythme nécessaire et date d’atteinte estimée</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
                   {health.forecast.requiredMonthlyForDeadline ? (
                     <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
-                      <span className="text-muted-foreground">To hit the deadline</span>
+                      <span className="text-muted-foreground">Pour respecter l’échéance</span>
                       <span className="font-semibold">
-                        <Money amount={health.forecast.requiredMonthlyForDeadline} minimumFractionDigits={0} maximumFractionDigits={0} />/mo
+                        <Money amount={health.forecast.requiredMonthlyForDeadline} minimumFractionDigits={0} maximumFractionDigits={0} />/mois
                       </span>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
-                      <span className="text-muted-foreground">To hit the deadline</span>
+                      <span className="text-muted-foreground">Pour respecter l’échéance</span>
                       <span className="font-semibold">—</span>
                     </div>
                   )}
 
                   {health.forecast.averageMonthlyNet ? (
                     <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
-                      <span className="text-muted-foreground">Recent average (net)</span>
+                      <span className="text-muted-foreground">Moyenne récente nette</span>
                       <span className="font-semibold">
-                        <Money amount={health.forecast.averageMonthlyNet} minimumFractionDigits={0} maximumFractionDigits={0} />/mo
+                        <Money amount={health.forecast.averageMonthlyNet} minimumFractionDigits={0} maximumFractionDigits={0} />/mois
                       </span>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
-                      <span className="text-muted-foreground">Recent average (net)</span>
+                      <span className="text-muted-foreground">Moyenne récente nette</span>
                       <span className="font-semibold">—</span>
                     </div>
                   )}
 
                   <div className="rounded-lg border bg-muted/20 p-3">
-                    <p className="text-muted-foreground">Estimated reach</p>
+                    <p className="text-muted-foreground">Date d’atteinte estimée</p>
                     <p className="mt-1 font-semibold">
                       {health.forecast.estimatedReachDate
-                        ? format(parseISO(health.forecast.estimatedReachDate), "MMM yyyy")
-                        : "Add a few contributions over time to unlock a useful forecast."}
+                        ? format(parseISO(health.forecast.estimatedReachDate), "MMM yyyy", { locale: fr })
+                        : "Ajoutez quelques mouvements pour obtenir une projection fiable."}
                     </p>
                     {goal.deadline ? (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Deadline: {format(parseISO(goal.deadline), "MMM d, yyyy")}
+                        Échéance : {format(parseISO(goal.deadline), "d MMM yyyy", { locale: fr })}
                       </p>
                     ) : null}
                   </div>
@@ -412,18 +382,18 @@ export default function GoalDetailsPage() {
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Recent activity</CardTitle>
-                  <CardDescription>{sortedContributions.length} contribution(s)</CardDescription>
+                  <CardTitle className="text-base">Activité récente</CardTitle>
+                  <CardDescription>{sortedContributions.length} mouvement(s)</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {sortedContributions.length === 0 ? (
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">
-                        No contributions yet. Add a deposit (or a withdrawal) to start tracking.
+                        Aucun mouvement. Ajoutez un versement ou un retrait pour commencer le suivi.
                       </p>
                       <Button variant="outline" className="w-full" onClick={openAdd}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add first contribution
+                        Ajouter le premier mouvement
                       </Button>
                     </div>
                   ) : (
@@ -445,8 +415,9 @@ export default function GoalDetailsPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                                 onClick={() => setDeleteConfirm(c.id!)}
+                                aria-label={`Supprimer le mouvement du ${c.date}`}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -456,7 +427,7 @@ export default function GoalDetailsPage() {
                       </div>
                       <Button variant="outline" className="w-full" onClick={openAdd}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add contribution
+                        Ajouter un mouvement
                       </Button>
                     </div>
                   )}
@@ -468,12 +439,12 @@ export default function GoalDetailsPage() {
           <TabsContent value="activity">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">All contributions</CardTitle>
-                <CardDescription>History is the source of truth for the goal balance.</CardDescription>
+                <CardTitle className="text-base">Tous les mouvements</CardTitle>
+                <CardDescription>L’historique est la source de référence du solde de l’objectif.</CardDescription>
               </CardHeader>
               <CardContent>
                 {sortedContributions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No contributions yet.</p>
+                  <p className="text-sm text-muted-foreground">Aucun mouvement pour le moment.</p>
                 ) : (
                   <div className="overflow-auto rounded-md border">
                     <ul className="divide-y">
@@ -492,8 +463,9 @@ export default function GoalDetailsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                             onClick={() => setDeleteConfirm(c.id!)}
+                            aria-label={`Supprimer le mouvement du ${c.date}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -511,14 +483,18 @@ export default function GoalDetailsPage() {
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Contribution</DialogTitle>
-            <DialogDescription>Use a negative amount for withdrawals.</DialogDescription>
+            <DialogTitle>Ajouter un mouvement</DialogTitle>
+            <DialogDescription>Choisissez un versement ou un retrait; le signe est appliqué automatiquement.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-4">
+            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Type de mouvement">
+              <Button type="button" variant={contributionKind === "deposit" ? "default" : "outline"} onClick={() => setContributionKind("deposit")}>Versement</Button>
+              <Button type="button" variant={contributionKind === "withdrawal" ? "default" : "outline"} onClick={() => setContributionKind("withdrawal")}>Retrait</Button>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Amount</label>
-                <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                <label className="text-sm font-medium mb-1.5 block">Montant</label>
+                <Input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
               </div>
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Date</label>
@@ -527,35 +503,36 @@ export default function GoalDetailsPage() {
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Note</label>
-              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Facultatif" />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-              Cancel
+              Annuler
             </Button>
             <Button
               onClick={async () => {
                 setError(null);
-                const numeric = Number(amount);
+                const raw = Number(amount);
+                const numeric = contributionKind === "withdrawal" ? -Math.abs(raw) : Math.abs(raw);
                 if (!Number.isFinite(numeric) || numeric === 0) {
-                  setError("Enter a valid non-zero amount.");
+                  setError("Saisissez un montant valide différent de zéro.");
                   return;
                 }
                 if (goal.currentAmount + numeric < 0) {
-                  setError("That would make the goal balance negative.");
+                  setError("Ce retrait rendrait le solde de l’objectif négatif.");
                   return;
                 }
                 try {
                   await addContribution({ goalId, amount: numeric, date, note });
                   setIsAddOpen(false);
                 } catch (err) {
-                  setError(err instanceof Error ? err.message : "Failed to add contribution");
+                  setError(err instanceof Error ? err.message : "Impossible d’ajouter la contribution");
                 }
               }}
             >
-              Add
+              Ajouter
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -564,13 +541,13 @@ export default function GoalDetailsPage() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit goal</DialogTitle>
-            <DialogDescription>Update your goal details. Use contributions for ongoing balance changes.</DialogDescription>
+            <DialogTitle>Modifier l’objectif</DialogTitle>
+            <DialogDescription>Modifiez les paramètres. Utilisez les mouvements pour faire évoluer le solde.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Goal name</label>
+              <label className="text-sm font-medium mb-1.5 block">Nom de l’objectif</label>
               <Input
                 value={editForm.name}
                 onChange={(e) => setEditForm((v) => ({ ...v, name: e.target.value }))}
@@ -578,16 +555,23 @@ export default function GoalDetailsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Linked Account (Optional)</label>
+              <label className="text-sm font-medium mb-1.5 block">Compte lié (facultatif)</label>
               <Select
                 value={editForm.linkedAccountId}
-                onValueChange={(value) => setEditForm((v) => ({ ...v, linkedAccountId: value }))}
+                onValueChange={(value) => setEditForm((v) => {
+                  const account = value === "none" ? undefined : accounts.find((candidate) => candidate.id === Number(value));
+                  return {
+                    ...v,
+                    linkedAccountId: value,
+                    currentAmount: account ? account.balance.toString() : v.currentAmount,
+                  };
+                })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an account" />
+                  <SelectValue placeholder="Sélectionner un compte" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None (Virtual Goal)</SelectItem>
+                  <SelectItem value="none">Aucun (objectif virtuel)</SelectItem>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id!.toString()}>
                       {account.name} ({account.type})
@@ -599,7 +583,7 @@ export default function GoalDetailsPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Target amount</label>
+                <label className="text-sm font-medium mb-1.5 block">Montant cible</label>
                 <Input
                   type="number"
                   min="0"
@@ -609,22 +593,27 @@ export default function GoalDetailsPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Current amount</label>
+                <label className="text-sm font-medium mb-1.5 block">
+                  {editForm.linkedAccountId === "none" ? "Progression virtuelle" : "Solde du compte"}
+                </label>
                 <Input
                   type="number"
                   min="0"
                   step="0.01"
                   value={editForm.currentAmount}
+                  disabled={editForm.linkedAccountId !== "none"}
                   onChange={(e) => setEditForm((v) => ({ ...v, currentAmount: e.target.value }))}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Tip: prefer adding a contribution to keep history consistent.
+                  {editForm.linkedAccountId === "none"
+                    ? "Valeur de planification uniquement : ce n’est pas de l’argent disponible sur un compte."
+                    : "Valeur issue du compte lié : modifiez-la via les transactions ou un relevé de solde."}
                 </p>
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Deadline (optional)</label>
+              <label className="text-sm font-medium mb-1.5 block">Échéance (facultative)</label>
               <Input
                 type="date"
                 value={editForm.deadline}
@@ -633,7 +622,7 @@ export default function GoalDetailsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Color</label>
+              <label className="text-sm font-medium mb-1.5 block">Couleur</label>
               <div className="flex flex-wrap gap-2">
                 {GOAL_COLORS.map((color) => (
                   <button
@@ -645,17 +634,19 @@ export default function GoalDetailsPage() {
                     )}
                     style={{ backgroundColor: color }}
                     onClick={() => setEditForm((v) => ({ ...v, color }))}
+                    aria-label={`Choisir la couleur ${color}`}
+                    aria-pressed={editForm.color === color}
                   />
                 ))}
               </div>
             </div>
 
-            {editError ? <p className="text-sm text-red-600">{editError}</p> : null}
+            {editError ? <p className="text-sm text-destructive">{editError}</p> : null}
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>
-              Cancel
+              Annuler
             </Button>
             <Button
               onClick={async () => {
@@ -663,22 +654,27 @@ export default function GoalDetailsPage() {
 
                 const name = editForm.name.trim();
                 const targetAmount = Number(editForm.targetAmount);
-                const currentAmount = Number(editForm.currentAmount) || 0;
+                const selectedLinkedAccount = editForm.linkedAccountId === "none"
+                  ? undefined
+                  : accounts.find((account) => account.id === Number(editForm.linkedAccountId));
+                const currentAmount = selectedLinkedAccount
+                  ? selectedLinkedAccount.balance
+                  : (Number(editForm.currentAmount) || 0);
 
                 if (!name) {
-                  setEditError("Please enter a goal name.");
+                  setEditError("Saisissez un nom pour l’objectif.");
                   return;
                 }
                 if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
-                  setEditError("Please enter a valid target amount.");
+                  setEditError("Saisissez un montant cible valide.");
                   return;
                 }
                 if (!Number.isFinite(currentAmount) || currentAmount < 0) {
-                  setEditError("Current amount must be >= 0.");
+                  setEditError("Le montant actuel doit être positif ou nul.");
                   return;
                 }
                 if (currentAmount > targetAmount) {
-                  setEditError("Current amount cannot exceed the target amount.");
+                  setEditError("Le montant actuel ne peut pas dépasser la cible.");
                   return;
                 }
 
@@ -694,11 +690,11 @@ export default function GoalDetailsPage() {
                   });
                   setIsEditOpen(false);
                 } catch (err) {
-                  setEditError(err instanceof Error ? err.message : "Failed to update goal");
+                  setEditError(err instanceof Error ? err.message : "Impossible de modifier l’objectif");
                 }
               }}
             >
-              Save changes
+              Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -707,12 +703,12 @@ export default function GoalDetailsPage() {
       <Dialog open={deleteConfirm !== null} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Contribution</DialogTitle>
-            <DialogDescription>This will adjust the goal balance.</DialogDescription>
+            <DialogTitle>Supprimer la contribution</DialogTitle>
+            <DialogDescription>Cette action ajustera le solde de l’objectif.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              Cancel
+              Annuler
             </Button>
             <Button
               variant="destructive"
@@ -721,12 +717,12 @@ export default function GoalDetailsPage() {
                 try {
                   await deleteContribution(deleteConfirm);
                   setDeleteConfirm(null);
-                } catch (err) {
+                } catch {
                   setDeleteConfirm(null);
                 }
               }}
             >
-              Delete
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -735,14 +731,14 @@ export default function GoalDetailsPage() {
       <Dialog open={deleteGoalConfirm} onOpenChange={setDeleteGoalConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete goal</DialogTitle>
+            <DialogTitle>Supprimer l’objectif</DialogTitle>
             <DialogDescription>
-              This will remove the goal. Contribution history may remain in storage.
+              Cette action supprimera l’objectif et tout son historique de mouvements.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteGoalConfirm(false)}>
-              Cancel
+              Annuler
             </Button>
             <Button
               variant="destructive"
@@ -755,7 +751,7 @@ export default function GoalDetailsPage() {
                 }
               }}
             >
-              Delete
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>

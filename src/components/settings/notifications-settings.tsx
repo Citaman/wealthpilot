@@ -17,23 +17,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { getStringSetting, setStringSetting } from "@/lib/backups";
 import { useToast } from "@/hooks/use-toast";
+import { BUDGET_ALERT_THRESHOLDS, getBudgetAlertThreshold, setBudgetAlertThreshold as persistBudgetAlertThreshold, type BudgetAlertThreshold } from "./preferences";
 
 export function NotificationsSettings() {
   const { toast } = useToast();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [budgetAlertThreshold, setBudgetAlertThreshold] = useState("80");
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [budgetAlertThreshold, setBudgetAlertThresholdState] = useState("80");
 
   useEffect(() => {
     if ("Notification" in window) {
+      setPermission(Notification.permission);
       setNotificationsEnabled(Notification.permission === "granted");
+    } else {
+      setPermission("unsupported");
     }
 
-    getStringSetting("budgetAlertThreshold")
-      .then((value) => {
-        if (value) setBudgetAlertThreshold(value);
-      })
+    getBudgetAlertThreshold()
+      .then((value) => setBudgetAlertThresholdState(String(value)))
       .catch(() => undefined);
   }, []);
 
@@ -41,39 +43,41 @@ export function NotificationsSettings() {
     if (!("Notification" in window)) {
       toast({
         variant: "default",
-        title: "Not Supported",
-        description: "This browser does not support notifications.",
+        title: "Notifications indisponibles",
+        description: "Ce navigateur ne prend pas en charge les notifications.",
       });
       return;
     }
 
     const permission = await Notification.requestPermission();
+    setPermission(permission);
     setNotificationsEnabled(permission === "granted");
 
     if (permission === "granted") {
       new Notification("WealthPilot", {
-        body: "Notifications are now enabled!",
+        body: "Les notifications sont maintenant activées.",
         icon: "/favicon.ico",
       });
 
       toast({
         variant: "success",
-        title: "Enabled",
-        description: "Browser notifications enabled.",
+        title: "Notifications activées",
+        description: "Les alertes du navigateur sont actives.",
       });
     } else {
       toast({
         variant: "warning",
-        title: "Permission Denied",
-        description: "Notification permission was not granted.",
+        title: "Autorisation refusée",
+        description: "Vous pourrez réactiver cette permission dans les réglages du navigateur.",
       });
     }
   };
 
   const handleBudgetAlertThresholdChange = async (value: string) => {
-    setBudgetAlertThreshold(value);
+    setBudgetAlertThresholdState(value);
     try {
-      await setStringSetting("budgetAlertThreshold", value);
+      await persistBudgetAlertThreshold(Number(value) as BudgetAlertThreshold);
+      toast({ variant: "success", title: "Seuil enregistré", description: `Les alertes seront préparées à ${value} % du budget.` });
     } catch {
       // Non-blocking
     }
@@ -84,45 +88,45 @@ export function NotificationsSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" />
-          Notifications
+          Notifications du navigateur
         </CardTitle>
-        <CardDescription>Configure alert preferences</CardDescription>
+        <CardDescription>Choisissez quand WealthPilot doit attirer votre attention. Les données restent locales.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-medium">Browser Notifications</p>
-            <p className="text-sm text-muted-foreground">Get alerts for budget warnings and goals</p>
+            <p className="font-medium">Notifications du navigateur</p>
+            <p className="text-sm text-muted-foreground">La permission n’est demandée qu’après votre action.</p>
           </div>
           {notificationsEnabled ? (
-            <div className="flex items-center gap-2 text-emerald-600">
+            <div className="flex items-center gap-2 text-foreground">
               <Check className="h-4 w-4" />
-              <span className="text-sm font-medium">Enabled</span>
+              <span className="text-sm font-medium">Activées</span>
             </div>
+          ) : permission === "denied" ? (
+            <p className="text-sm font-medium text-warning">Bloquées dans le navigateur</p>
+          ) : permission === "unsupported" ? (
+            <p className="text-sm text-muted-foreground">Non prises en charge</p>
           ) : (
             <Button variant="outline" onClick={handleEnableNotifications}>
-              Enable
+              Activer
             </Button>
           )}
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-medium">Budget Alert Threshold</p>
+            <p className="font-medium">Seuil d’alerte du budget</p>
             <p className="text-sm text-muted-foreground">
-              Get notified when spending reaches this percentage
+              Prépare une alerte lorsque les dépenses atteignent ce pourcentage.
             </p>
           </div>
           <Select value={budgetAlertThreshold} onValueChange={handleBudgetAlertThresholdChange}>
-            <SelectTrigger className="w-[120px]">
+            <SelectTrigger aria-label="Seuil d’alerte du budget" className="w-full sm:w-[120px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="50">50%</SelectItem>
-              <SelectItem value="75">75%</SelectItem>
-              <SelectItem value="80">80%</SelectItem>
-              <SelectItem value="90">90%</SelectItem>
-              <SelectItem value="100">100%</SelectItem>
+              {BUDGET_ALERT_THRESHOLDS.map((threshold) => <SelectItem key={threshold} value={String(threshold)}>{threshold} %</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

@@ -34,6 +34,7 @@ import {
 } from "@/lib/db";
 import { Money } from "@/components/ui/money";
 import { useMoney } from "@/hooks/use-money";
+import { useAccount } from "@/contexts/account-context";
 
 interface InitialValues {
   name?: string;
@@ -54,6 +55,7 @@ interface AddEditRecurringDialogProps {
   defaultType?: RecurringType;
   initialValues?: InitialValues;
   sourceTransaction?: Transaction | null;
+  defaultAccountId?: number;
 }
 
 const initialFormData = {
@@ -83,6 +85,7 @@ export function AddEditRecurringDialog({
   defaultType = "subscription",
   initialValues,
   sourceTransaction,
+  defaultAccountId,
 }: AddEditRecurringDialogProps) {
   const [formData, setFormData] = useState(initialFormData);
   const [mode, setMode] = useState<"new" | "link">("new");
@@ -90,6 +93,8 @@ export function AddEditRecurringDialog({
   const [selectedExistingId, setSelectedExistingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { getAccountCurrency } = useMoney();
+  const { accounts } = useAccount();
+  const [accountId, setAccountId] = useState("");
 
   const isEditing = !!recurring?.id;
   const showLinkOption = !!sourceTransaction && !isEditing;
@@ -117,6 +122,7 @@ export function AddEditRecurringDialog({
 
   // Initialize form when recurring or initialValues changes
   useEffect(() => {
+    setAccountId(String(recurring?.accountId || sourceTransaction?.accountId || defaultAccountId || ""));
     if (recurring) {
       setFormData({
         name: recurring.name,
@@ -151,11 +157,11 @@ export function AddEditRecurringDialog({
     setMode("new");
     setSelectedExistingId(null);
     setSearchTerm("");
-  }, [recurring, initialValues, defaultType, open]);
+  }, [recurring, initialValues, defaultType, open, sourceTransaction, defaultAccountId]);
 
   const handleSubmit = () => {
     const amount = parseFloat(formData.amount);
-    if (!formData.name || isNaN(amount)) return;
+    if (!formData.name || isNaN(amount) || !accountId) return;
 
     // Build loan details if type is loan
     let loanDetails: LoanDetails | undefined;
@@ -198,6 +204,7 @@ export function AddEditRecurringDialog({
       loan: loanDetails,
       status: recurring?.status || "active",
       isUserCreated: true,
+      accountId: Number(accountId),
     };
 
     onSave(data);
@@ -226,34 +233,49 @@ export function AddEditRecurringDialog({
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit" : "Add"}{" "}
+            {isEditing ? "Modifier" : "Ajouter"}{" "}
             {formData.type === "subscription"
-              ? "Subscription"
+              ? "un abonnement"
               : formData.type === "bill"
-              ? "Bill"
+              ? "une facture"
               : formData.type === "loan"
-              ? "Loan"
-              : "Income"}
+              ? "un crédit"
+              : "un revenu"}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Update the details of this recurring item"
+              ? "Modifiez les informations de cet élément récurrent."
               : showLinkOption
-              ? "Create new or link to existing recurring item"
-              : "Add a new recurring payment or income"}
+              ? "Créez un élément ou reliez la transaction à un élément existant."
+              : "Ajoutez un nouveau paiement ou revenu récurrent."}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="space-y-2">
+          <Label htmlFor="recurring-account">Compte concerné</Label>
+          <Select value={accountId} onValueChange={setAccountId} disabled={!!sourceTransaction}>
+            <SelectTrigger id="recurring-account" aria-label="Compte concerné">
+              <SelectValue placeholder="Choisir un compte" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.filter((account) => account.isActive !== false && account.id).map((account) => (
+                <SelectItem key={account.id} value={String(account.id)}>{account.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {!accountId && <p role="alert" className="text-sm text-destructive">Le compte est obligatoire.</p>}
+        </div>
 
         {showLinkOption ? (
           <Tabs value={mode} onValueChange={(v) => setMode(v as "new" | "link")}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="new" className="gap-2">
                 <Plus className="h-4 w-4" />
-                Create New
+                Créer
               </TabsTrigger>
               <TabsTrigger value="link" className="gap-2">
                 <Link2 className="h-4 w-4" />
-                Link to Existing
+                Relier à un existant
               </TabsTrigger>
             </TabsList>
 
@@ -269,9 +291,9 @@ export function AddEditRecurringDialog({
             <TabsContent value="link" className="mt-4">
               <div className="space-y-4">
                 <div>
-                  <Label>Search Recurring Items</Label>
+                  <Label>Rechercher un élément récurrent</Label>
                   <Input
-                    placeholder="Search by name or merchant..."
+                    placeholder="Rechercher par nom ou marchand…"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -281,8 +303,8 @@ export function AddEditRecurringDialog({
                   {filteredExisting.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-muted-foreground">
                       {existingRecurring.length === 0
-                        ? "No existing recurring items found"
-                        : "No matches found"}
+                        ? "Aucun élément récurrent existant"
+                        : "Aucun résultat"}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -290,14 +312,16 @@ export function AddEditRecurringDialog({
                         const categoryInfo = CATEGORIES[item.category];
                         const isSelected = selectedExistingId === item.id;
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={item.id}
-                            className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                            className={`w-full p-3 rounded-lg border text-left cursor-pointer transition-colors ${
                               isSelected
                                 ? "border-primary bg-primary/5"
-                                : "hover:bg-muted/50"
+                                : "hover:bg-muted"
                             }`}
                             onClick={() => setSelectedExistingId(item.id!)}
+                            aria-pressed={isSelected}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -337,10 +361,10 @@ export function AddEditRecurringDialog({
                             </div>
                             {item.occurrences && item.occurrences.length > 0 && (
                               <p className="text-xs text-muted-foreground mt-2">
-                                {item.occurrences.length} payment{item.occurrences.length !== 1 ? "s" : ""} tracked
+                                {item.occurrences.length} paiement{item.occurrences.length !== 1 ? "s" : ""} suivi{item.occurrences.length !== 1 ? "s" : ""}
                               </p>
                             )}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -348,8 +372,8 @@ export function AddEditRecurringDialog({
                 </ScrollArea>
 
                 {sourceTransaction && (
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-sm font-medium mb-1">Transaction to link:</p>
+                  <div className="bg-muted rounded-lg p-3">
+                    <p className="text-sm font-medium mb-1">Transaction à relier :</p>
                     <p className="text-sm">
                       {sourceTransaction.merchant} -{" "}
                       <Money
@@ -378,21 +402,21 @@ export function AddEditRecurringDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Annuler
           </Button>
           {mode === "link" && showLinkOption ? (
             <Button
               onClick={handleLinkToExisting}
               disabled={!selectedExistingId}
             >
-              Link Transaction
+              Relier la transaction
             </Button>
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={!formData.name || !formData.amount}
+              disabled={!formData.name || !formData.amount || !accountId}
             >
-              {isEditing ? "Save Changes" : "Create"}
+              {isEditing ? "Enregistrer" : "Créer"}
             </Button>
           )}
         </DialogFooter>
@@ -438,10 +462,10 @@ function FormFields({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="subscription">Subscription</SelectItem>
-            <SelectItem value="bill">Bill</SelectItem>
-            <SelectItem value="loan">Loan</SelectItem>
-            <SelectItem value="income">Income</SelectItem>
+            <SelectItem value="subscription">Abonnement</SelectItem>
+            <SelectItem value="bill">Facture</SelectItem>
+            <SelectItem value="loan">Crédit</SelectItem>
+            <SelectItem value="income">Revenu</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -449,9 +473,9 @@ function FormFields({
       {/* Name and Merchant */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>Name *</Label>
+          <Label>Nom *</Label>
           <Input
-            placeholder="e.g., Netflix, Rent, Mortgage"
+            placeholder="Ex. Netflix, loyer, prêt immobilier"
             value={formData.name}
             onChange={(e) =>
               setFormData({ ...formData, name: e.target.value })
@@ -459,9 +483,9 @@ function FormFields({
           />
         </div>
         <div>
-          <Label>Merchant</Label>
+          <Label>Marchand</Label>
           <Input
-            placeholder="Company name"
+            placeholder="Nom de l’entreprise"
             value={formData.merchant}
             onChange={(e) =>
               setFormData({ ...formData, merchant: e.target.value })
@@ -473,7 +497,7 @@ function FormFields({
       {/* Amount and Frequency */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>Amount *</Label>
+          <Label>Montant *</Label>
           <Input
             type="number"
             placeholder="0.00"
@@ -486,7 +510,7 @@ function FormFields({
           />
         </div>
         <div>
-          <Label>Frequency</Label>
+          <Label>Fréquence</Label>
           <Select
             value={formData.frequency}
             onValueChange={(v) =>
@@ -500,11 +524,11 @@ function FormFields({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="biweekly">Biweekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="quarterly">Quarterly</SelectItem>
-              <SelectItem value="yearly">Yearly</SelectItem>
+              <SelectItem value="weekly">Hebdomadaire</SelectItem>
+              <SelectItem value="biweekly">Toutes les deux semaines</SelectItem>
+              <SelectItem value="monthly">Mensuelle</SelectItem>
+              <SelectItem value="quarterly">Trimestrielle</SelectItem>
+              <SelectItem value="yearly">Annuelle</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -513,7 +537,7 @@ function FormFields({
       {/* Category and Subcategory */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>Category</Label>
+          <Label>Catégorie</Label>
           <Select
             value={formData.category}
             onValueChange={(v) =>
@@ -534,7 +558,7 @@ function FormFields({
         </div>
         {subcategoryOptions.length > 0 && (
           <div>
-            <Label>Subcategory</Label>
+            <Label>Sous-catégorie</Label>
             <Select
               value={formData.subcategory}
               onValueChange={(v) =>
@@ -542,7 +566,7 @@ function FormFields({
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select..." />
+                <SelectValue placeholder="Sélectionner…" />
               </SelectTrigger>
               <SelectContent>
                 {subcategoryOptions.map((sub) => (
@@ -559,7 +583,7 @@ function FormFields({
       {/* Expected Day and Start Date */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>Expected Day of Month</Label>
+          <Label>Jour prévu du mois</Label>
           <Input
             type="number"
             placeholder="1-31"
@@ -572,7 +596,7 @@ function FormFields({
           />
         </div>
         <div>
-          <Label>Start Date</Label>
+          <Label>Date de début</Label>
           <Input
             type="date"
             value={formData.startDate}
@@ -594,7 +618,7 @@ function FormFields({
             }
           />
           <Label htmlFor="isVariable" className="text-sm font-normal">
-            Amount varies each time
+            Le montant varie à chaque échéance
           </Label>
         </div>
       )}
@@ -603,13 +627,13 @@ function FormFields({
       {formData.type === "loan" && (
         <>
           <div className="border-t pt-4">
-            <h4 className="font-medium mb-3">Loan Details</h4>
+            <h4 className="font-medium mb-3">Détails du crédit</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Principal Amount</Label>
+                <Label>Capital emprunté</Label>
                 <Input
                   type="number"
-                  placeholder="Total loan amount"
+                  placeholder="Montant total emprunté"
                   min="0"
                   step="0.01"
                   value={formData.principalAmount}
@@ -622,10 +646,10 @@ function FormFields({
                 />
               </div>
               <div>
-                <Label>Interest Rate (%)</Label>
+                <Label>Taux d’intérêt (%)</Label>
                 <Input
                   type="number"
-                  placeholder="Annual rate"
+                  placeholder="Taux annuel"
                   min="0"
                   step="0.01"
                   value={formData.interestRate}
@@ -638,10 +662,10 @@ function FormFields({
                 />
               </div>
               <div>
-                <Label>Term (months)</Label>
+                <Label>Durée (mois)</Label>
                 <Input
                   type="number"
-                  placeholder="Loan duration"
+                  placeholder="Durée du crédit"
                   min="1"
                   value={formData.termMonths}
                   onChange={(e) =>
@@ -650,10 +674,10 @@ function FormFields({
                 />
               </div>
               <div>
-                <Label>Remaining Balance</Label>
+                <Label>Capital restant dû</Label>
                 <Input
                   type="number"
-                  placeholder="Current balance"
+                  placeholder="Solde actuel"
                   min="0"
                   step="0.01"
                   value={formData.remainingBalance}

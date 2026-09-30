@@ -13,14 +13,21 @@ import {
 } from "@/components/ui/card";
 import { useState, useEffect, useCallback } from "react";
 import { type BalanceCheckpoint } from "@/lib/db";
-import { getPrimaryAccount } from "@/lib/accounts";
-import { setInitialBalance, addBalanceCheckpoint, getBalanceCheckpoints, deleteBalanceCheckpoint, recalculateAllBalances } from "@/lib/balance";
+import { setInitialBalance, addBalanceCheckpoint, getBalanceCheckpoints, deleteBalanceCheckpoint, recalculateBalances } from "@/lib/balance";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { logger } from "@/lib/logger";
+import { useAccount } from "@/contexts/account-context";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { Money } from "@/components/ui/money";
 
 export function AccountBalanceSettings() {
   const { toast } = useToast();
+  const { accounts, selectedAccountId } = useAccount();
+  const [settingsAccountId, setSettingsAccountId] = useState<number | null>(null);
   
   // Account/balance settings
   const [initialBalance, setInitialBalanceState] = useState("");
@@ -34,13 +41,16 @@ export function AccountBalanceSettings() {
   const [newCheckpointNote, setNewCheckpointNote] = useState("");
   const [addingCheckpoint, setAddingCheckpoint] = useState(false);
   const [showAddCheckpoint, setShowAddCheckpoint] = useState(false);
+  const [checkpointToDelete, setCheckpointToDelete] = useState<number | null>(null);
+  const currentAccount = accounts.find((candidate) => candidate.id === settingsAccountId);
+  const currentCurrency = currentAccount?.currency || "EUR";
 
   // Recalculate
   const [recalculating, setRecalculating] = useState(false);
   const [recalculateSuccess, setRecalculateSuccess] = useState(false);
 
   const loadAccountSettings = useCallback(async () => {
-    const account = await getPrimaryAccount();
+    const account = accounts.find((candidate) => candidate.id === settingsAccountId);
     if (account) {
       setInitialBalanceState(account.initialBalance?.toString() || "0");
       setInitialBalanceDate(account.initialBalanceDate || new Date().toISOString().split("T")[0]);
@@ -51,7 +61,18 @@ export function AccountBalanceSettings() {
         setCheckpoints(cps);
       }
     }
-  }, []);
+  }, [accounts, settingsAccountId]);
+
+  useEffect(() => {
+    if (accounts.length === 0) {
+      setSettingsAccountId(null);
+      return;
+    }
+    const preferred = selectedAccountId !== "all" && accounts.some((account) => account.id === selectedAccountId)
+      ? selectedAccountId
+      : accounts[0].id!;
+    setSettingsAccountId((current) => current && accounts.some((account) => account.id === current) ? current : preferred);
+  }, [accounts, selectedAccountId]);
 
   useEffect(() => {
     loadAccountSettings();
@@ -60,21 +81,21 @@ export function AccountBalanceSettings() {
   const handleSaveInitialBalance = async () => {
     setSavingBalance(true);
     try {
-      const account = await getPrimaryAccount();
+      const account = accounts.find((candidate) => candidate.id === settingsAccountId);
       if (account && account.id) {
         await setInitialBalance(account.id, parseFloat(initialBalance) || 0, initialBalanceDate);
         toast({
           variant: "success",
-          title: "Saved",
-          description: "Initial balance saved. Balances recalculated.",
+          title: "Solde enregistré",
+          description: "Le solde initial est enregistré et les soldes ont été recalculés.",
         });
       }
     } catch (error) {
-      console.error("Failed to save initial balance:", error);
+      logger.error("Failed to save initial balance:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to save initial balance.",
+        title: "Erreur",
+        description: "Impossible d’enregistrer le solde initial.",
       });
     } finally {
       setSavingBalance(false);
@@ -84,7 +105,7 @@ export function AccountBalanceSettings() {
   const handleAddCheckpoint = async () => {
     setAddingCheckpoint(true);
     try {
-      const account = await getPrimaryAccount();
+      const account = accounts.find((candidate) => candidate.id === settingsAccountId);
       if (account && account.id) {
         await addBalanceCheckpoint(
           account.id,
@@ -101,16 +122,16 @@ export function AccountBalanceSettings() {
         setShowAddCheckpoint(false);
         toast({
           variant: "success",
-          title: "Added",
-          description: "Balance checkpoint added.",
+          title: "Point de contrôle ajouté",
+          description: "Le solde connu a bien été ajouté.",
         });
       }
     } catch (error) {
-      console.error("Failed to add checkpoint:", error);
+      logger.error("Failed to add checkpoint:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to add balance checkpoint.",
+        title: "Erreur",
+        description: "Impossible d’ajouter ce solde connu.",
       });
     } finally {
       setAddingCheckpoint(false);
@@ -119,18 +140,19 @@ export function AccountBalanceSettings() {
 
   const handleDeleteCheckpoint = async (checkpointId: number) => {
     try {
-      const account = await getPrimaryAccount();
+      const account = accounts.find((candidate) => candidate.id === settingsAccountId);
       if (account && account.id) {
         await deleteBalanceCheckpoint(checkpointId, account.id);
         const cps = await getBalanceCheckpoints(account.id);
         setCheckpoints(cps);
         toast({
-          title: "Deleted",
-          description: "Balance checkpoint removed.",
+          variant: "success",
+          title: "Point supprimé",
+          description: "Le solde connu a été supprimé.",
         });
       }
     } catch (error) {
-      console.error("Failed to delete checkpoint:", error);
+      logger.error("Failed to delete checkpoint:", error);
     }
   };
 
@@ -138,22 +160,23 @@ export function AccountBalanceSettings() {
     setRecalculating(true);
     setRecalculateSuccess(false);
     try {
-      await recalculateAllBalances();
+      if (!settingsAccountId) throw new Error("Sélectionnez d’abord un compte");
+      await recalculateBalances(settingsAccountId);
       setRecalculateSuccess(true);
       // Reload account settings to show updated balance
       await loadAccountSettings();
       setTimeout(() => setRecalculateSuccess(false), 3000);
       toast({
         variant: "success",
-        title: "Recalculated",
-        description: "All balances have been updated from transactions.",
+        title: "Soldes recalculés",
+        description: "Le solde du compte a été mis à jour à partir des transactions.",
       });
     } catch (error) {
-      console.error("Failed to recalculate balances:", error);
+      logger.error("Failed to recalculate balances:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to recalculate balances.",
+        title: "Erreur",
+        description: "Impossible de recalculer les soldes.",
       });
     } finally {
       setRecalculating(false);
@@ -165,21 +188,40 @@ export function AccountBalanceSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wallet className="h-5 w-5" />
-          Account Balance
+          Solde du compte
         </CardTitle>
-        <CardDescription>Set your initial balance for accurate balance tracking</CardDescription>
+        <CardDescription>Définissez un point de départ fiable pour le suivi du solde.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="rounded-lg bg-muted/50 p-4">
+        <div className="space-y-2">
+          <Label>Compte</Label>
+          <Select
+            value={settingsAccountId?.toString() || ""}
+            onValueChange={(value) => setSettingsAccountId(Number(value))}
+          >
+            <SelectTrigger aria-label="Compte à rapprocher">
+              <SelectValue placeholder="Sélectionner un compte" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id!.toString()}>
+                  {account.name} · {account.currency}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="rounded-lg bg-muted p-4">
           <p className="mb-2 text-sm text-muted-foreground">
-            <strong>How it works:</strong> All balances are calculated from your transactions starting from this initial balance. If your current balance looks incorrect, adjust the initial balance and date.
+            <strong>Principe :</strong> les soldes sont calculés à partir des transactions et de ce solde initial. Si le solde actuel semble incorrect, ajustez le montant et sa date.
           </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Initial Balance (€)</Label>
+            <Label htmlFor="initial-balance">Solde initial ({currentCurrency})</Label>
             <Input
+              id="initial-balance"
               type="number"
               value={initialBalance}
               onChange={(e) => setInitialBalanceState(e.target.value)}
@@ -188,8 +230,9 @@ export function AccountBalanceSettings() {
             />
           </div>
           <div className="space-y-2">
-            <Label>Balance Date</Label>
+            <Label htmlFor="initial-balance-date">Date du solde</Label>
             <Input
+              id="initial-balance-date"
               type="date"
               value={initialBalanceDate}
               onChange={(e) => setInitialBalanceDate(e.target.value)}
@@ -198,42 +241,44 @@ export function AccountBalanceSettings() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          This should be your account balance on the day <strong>before</strong> your first imported transaction.
+          Indiquez le solde du compte le jour <strong>précédant</strong> la première transaction importée.
         </p>
 
-        <Button onClick={handleSaveInitialBalance} disabled={savingBalance}>
-          {savingBalance ? "Recalculating..." : "Save & Recalculate Balances"}
+        <Button onClick={handleSaveInitialBalance} loading={savingBalance}>
+          Enregistrer et recalculer
         </Button>
 
         {/* Balance Checkpoints Section */}
         <div className="border-t pt-6">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h4 className="font-medium">Known Balance Points</h4>
+              <h4 className="font-medium">Soldes connus</h4>
               <p className="text-sm text-muted-foreground">
-                Add dates where you know your exact balance (e.g., from bank statements)
+                Ajoutez les dates auxquelles vous connaissez le solde exact, par exemple grâce à un relevé bancaire.
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => setShowAddCheckpoint(!showAddCheckpoint)}>
               <Plus className="mr-1 h-4 w-4" />
-              Add
+              Ajouter
             </Button>
           </div>
 
           {showAddCheckpoint && (
-            <div className="mb-4 space-y-4 rounded-lg bg-muted/50 p-4">
+            <div className="mb-4 space-y-4 rounded-lg bg-muted p-4">
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label>Date</Label>
+                  <Label htmlFor="checkpoint-date">Date</Label>
                   <Input
+                    id="checkpoint-date"
                     type="date"
                     value={newCheckpointDate}
                     onChange={(e) => setNewCheckpointDate(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Balance (€)</Label>
+                  <Label htmlFor="checkpoint-balance">Solde ({currentCurrency})</Label>
                   <Input
+                    id="checkpoint-balance"
                     type="number"
                     value={newCheckpointBalance}
                     onChange={(e) => setNewCheckpointBalance(e.target.value)}
@@ -242,20 +287,21 @@ export function AccountBalanceSettings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Note (optional)</Label>
+                  <Label htmlFor="checkpoint-note">Note (facultative)</Label>
                   <Input
+                    id="checkpoint-note"
                     value={newCheckpointNote}
                     onChange={(e) => setNewCheckpointNote(e.target.value)}
-                    placeholder="Bank statement Dec 2024"
+                    placeholder="Relevé bancaire de décembre 2024"
                   />
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleAddCheckpoint} disabled={addingCheckpoint} size="sm">
-                  {addingCheckpoint ? "Adding..." : "Add Checkpoint"}
+                <Button onClick={handleAddCheckpoint} loading={addingCheckpoint} size="sm">
+                  Ajouter le point
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setShowAddCheckpoint(false)}>
-                  Cancel
+                  Annuler
                 </Button>
               </div>
             </div>
@@ -264,15 +310,15 @@ export function AccountBalanceSettings() {
           {checkpoints.length > 0 ? (
             <div className="space-y-2">
               {checkpoints.map((cp) => (
-                <div key={cp.id} className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
+                <div key={cp.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <div className="text-sm font-mono">{format(new Date(cp.date), "dd MMM yyyy")}</div>
+                    <div className="text-sm font-mono">{format(new Date(cp.date), "dd MMM yyyy", { locale: fr })}</div>
                     <div className="font-medium">
-                      {cp.balance.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                      <Money amount={cp.balance} currency={currentCurrency} />
                     </div>
                     {cp.note && <div className="text-sm text-muted-foreground">{cp.note}</div>}
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => cp.id && handleDeleteCheckpoint(cp.id)}>
+                  <Button variant="ghost" size="icon" aria-label={`Supprimer le solde connu du ${format(new Date(cp.date), "dd MMM yyyy", { locale: fr })}`} onClick={() => cp.id && setCheckpointToDelete(cp.id)}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -280,34 +326,47 @@ export function AccountBalanceSettings() {
             </div>
           ) : (
             <p className="py-4 text-center text-sm text-muted-foreground">
-              No checkpoints added. Add a known balance to improve accuracy.
+              Aucun solde connu. Ajoutez-en un pour améliorer la précision.
             </p>
           )}
         </div>
 
         {/* Balance Maintenance */}
         <div className="border-t pt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-medium">Recalculate Balances</p>
+              <p className="font-medium">Recalculer les soldes</p>
               <p className="text-sm text-muted-foreground">
-                Fix balance issues by recalculating from transactions
+                Corrige les écarts en repartant des transactions du compte.
               </p>
             </div>
             <div className="flex items-center gap-2">
               {recalculateSuccess && (
-                <span className="flex items-center gap-1 text-sm text-emerald-600">
-                  <Check className="h-4 w-4" /> Done!
+                <span className="flex items-center gap-1 text-sm text-foreground">
+                  <Check className="h-4 w-4" /> Terminé
                 </span>
               )}
-              <Button variant="outline" onClick={handleRecalculateAll} disabled={recalculating}>
+              <Button variant="outline" onClick={handleRecalculateAll} loading={recalculating}>
                 <RefreshCw className={cn("mr-2 h-4 w-4", recalculating && "animate-spin")} />
-                {recalculating ? "Recalculating..." : "Recalculate"}
+                Recalculer
               </Button>
             </div>
           </div>
         </div>
       </CardContent>
+      <ConfirmationDialog
+        open={checkpointToDelete !== null}
+        onOpenChange={(open) => { if (!open) setCheckpointToDelete(null); }}
+        title="Supprimer ce solde connu ?"
+        description="Ce point de contrôle sera retiré. Les transactions et le compte ne seront pas supprimés."
+        confirmLabel="Supprimer"
+        destructive
+        onConfirm={async () => {
+          if (checkpointToDelete === null) return;
+          await handleDeleteCheckpoint(checkpointToDelete);
+          setCheckpointToDelete(null);
+        }}
+      />
     </Card>
   );
 }

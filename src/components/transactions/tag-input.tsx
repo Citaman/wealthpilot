@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { X, Plus } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +18,7 @@ export function TagInput({
   value = [],
   onChange,
   suggestions = [],
-  placeholder = "Add tag...",
+  placeholder = "Ajouter un libellé…",
   maxTags = 10,
   className,
 }: TagInputProps) {
@@ -70,6 +69,7 @@ export function TagInput({
               type="button"
               onClick={() => removeTag(tag)}
               className="ml-1 hover:text-destructive"
+              aria-label={`Retirer le libellé ${tag}`}
             >
               <X className="h-3 w-3" />
             </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
   MoreHorizontal,
   Calendar,
@@ -78,24 +79,24 @@ export function SubscriptionCard({
 
   // Type options with icons and labels
   const typeOptions: { type: RecurringType; label: string; icon: typeof CreditCard }[] = [
-    { type: "subscription", label: "Subscription", icon: CreditCard },
-    { type: "bill", label: "Bill", icon: Receipt },
-    { type: "loan", label: "Loan", icon: Landmark },
-    { type: "income", label: "Income", icon: Wallet },
+    { type: "subscription", label: "Abonnement", icon: CreditCard },
+    { type: "bill", label: "Facture", icon: Receipt },
+    { type: "loan", label: "Crédit", icon: Landmark },
+    { type: "income", label: "Revenu", icon: Wallet },
   ];
 
   const frequencyLabel = (freq: string) => {
     switch (freq) {
       case "weekly":
-        return "week";
+        return "semaine";
       case "biweekly":
-        return "2 weeks";
+        return "2 semaines";
       case "monthly":
-        return "month";
+        return "mois";
       case "quarterly":
-        return "quarter";
+        return "trimestre";
       case "yearly":
-        return "year";
+        return "an";
       default:
         return freq;
     }
@@ -103,15 +104,15 @@ export function SubscriptionCard({
 
   const getStatusBadge = () => {
     if (isCancelled) {
-      return <Badge variant="destructive">Cancelled</Badge>;
+      return <Badge variant="secondary">Annulé</Badge>;
     }
     if (isPaused) {
-      return <Badge variant="secondary">Paused</Badge>;
+      return <Badge variant="secondary">En pause</Badge>;
     }
     if (sub.status === "completed") {
-      return <Badge variant="outline">Completed</Badge>;
+      return <Badge variant="outline">Terminé</Badge>;
     }
-    return <Badge variant="default">Active</Badge>;
+    return <Badge variant="default">Actif</Badge>;
   };
 
   const nextPaymentDate = sub.nextExpected ? new Date(sub.nextExpected) : null;
@@ -150,29 +151,29 @@ export function SubscriptionCard({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Actions pour ${sub.name}`}>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(sub)}>
                 <Edit className="mr-2 h-4 w-4" />
-                Edit
+                Modifier
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onViewHistory(sub)}>
                 <Calendar className="mr-2 h-4 w-4" />
-                View History
+                Voir l’historique
               </DropdownMenuItem>
               {onLinkTransaction && (
                 <DropdownMenuItem onClick={() => onLinkTransaction(sub)}>
                   <Link2 className="mr-2 h-4 w-4" />
-                  Link Transaction
+                  Relier une transaction
                 </DropdownMenuItem>
               )}
               {onMerge && (
                 <DropdownMenuItem onClick={() => onMerge(sub)}>
                   <Merge className="mr-2 h-4 w-4" />
-                  Merge with Another
+                  Fusionner avec un autre
                 </DropdownMenuItem>
               )}
               
@@ -181,7 +182,7 @@ export function SubscriptionCard({
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <ArrowRight className="mr-2 h-4 w-4" />
-                    Change Type
+                    Changer le type
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     {typeOptions
@@ -203,33 +204,33 @@ export function SubscriptionCard({
               {isActive ? (
                 <DropdownMenuItem onClick={() => onPause(sub)}>
                   <Pause className="mr-2 h-4 w-4" />
-                  Pause
+                  Mettre en pause
                 </DropdownMenuItem>
               ) : isPaused ? (
                 <DropdownMenuItem onClick={() => onPause(sub)}>
                   <Play className="mr-2 h-4 w-4" />
-                  Resume
+                  Reprendre
                 </DropdownMenuItem>
               ) : null}
               {!isCancelled && sub.status !== "completed" && (
                 <DropdownMenuItem onClick={() => onCancel(sub)}>
                   <XCircle className="mr-2 h-4 w-4" />
-                  Mark as Cancelled
+                  Marquer comme annulé
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onExclude(sub)}
-                className="text-amber-600"
+                className="text-muted-foreground"
               >
-                Not a {sub.type === "bill" ? "bill" : "subscription"}
+                Ce n’est pas {sub.type === "bill" ? "une facture" : "un abonnement"}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(sub)}
-                className="text-red-500"
+                className="text-foreground"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                Supprimer
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -246,18 +247,18 @@ export function SubscriptionCard({
             </p>
             {sub.isVariable && sub.averageAmount && (
               <p className="text-xs text-muted-foreground">
-                Avg: <Money amount={Math.abs(convertFromAccount(sub.averageAmount, sub.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} />
+                Moy. : <Money amount={Math.abs(convertFromAccount(sub.averageAmount, sub.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} />
               </p>
             )}
           </div>
           {nextPaymentDate && isActive && (
             <div className="text-right">
               <p className="text-sm text-muted-foreground">
-                Next: {format(nextPaymentDate, "MMM d")}
+                Prochaine : {format(nextPaymentDate, "d MMM", { locale: fr })}
               </p>
               {isUpcoming && (
-                <span className="text-xs text-amber-600 font-medium">
-                  Due soon
+                <span className="text-xs text-muted-foreground font-medium">
+                  Bientôt due
                 </span>
               )}
             </div>
@@ -270,8 +271,8 @@ export function SubscriptionCard({
             <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <ChevronDown className="h-3 w-3" />
               {sub.isUserCreated
-                ? "Payment history"
-                : `Detection basis: ${sub.occurrences.length} occurrences`}
+                ? "Historique des paiements"
+                : `Base de détection : ${sub.occurrences.length} occurrences`}
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="mt-2 space-y-1 pl-4 border-l-2 border-muted">
@@ -284,12 +285,12 @@ export function SubscriptionCard({
                       <span
                         className={cn(
                           "w-2 h-2 rounded-full",
-                          occ.status === "paid" && "bg-green-500",
-                          occ.status === "pending" && "bg-yellow-500",
-                          occ.status === "missed" && "bg-red-500"
+                          occ.status === "paid" && "bg-[#FF6B4A]",
+                          occ.status === "pending" && "bg-[#FFAB96]",
+                          occ.status === "missed" && "bg-[#E8E8EC]"
                         )}
                       />
-                      {format(new Date(occ.date), "MMM d, yyyy")}
+                      {format(new Date(occ.date), "d MMM yyyy", { locale: fr })}
                     </span>
                     <span>
                       <Money amount={Math.abs(convertFromAccount(occ.amount, sub.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} />
@@ -301,7 +302,7 @@ export function SubscriptionCard({
                     onClick={() => onViewHistory(sub)}
                     className="text-xs text-primary hover:underline"
                   >
-                    View all {sub.occurrences.length} occurrences
+                    Voir les {sub.occurrences.length} occurrences
                   </button>
                 )}
               </div>

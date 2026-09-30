@@ -36,6 +36,7 @@ export function GoalCard(props: {
   onEdit: (goal: Goal) => void;
   onDelete: (goalId: number) => void;
   onAddContribution: (goalId: number) => void;
+  linkedAccountName?: string;
   className?: string;
 }) {
   const { goal } = props;
@@ -65,7 +66,7 @@ export function GoalCard(props: {
         className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
         style={{
           background:
-            "radial-gradient(600px circle at 20% 0%, rgba(59,130,246,0.08), transparent 40%), radial-gradient(600px circle at 80% 20%, rgba(16,185,129,0.06), transparent 40%)",
+            "radial-gradient(600px circle at 20% 0%, rgba(255,107,74,0.06), transparent 40%), radial-gradient(600px circle at 80% 20%, rgba(255,107,74,0.04), transparent 40%)",
         }}
       />
 
@@ -87,6 +88,9 @@ export function GoalCard(props: {
                   {goal.name}
                 </Link>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">
+                    {goal.linkedAccountId ? `Réel · ${props.linkedAccountName || "compte lié"}` : "Objectif virtuel"}
+                  </Badge>
                   <Badge className={cn("border", summary.status.badgeClassName)} variant="outline">
                     {summary.status.label}
                   </Badge>
@@ -95,12 +99,12 @@ export function GoalCard(props: {
                       <Calendar className="h-3.5 w-3.5" />
                       {summary.status.deadlineDaysLeft !== null ? (
                         summary.status.deadlineDaysLeft > 0
-                          ? `Due in ${summary.status.deadlineDaysLeft}d`
+                          ? `Dans ${summary.status.deadlineDaysLeft} j`
                           : summary.status.deadlineDaysLeft === 0
-                            ? "Due today"
-                            : "Overdue"
+                            ? "Aujourd’hui"
+                            : "En retard"
                       ) : (
-                        "Deadline"
+                        "Échéance"
                       )}
                     </span>
                   )}
@@ -111,26 +115,28 @@ export function GoalCard(props: {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button variant="ghost" size="icon" className="h-9 w-9" aria-label={`Actions pour ${goal.name}`}>
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => props.onAddContribution(goal.id!)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add contribution
-              </DropdownMenuItem>
+              {!goal.linkedAccountId && (
+                <DropdownMenuItem onClick={() => props.onAddContribution(goal.id!)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Ajouter un mouvement virtuel
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => props.onEdit(goal)}>
                 <Edit2 className="mr-2 h-4 w-4" />
-                Edit goal
+                Modifier l’objectif
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-red-600 focus:text-red-600"
+                className="text-foreground focus:text-foreground"
                 onClick={() => props.onDelete(goal.id!)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                Supprimer
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -140,21 +146,21 @@ export function GoalCard(props: {
       <CardContent className="relative space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Saved</p>
+            <p className="text-xs text-muted-foreground">{goal.linkedAccountId ? "Solde du compte" : "Progression virtuelle"}</p>
             <p className="truncate text-2xl font-bold">
               <Money amount={goal.currentAmount} minimumFractionDigits={0} maximumFractionDigits={0} />
             </p>
             <p className="text-xs text-muted-foreground">
-              of <Money amount={goal.targetAmount} minimumFractionDigits={0} maximumFractionDigits={0} /> · {summary.progress.toFixed(0)}%
+              sur <Money amount={goal.targetAmount} minimumFractionDigits={0} maximumFractionDigits={0} /> · {summary.progress.toFixed(0)} %
             </p>
           </div>
           <CircularProgress progress={summary.progress} color={goal.color} size={78} strokeWidth={6} />
         </div>
 
-        <div className="rounded-xl border bg-muted/30 p-3">
+        <div className="rounded-xl border bg-muted/50 p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Remaining</p>
+              <p className="text-xs text-muted-foreground">Reste</p>
               <p className="font-semibold">
                 <Money amount={Math.max(0, summary.remaining)} minimumFractionDigits={0} maximumFractionDigits={0} />
               </p>
@@ -164,15 +170,15 @@ export function GoalCard(props: {
               <div className="text-right text-xs">
                 {summary.status.forecast.requiredMonthlyForDeadline && (
                   <p>
-                    <span className="text-muted-foreground">Need</span>{" "}
+                    <span className="text-muted-foreground">Besoin</span>{" "}
                     <span className="font-semibold">
-                      <Money amount={summary.status.forecast.requiredMonthlyForDeadline} minimumFractionDigits={0} maximumFractionDigits={0} />/mo
+                      <Money amount={summary.status.forecast.requiredMonthlyForDeadline} minimumFractionDigits={0} maximumFractionDigits={0} />/mois
                     </span>
                   </p>
                 )}
                 {summary.status.forecast.averageMonthlyNet && (
                   <p className="text-muted-foreground">
-                    Pace ~<Money amount={summary.status.forecast.averageMonthlyNet} minimumFractionDigits={0} maximumFractionDigits={0} />/mo
+                    Rythme ~<Money amount={summary.status.forecast.averageMonthlyNet} minimumFractionDigits={0} maximumFractionDigits={0} />/mois
                   </p>
                 )}
               </div>
@@ -183,7 +189,7 @@ export function GoalCard(props: {
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <TrendingUp className="h-3.5 w-3.5" />
-                Est. reach
+                Atteinte estimée
               </span>
               <span className="font-medium text-foreground">
                 {format(parseISO(summary.status.forecast.estimatedReachDate), "MMM yyyy")}
@@ -193,31 +199,33 @@ export function GoalCard(props: {
         </div>
 
         <div className="flex items-center justify-between gap-2">
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={() => props.onAddContribution(goal.id!)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add
-          </Button>
+          {!goal.linkedAccountId && (
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => props.onAddContribution(goal.id!)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter un mouvement
+            </Button>
+          )}
           <Button variant="ghost" asChild className="flex-1">
-            <Link href={`/goals/${goal.id}`}>Details</Link>
+            <Link href={`/goals/${goal.id}`}>Détails</Link>
           </Button>
         </div>
 
         <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Recent activity</p>
+          <p className="text-xs font-medium text-muted-foreground">Activité récente</p>
           {summary.recent.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No contributions yet.</p>
+            <p className="text-xs text-muted-foreground">Aucun mouvement.</p>
           ) : (
             <ul className="space-y-1">
               {summary.recent.map((c) => (
                 <li key={c.id} className="flex items-center justify-between text-xs">
                   <span className="truncate text-muted-foreground">
-                    {c.note ? c.note : c.amount >= 0 ? "Deposit" : "Withdrawal"}
+                    {c.note ? c.note : c.amount >= 0 ? "Versement" : "Retrait"}
                   </span>
-                  <span className={cn("font-medium", c.amount >= 0 ? "text-emerald-600" : "text-red-600")}>
+                  <span className={cn("font-medium text-foreground")}>
                     {c.amount >= 0 ? "+" : "-"}
                     <Money amount={Math.abs(c.amount)} minimumFractionDigits={0} maximumFractionDigits={0} />
                   </span>

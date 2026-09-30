@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeftRight,
   CheckCircle2,
-  LayoutDashboard,
   PieChart,
   Plus,
   Search,
   SlidersHorizontal,
-  Sparkles,
   Target,
   TrendingUp,
   Trash2,
@@ -60,30 +58,30 @@ import {
 import { type Goal, type GoalContribution } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { Money } from "@/components/ui/money";
+import { useAccount } from "@/contexts/account-context";
 
 const GOAL_COLORS = [
-  "#10b981", // emerald
-  "#3b82f6", // blue
-  "#8b5cf6", // violet
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#ec4899", // pink
-  "#06b6d4", // cyan
-  "#84cc16", // lime
+  "#FF6B4A", // coral
+  "#FF8B70", // coral light
+  "#FFAB96", // coral lighter
+  "#FFCBBC", // coral lightest
+  "#E8E8EC", // gray
 ];
 
 export default function GoalsPage() {
+  const { selectedAccountId } = useAccount();
   const { goals, isLoading, addGoal, updateGoal, deleteGoal } = useGoals();
   const { accounts } = useAccounts();
   const { contributions } = useGoalContributions();
   const { addContribution, deleteContribution } = useGoalContributionActions();
-  const dashboard = useDashboard();
+  const dashboard = useDashboard(selectedAccountId);
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [contributionGoalId, setContributionGoalId] = useState<number | null>(null);
   const [contributionAmount, setContributionAmount] = useState("");
+  const [contributionKind, setContributionKind] = useState<"deposit" | "withdrawal">("deposit");
   const [contributionDate, setContributionDate] = useState(() =>
     new Date().toISOString().split("T")[0]
   );
@@ -96,6 +94,18 @@ export default function GoalsPage() {
   const [sortMode, setSortMode] = useState<
     "progress" | "deadline" | "name" | "activity" | "remaining"
   >("progress");
+
+  const goalsWithRealBalances = useMemo(() => goals
+    .filter((goal) => (
+      selectedAccountId === "all" ||
+      !goal.linkedAccountId ||
+      goal.linkedAccountId === selectedAccountId
+    ))
+    .map((goal) => {
+      if (!goal.linkedAccountId) return goal;
+      const account = accounts.find((candidate) => candidate.id === goal.linkedAccountId);
+      return account ? { ...goal, currentAmount: account.balance } : goal;
+    }), [goals, accounts, selectedAccountId]);
 
   const contributionsByGoal = useMemo(() => {
     const map: Record<number, GoalContribution[]> = {};
@@ -140,6 +150,17 @@ export default function GoalsPage() {
     setIsAddDialogOpen(true);
   };
 
+  useEffect(() => {
+    if (new URL(window.location.href).searchParams.get('new') === '1') {
+      handleOpenAdd();
+      const url = new URL(window.location.href);
+      url.searchParams.delete('new');
+      window.history.replaceState({}, '', url);
+    }
+    // This deep link is consumed once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleOpenEdit = (goal: Goal) => {
     setFormData({
       name: goal.name,
@@ -156,10 +177,13 @@ export default function GoalsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const linkedAccount = formData.linkedAccountId === "none"
+      ? undefined
+      : accounts.find((account) => account.id === parseInt(formData.linkedAccountId));
     const goalData = {
       name: formData.name.trim(),
       targetAmount: parseFloat(formData.targetAmount),
-      currentAmount: parseFloat(formData.currentAmount) || 0,
+      currentAmount: linkedAccount ? linkedAccount.balance : (parseFloat(formData.currentAmount) || 0),
       deadline: formData.deadline || undefined,
       color: formData.color,
       icon: 'target',
@@ -186,6 +210,7 @@ export default function GoalsPage() {
   const openContribution = (goalId: number) => {
     setContributionGoalId(goalId);
     setContributionAmount("");
+    setContributionKind("deposit");
     setContributionNote("");
     setContributionError(null);
     setContributionDate(new Date().toISOString().split("T")[0]);
@@ -194,19 +219,24 @@ export default function GoalsPage() {
   const handleContribute = async () => {
     if (!contributionGoalId || !contributionAmount) return;
 
-    const goal = goals.find((g) => g.id === contributionGoalId);
+    const goal = goalsWithRealBalances.find((g) => g.id === contributionGoalId);
     if (!goal) return;
+    if (goal.linkedAccountId) {
+      setContributionError("Cet objectif suit le solde d’un compte réel. Ajoutez l’argent via une transaction du compte.");
+      return;
+    }
 
     setContributionError(null);
 
-    const amount = Number(contributionAmount);
+    const rawAmount = Number(contributionAmount);
+    const amount = contributionKind === "withdrawal" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
     if (!Number.isFinite(amount) || amount === 0) {
-      setContributionError("Please enter a valid amount (non-zero). Use negative for withdrawals.");
+      setContributionError("Saisissez un montant valide supérieur à zéro.");
       return;
     }
 
     if (goal.currentAmount + amount < 0) {
-      setContributionError("That withdrawal would make the goal balance negative.");
+      setContributionError("Ce retrait rendrait le solde de l’objectif négatif.");
       return;
     }
 
@@ -223,17 +253,17 @@ export default function GoalsPage() {
       setContributionError(null);
       setContributionDate(new Date().toISOString().split("T")[0]);
     } catch (err) {
-      setContributionError(err instanceof Error ? err.message : "Failed to add contribution");
+      setContributionError(err instanceof Error ? err.message : "Impossible d’ajouter le mouvement.");
     }
   };
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
 
   const { activeGoals, completedGoals } = useMemo(() => {
-    const active = goals.filter((g) => g.isActive && g.currentAmount < g.targetAmount);
-    const completed = goals.filter((g) => !g.isActive || g.currentAmount >= g.targetAmount);
+    const active = goalsWithRealBalances.filter((g) => g.isActive && g.currentAmount < g.targetAmount);
+    const completed = goalsWithRealBalances.filter((g) => !g.isActive || g.currentAmount >= g.targetAmount);
     return { activeGoals: active, completedGoals: completed };
-  }, [goals]);
+  }, [goalsWithRealBalances]);
 
   const filteredActiveGoals = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -301,66 +331,50 @@ export default function GoalsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Hero */}
-        <div className="relative overflow-hidden rounded-2xl border bg-card">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-emerald-500/10" />
-          <div className="relative p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Plan, track, and stay on pace
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">Financial Goals</h2>
-                <p className="text-muted-foreground">
-                  A clean place to manage goals, contributions, and forecasts — with quick links into budgets and analytics.
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button variant="outline" asChild>
-                  <Link href="/">
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Link>
-                </Button>
-                <Button onClick={handleOpenAdd}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New goal
-                </Button>
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-1 items-center gap-2 rounded-xl border bg-background px-3 py-2">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search goals…"
-                  className="border-0 bg-transparent p-0 focus-visible:ring-0"
-                />
-              </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="justify-between">
-                    <span className="inline-flex items-center gap-2">
-                      <SlidersHorizontal className="h-4 w-4" />
-                      Sort
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => setSortMode("progress")}>Most funded</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortMode("deadline")}>Nearest deadline</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortMode("activity")}>Recent activity</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortMode("remaining")}>Least remaining</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setSortMode("name")}>Name (A → Z)</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+        {/* Page Header */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-semibold">Objectifs financiers</h2>
+            <p className="text-muted-foreground">
+              Suivez vos projets, leurs mouvements et leur date d’atteinte estimée.
+            </p>
           </div>
+          <Button onClick={handleOpenAdd} className="bg-primary text-white">
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvel objectif
+          </Button>
+        </div>
+
+        {/* Search & Sort */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-1 items-center gap-2">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Rechercher un objectif…"
+              className="bg-muted/50 border-0"
+            />
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="justify-between">
+                <span className="inline-flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Trier
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setSortMode("progress")}>Mieux financés</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortMode("deadline")}>Échéance la plus proche</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortMode("activity")}>Activité récente</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortMode("remaining")}>Plus petit reste</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setSortMode("name")}>Nom (A → Z)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* KPIs */}
@@ -368,12 +382,12 @@ export default function GoalsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                  <Target className="h-5 w-5 text-blue-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
+                  <Target className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Active target</p>
-                  <p className="text-xl font-bold">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cible active</p>
+                  <p className="text-2xl font-semibold">
                     <Money amount={kpis.totalTarget} minimumFractionDigits={0} maximumFractionDigits={0} />
                   </p>
                 </div>
@@ -383,12 +397,12 @@ export default function GoalsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
+                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Saved</p>
-                  <p className="text-xl font-bold text-emerald-600">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Financé</p>
+                  <p className="text-2xl font-semibold">
                     <Money amount={kpis.totalSaved} minimumFractionDigits={0} maximumFractionDigits={0} />
                   </p>
                 </div>
@@ -398,12 +412,12 @@ export default function GoalsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
-                  <TrendingUp className="h-5 w-5 text-violet-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
+                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Net funding (30d)</p>
-                  <p className={cn("text-xl font-bold", kpis.net30 >= 0 ? "text-violet-700 dark:text-violet-300" : "text-red-600")}>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Contributions nettes (30 j)</p>
+                  <p className="text-2xl font-semibold">
                     {kpis.net30 >= 0 ? "+" : "-"}
                     <Money amount={Math.abs(kpis.net30)} minimumFractionDigits={0} maximumFractionDigits={0} />
                   </p>
@@ -414,12 +428,12 @@ export default function GoalsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
-                  <CheckCircle2 className="h-5 w-5 text-amber-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
+                  <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">At risk</p>
-                  <p className="text-xl font-bold">{kpis.atRisk}</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">À risque</p>
+                  <p className="text-2xl font-semibold">{kpis.atRisk}</p>
                 </div>
               </div>
             </CardContent>
@@ -431,19 +445,19 @@ export default function GoalsPage() {
           <CardContent className="py-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-semibold">Connect goals to the rest of your money flow</p>
+                <p className="text-sm font-semibold">Relier les objectifs au budget du foyer</p>
                 <p className="text-sm text-muted-foreground">
-                  Review transactions, adjust your budget, and validate progress with analytics.
+                  Vérifiez les transactions, ajustez le budget et contrôlez la progression dans les analyses.
                   {!dashboard.isLoading && dashboard.hasData ? (
                     <span>
-                      {" "}This month’s net savings:{" "}
+                      {" "}Épargne nette ce mois-ci :{" "}
                       <Money
                         amount={dashboard.totalIncome - dashboard.totalExpenses}
                         className="font-medium text-foreground"
                         minimumFractionDigits={0}
                         maximumFractionDigits={0}
                       />
-                      {" "}({dashboard.savingsRate.toFixed(0)}% savings rate)
+                      {" "}({dashboard.savingsRate.toFixed(0)} % d’épargne)
                     </span>
                   ) : null}
                 </p>
@@ -464,7 +478,7 @@ export default function GoalsPage() {
                 <Button variant="outline" size="sm" asChild>
                   <Link href="/analytics">
                     <PieChart className="mr-2 h-4 w-4" />
-                    Analytics
+                    Analyses
                   </Link>
                 </Button>
               </div>
@@ -476,16 +490,16 @@ export default function GoalsPage() {
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <TabsList>
-              <TabsTrigger value="active">Active ({filteredActiveGoals.length})</TabsTrigger>
-              <TabsTrigger value="completed">Completed ({filteredCompletedGoals.length})</TabsTrigger>
+              <TabsTrigger value="active">Actifs ({filteredActiveGoals.length})</TabsTrigger>
+              <TabsTrigger value="completed">Terminés ({filteredCompletedGoals.length})</TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>
-                Active goals: <span className="font-medium text-foreground">{activeGoals.length}</span>
+                Objectifs actifs : <span className="font-medium text-foreground">{activeGoals.length}</span>
               </span>
               <span className="hidden sm:inline">·</span>
               <span className="hidden sm:inline">
-                Completed: <span className="font-medium text-foreground">{completedGoals.length}</span>
+                Terminés : <span className="font-medium text-foreground">{completedGoals.length}</span>
               </span>
             </div>
           </div>
@@ -506,20 +520,20 @@ export default function GoalsPage() {
             ) : filteredActiveGoals.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-14 text-center">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-lg bg-muted">
                     <Target className="h-7 w-7 text-muted-foreground" />
                   </div>
-                  <p className="text-lg font-semibold">No active goals</p>
+                  <p className="text-lg font-semibold">Aucun objectif actif</p>
                   <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                    Create a goal, then add contributions over time — forecasting and status will automatically get smarter.
+                    Créez un objectif puis ajoutez des mouvements : la projection deviendra plus fiable au fil du temps.
                   </p>
                   <div className="mt-5 flex flex-col gap-2 sm:flex-row">
                     <Button onClick={handleOpenAdd}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Create goal
+                      Créer un objectif
                     </Button>
                     <Button variant="outline" asChild>
-                      <Link href="/budgets">Set a budget plan</Link>
+                      <Link href="/budgets">Définir un budget</Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -534,6 +548,7 @@ export default function GoalsPage() {
                     onEdit={handleOpenEdit}
                     onDelete={(id) => setDeleteConfirm(id)}
                     onAddContribution={openContribution}
+                    linkedAccountName={accounts.find((account) => account.id === goal.linkedAccountId)?.name}
                   />
                 ))}
               </div>
@@ -544,8 +559,8 @@ export default function GoalsPage() {
             {filteredCompletedGoals.length === 0 ? (
               <Card>
                 <CardContent className="py-10 text-center">
-                  <p className="font-medium">No completed goals yet</p>
-                  <p className="text-sm text-muted-foreground">You’ll see completed goals here once targets are reached.</p>
+                  <p className="font-medium">Aucun objectif terminé</p>
+                  <p className="text-sm text-muted-foreground">Les objectifs atteints apparaîtront ici.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -558,6 +573,7 @@ export default function GoalsPage() {
                     onEdit={handleOpenEdit}
                     onDelete={(id) => setDeleteConfirm(id)}
                     onAddContribution={openContribution}
+                    linkedAccountName={accounts.find((account) => account.id === goal.linkedAccountId)?.name}
                     className="opacity-80"
                   />
                 ))}
@@ -571,35 +587,42 @@ export default function GoalsPage() {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingGoal ? "Edit Goal" : "Add New Goal"}</DialogTitle>
+            <DialogTitle>{editingGoal ? "Modifier l’objectif" : "Ajouter un objectif"}</DialogTitle>
             <DialogDescription>
               {editingGoal
-                ? "Update your savings goal details"
-                : "Create a new savings goal to track your progress"}
+                ? "Modifiez les informations de cet objectif."
+                : "Créez un objectif virtuel ou lié à un compte réel."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4 py-4">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Goal Name</label>
+                <label className="text-sm font-medium mb-1.5 block">Nom de l’objectif</label>
                 <Input
-                  placeholder="e.g., Emergency Fund"
+                  placeholder="ex. Fonds d’urgence"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Linked Account (Optional)</label>
+                <label className="text-sm font-medium mb-1.5 block">Compte lié (facultatif)</label>
                 <Select
                   value={formData.linkedAccountId}
-                  onValueChange={(value) => setFormData({ ...formData, linkedAccountId: value })}
+                  onValueChange={(value) => {
+                    const account = value === "none" ? undefined : accounts.find((candidate) => candidate.id === Number(value));
+                    setFormData({
+                      ...formData,
+                      linkedAccountId: value,
+                      currentAmount: account ? account.balance.toString() : formData.currentAmount,
+                    });
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an account" />
+                    <SelectValue placeholder="Choisir un compte" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None (Virtual Goal)</SelectItem>
+                    <SelectItem value="none">Aucun — objectif virtuel</SelectItem>
                     {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id!.toString()}>
                         {account.name} ({account.type})
@@ -608,12 +631,12 @@ export default function GoalsPage() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Link this goal to a real bank account to track its balance automatically.
+                  Un compte lié fournit la progression depuis son solde réel. Sinon, les mouvements sont virtuels.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Target Amount</label>
+                  <label className="text-sm font-medium mb-1.5 block">Montant cible</label>
                   <Input
                     type="number"
                     placeholder="0"
@@ -627,22 +650,28 @@ export default function GoalsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Current Amount</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    {formData.linkedAccountId === "none" ? "Progression virtuelle" : "Solde du compte"}
+                  </label>
                   <Input
                     type="number"
                     placeholder="0"
                     min="0"
                     step="0.01"
                     value={formData.currentAmount}
+                    disabled={formData.linkedAccountId !== "none"}
                     onChange={(e) =>
                       setFormData({ ...formData, currentAmount: e.target.value })
                     }
                   />
+                  {formData.linkedAccountId !== "none" && (
+                    <p className="mt-1 text-xs text-muted-foreground">Lu depuis le compte lié ; non modifiable ici.</p>
+                  )}
                 </div>
               </div>
               <div>
                 <label className="text-sm font-medium mb-1.5 block">
-                  Deadline (optional)
+                  Échéance (facultative)
                 </label>
                 <Input
                   type="date"
@@ -651,7 +680,7 @@ export default function GoalsPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Color</label>
+                <label className="text-sm font-medium mb-1.5 block">Couleur</label>
                 <div className="flex gap-2">
                   {GOAL_COLORS.map((color) => (
                     <button
@@ -663,6 +692,8 @@ export default function GoalsPage() {
                       )}
                       style={{ backgroundColor: color }}
                       onClick={() => setFormData({ ...formData, color })}
+                      aria-label={`Choisir la couleur ${color}`}
+                      aria-pressed={formData.color === color}
                     />
                   ))}
                 </div>
@@ -674,10 +705,10 @@ export default function GoalsPage() {
                 variant="outline"
                 onClick={() => setIsAddDialogOpen(false)}
               >
-                Cancel
+                Annuler
               </Button>
               <Button type="submit">
-                {editingGoal ? "Save Changes" : "Create Goal"}
+                {editingGoal ? "Enregistrer" : "Créer l’objectif"}
               </Button>
             </DialogFooter>
           </form>
@@ -691,19 +722,24 @@ export default function GoalsPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Contribution</DialogTitle>
+            <DialogTitle>Ajouter un mouvement d’objectif</DialogTitle>
             <DialogDescription>
-              Add a deposit (positive) or a withdrawal (negative). Contributions are saved as history.
+              Choisissez un versement ou un retrait; le signe est appliqué automatiquement et l’historique est conservé.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-4">
+            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Type de mouvement">
+              <Button type="button" variant={contributionKind === "deposit" ? "default" : "outline"} onClick={() => setContributionKind("deposit")}>Versement</Button>
+              <Button type="button" variant={contributionKind === "withdrawal" ? "default" : "outline"} onClick={() => setContributionKind("withdrawal")}>Retrait</Button>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Amount</label>
+                <label className="text-sm font-medium mb-1.5 block">Montant</label>
                 <Input
                   type="number"
-                  placeholder="e.g. 100 (or -50)"
+                  placeholder="ex. 100"
+                  min="0"
                   step="0.01"
                   value={contributionAmount}
                   onChange={(e) => setContributionAmount(e.target.value)}
@@ -719,20 +755,20 @@ export default function GoalsPage() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Note (optional)</label>
+              <label className="text-sm font-medium mb-1.5 block">Note (facultative)</label>
               <Input
-                placeholder="e.g. Salary savings"
+                placeholder="ex. Épargne du salaire"
                 value={contributionNote}
                 onChange={(e) => setContributionNote(e.target.value)}
               />
             </div>
             {contributionError && (
-              <p className="text-sm text-red-600">{contributionError}</p>
+              <p className="text-sm text-destructive">{contributionError}</p>
             )}
 
             {contributionGoalId !== null && (contributionsByGoal[contributionGoalId] || []).length > 0 && (
               <div className="pt-2">
-                <p className="text-sm font-medium mb-2">Recent history</p>
+                <p className="text-sm font-medium mb-2">Historique récent</p>
                 <div className="max-h-48 overflow-auto rounded-md border">
                   <ul className="divide-y">
                     {(contributionsByGoal[contributionGoalId] || []).slice(0, 8).map((c) => (
@@ -748,8 +784,9 @@ export default function GoalsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                           onClick={() => setDeleteContributionConfirm(c.id!)}
+                          aria-label={`Supprimer le mouvement du ${c.date}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -762,10 +799,10 @@ export default function GoalsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setContributionGoalId(null)}>
-              Cancel
+              Annuler
             </Button>
             <Button onClick={handleContribute} disabled={!contributionAmount}>
-              Add Contribution
+              Ajouter le mouvement
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -778,14 +815,14 @@ export default function GoalsPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Contribution</DialogTitle>
+            <DialogTitle>Supprimer le mouvement</DialogTitle>
             <DialogDescription>
-              This will remove the contribution and adjust the goal balance.
+              Le mouvement sera retiré et le solde de l’objectif recalculé.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteContributionConfirm(null)}>
-              Cancel
+              Annuler
             </Button>
             <Button
               variant="destructive"
@@ -796,13 +833,13 @@ export default function GoalsPage() {
                   setDeleteContributionConfirm(null);
                 } catch (err) {
                   setContributionError(
-                    err instanceof Error ? err.message : "Failed to delete contribution"
+                    err instanceof Error ? err.message : "Impossible de supprimer le mouvement."
                   );
                   setDeleteContributionConfirm(null);
                 }
               }}
             >
-              Delete
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -815,20 +852,20 @@ export default function GoalsPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Goal</DialogTitle>
+            <DialogTitle>Supprimer l’objectif</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this goal? This action cannot be undone.
+              L’objectif et son historique seront supprimés. Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              Cancel
+              Annuler
             </Button>
             <Button
               variant="destructive"
               onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
             >
-              Delete
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>

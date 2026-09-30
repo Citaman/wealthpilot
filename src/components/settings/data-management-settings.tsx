@@ -44,7 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { recalculateAllBalances } from "@/lib/balance";
-import { StressTestControl } from "./stress-test-control";
+import { logger } from "@/lib/logger";
 
 export function DataManagementSettings() {
   const { toast } = useToast();
@@ -142,14 +142,14 @@ export function DataManagementSettings() {
 
       if (warning === "gzip-not-supported") {
         toast({
-          title: "Backup Exported",
-          description: "Exported uncompressed JSON (gzip not supported).",
+          title: "Sauvegarde exportée",
+          description: "Le JSON non compressé a été exporté (gzip indisponible).",
         });
       } else {
         toast({
           variant: "success",
-          title: "Backup Exported",
-          description: `Saved as ${filename}${passphrase ? " (Encrypted)" : ""}`,
+          title: "Sauvegarde exportée",
+          description: `Fichier enregistré : ${filename}${passphrase ? " (chiffré)" : ""}`,
         });
       }
 
@@ -157,11 +157,11 @@ export function DataManagementSettings() {
       setShowExportPassPrompt(false);
       return { exportedAt: now, filename };
     } catch (error) {
-      console.error("Backup export failed:", error);
+      logger.error("Backup export failed:", error);
       toast({
         variant: "destructive",
-        title: "Export Failed",
-        description: "Could not create backup file.",
+        title: "Échec de l’export",
+        description: "Impossible de créer le fichier de sauvegarde.",
       });
       return null;
     } finally {
@@ -210,8 +210,8 @@ export function DataManagementSettings() {
         setRestoreDiagnostics(diagnostics);
         toast({
           variant: "destructive",
-          title: "Invalid Backup",
-          description: "File is invalid or corrupted. Review diagnostics.",
+          title: "Sauvegarde invalide",
+          description: "Le fichier est invalide ou corrompu. Consultez le diagnostic.",
         });
         return;
       }
@@ -219,7 +219,7 @@ export function DataManagementSettings() {
       setRestoreSnapshot(snapshot);
       setRestoreDialogOpen(true);
     } catch (error) {
-      console.error("Failed to read/validate backup:", error);
+      logger.error("Failed to read/validate backup:", error);
       const diagnostics = {
         fileName: file.name,
         createdAt: new Date().toISOString(),
@@ -228,8 +228,8 @@ export function DataManagementSettings() {
       setRestoreDiagnostics(diagnostics);
       toast({
         variant: "destructive",
-        title: "Read Failed",
-        description: "Could not parse backup file.",
+        title: "Lecture impossible",
+        description: "Le fichier de sauvegarde n’a pas pu être analysé.",
       });
     } finally {
       event.target.value = "";
@@ -251,15 +251,15 @@ export function DataManagementSettings() {
       } else {
         toast({
           variant: "destructive",
-          title: "Invalid Data",
-          description: "Decrypted data is not a valid WealthPilot backup.",
+          title: "Données invalides",
+          description: "Le contenu déchiffré n’est pas une sauvegarde WealthPilot valide.",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
-        title: "Decryption Failed",
-        description: "Invalid passphrase. Please try again.",
+        title: "Échec du déchiffrement",
+        description: "Phrase secrète incorrecte. Réessayez.",
       });
     } finally {
       setRestoreLoading(false);
@@ -304,18 +304,18 @@ export function DataManagementSettings() {
 
       toast({
         variant: "success",
-        title: "Restore Complete",
-        description: `Successfully ${restoreStrategy === "merge" ? "merged" : "restored"} backup data.`,
+        title: "Restauration terminée",
+        description: restoreStrategy === "merge" ? "Les données ont été fusionnées." : "La sauvegarde a été restaurée.",
       });
       
       // Force reload to ensure UI consistency if needed, though react state should handle most
       // router.refresh() might be needed if context doesn't update, but we are in client component
     } catch (error) {
-      console.error("Restore failed:", error);
+      logger.error("Restore failed:", error);
       toast({
         variant: "destructive",
-        title: "Restore Failed",
-        description: "Your existing data should be unchanged.",
+        title: "Échec de la restauration",
+        description: "Vos données existantes devraient être inchangées.",
       });
     } finally {
       setRestoreLoading(false);
@@ -353,15 +353,15 @@ export function DataManagementSettings() {
       
       toast({
         variant: "success",
-        title: "App Reset",
-        description: "All data has been cleared and reset to defaults.",
+        title: "Application réinitialisée",
+        description: "Toutes les données locales ont été effacées et les valeurs par défaut restaurées.",
       });
     } catch (error) {
-      console.error("Reset failed:", error);
+      logger.error("Reset failed:", error);
       toast({
         variant: "destructive",
-        title: "Reset Failed",
-        description: "Could not reset the application.",
+        title: "Échec de la réinitialisation",
+        description: "Impossible de réinitialiser l’application.",
       });
     } finally {
       setResetLoading(false);
@@ -374,20 +374,20 @@ export function DataManagementSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            Data & Backups
+            Données et sauvegardes
           </CardTitle>
           <CardDescription>
-            Offline-first means your browser holds your data — backups keep it safe.
+            Vos données restent dans ce navigateur : les sauvegardes vous permettent de les protéger.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 rounded-lg bg-muted/50 p-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 rounded-lg bg-muted p-4 sm:grid-cols-4">
             {[
               { label: "Transactions", value: stats.transactions },
-              { label: "Goals", value: stats.goals },
+              { label: "Objectifs", value: stats.goals },
               { label: "Budgets", value: stats.budgets },
-              { label: "Accounts", value: stats.accounts },
+              { label: "Comptes", value: stats.accounts },
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <p className="text-2xl font-bold">{value}</p>
@@ -396,18 +396,18 @@ export function DataManagementSettings() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
             {/* Backup */}
             <div className="rounded-xl border bg-card p-4 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <Download className="h-4 w-4" />
-                  <p className="font-medium">Backup</p>
+                  <p className="font-medium">Sauvegarde</p>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {lastBackupAt
-                    ? `Last backup: ${format(new Date(lastBackupAt), "PPp")}`
-                    : "No backup recorded yet."}
+                    ? `Dernière sauvegarde : ${format(new Date(lastBackupAt), "PPp")}`
+                    : "Aucune sauvegarde enregistrée."}
                 </p>
 
                 <div className="mt-3 flex items-center gap-2">
@@ -417,7 +417,7 @@ export function DataManagementSettings() {
                     onCheckedChange={(v) => handleBackupGzipChange(v === true)}
                   />
                   <Label htmlFor="backup-gzip" className="text-sm">
-                    Advanced: gzip (.json.gz)
+                    Avancé : compression gzip (.json.gz)
                   </Label>
                 </div>
 
@@ -428,7 +428,7 @@ export function DataManagementSettings() {
                     onCheckedChange={(v) => setUseEncryption(v === true)}
                   />
                   <Label htmlFor="backup-encrypt" className="text-sm">
-                    Encrypt backup (.wpenc)
+                    Chiffrer la sauvegarde (.wpenc)
                   </Label>
                 </div>
               </div>
@@ -437,9 +437,9 @@ export function DataManagementSettings() {
                 className="mt-4 w-full"
                 variant="outline"
                 onClick={() => useEncryption ? setShowExportPassPrompt(true) : handleExportBackup()}
-                disabled={exportLoading}
+                loading={exportLoading}
               >
-                {exportLoading ? "Preparing..." : "Export backup"}
+                Exporter la sauvegarde
               </Button>
             </div>
 
@@ -448,25 +448,24 @@ export function DataManagementSettings() {
               <div>
                 <div className="flex items-center gap-2">
                   <Upload className="h-4 w-4" />
-                  <p className="font-medium">Restore</p>
+                  <p className="font-medium">Restaurer</p>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Import a previous backup. You’ll see a preview before restoring.
+                  Importez une sauvegarde après en avoir vérifié l’aperçu.
                 </p>
               </div>
 
               <div className="mt-4">
-                <label>
-                  <input
-                    type="file"
-                    accept=".json,.gz"
-                    onChange={handleSelectRestoreFile}
-                    className="hidden"
-                  />
-                  <Button variant="outline" asChild className="w-full cursor-pointer">
-                    <span>Import backup…</span>
-                  </Button>
-                </label>
+                <input
+                  id="restore-backup-file"
+                  type="file"
+                  accept=".json,.gz,.wpenc"
+                  onChange={handleSelectRestoreFile}
+                  className="peer sr-only"
+                />
+                <Button variant="outline" asChild className="w-full cursor-pointer peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                  <label htmlFor="restore-backup-file">Importer une sauvegarde…</label>
+                </Button>
 
                 {restoreDiagnostics && (
                   <Button
@@ -474,21 +473,21 @@ export function DataManagementSettings() {
                     variant="secondary"
                     onClick={() => downloadDiagnostics(restoreDiagnostics)}
                   >
-                    Download diagnostics
+                    Télécharger le diagnostic
                   </Button>
                 )}
               </div>
             </div>
 
             {/* Reset */}
-            <div className="rounded-xl border border-red-200 bg-card p-4 dark:border-red-900/40 flex flex-col justify-between">
+            <div className="rounded-xl border border-muted bg-card p-4 flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
+                <div className="flex items-center gap-2 text-foreground">
                   <Trash2 className="h-4 w-4" />
-                  <p className="font-medium">Reset App</p>
+                  <p className="font-medium">Réinitialiser l’application</p>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Clears all local data in this browser profile. Use with caution.
+                  Efface toutes les données locales de ce profil de navigateur.
                 </p>
               </div>
 
@@ -497,14 +496,11 @@ export function DataManagementSettings() {
                 variant="destructive"
                 onClick={() => setResetDialogOpen(true)}
               >
-                Reset…
+                Réinitialiser…
               </Button>
             </div>
           </div>
 
-          <div className="pt-4 border-t">
-            <StressTestControl />
-          </div>
         </CardContent>
       </Card>
 
@@ -512,28 +508,28 @@ export function DataManagementSettings() {
       <Dialog open={showExportPassPrompt} onOpenChange={setShowExportPassPrompt}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Encrypt Backup</DialogTitle>
+            <DialogTitle>Chiffrer la sauvegarde</DialogTitle>
             <DialogDescription>
-              Set a passphrase to encrypt your backup file. You will need this to restore your data.
+              Définissez une phrase secrète. Elle sera indispensable pour restaurer ce fichier.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="export-pass">Passphrase</Label>
+              <Label htmlFor="export-pass">Phrase secrète</Label>
               <Input
                 id="export-pass"
                 type="password"
                 value={exportPassphrase}
                 onChange={(e) => setExportPassphrase(e.target.value)}
-                placeholder="Enter strong passphrase..."
+                placeholder="Saisissez une phrase secrète robuste…"
                 autoFocus
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowExportPassPrompt(false)}>Cancel</Button>
-            <Button onClick={() => handleExportBackup()} disabled={!exportPassphrase || exportLoading}>
-              {exportLoading ? "Encrypting..." : "Export Encrypted"}
+            <Button variant="outline" onClick={() => setShowExportPassPrompt(false)}>Annuler</Button>
+            <Button onClick={() => handleExportBackup()} disabled={!exportPassphrase} loading={exportLoading}>
+              Exporter le fichier chiffré
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -545,10 +541,10 @@ export function DataManagementSettings() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5" />
-              Restore Backup
+              Restaurer une sauvegarde
             </DialogTitle>
             <DialogDescription>
-              {restoreFileName ? `Preview: ${restoreFileName}` : "Preview your backup before restoring."}
+              {restoreFileName ? `Aperçu : ${restoreFileName}` : "Vérifiez la sauvegarde avant de la restaurer."}
             </DialogDescription>
           </DialogHeader>
 
@@ -557,24 +553,24 @@ export function DataManagementSettings() {
               <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 flex gap-3">
                 <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
                 <div className="text-sm">
-                  <p className="font-semibold">Encrypted Backup Detected</p>
-                  <p className="text-muted-foreground">Enter the passphrase to unlock and preview this backup.</p>
+                  <p className="font-semibold">Sauvegarde chiffrée détectée</p>
+                  <p className="text-muted-foreground">Saisissez la phrase secrète pour afficher son aperçu.</p>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="import-pass">Passphrase</Label>
+                <Label htmlFor="import-pass">Phrase secrète</Label>
                 <div className="flex gap-2">
                   <Input
                     id="import-pass"
                     type="password"
                     value={importPassphrase}
                     onChange={(e) => setImportPassphrase(e.target.value)}
-                    placeholder="Enter passphrase..."
+                    placeholder="Saisissez la phrase secrète…"
                     autoFocus
                     onKeyDown={(e) => e.key === "Enter" && handleDecryptAndPreview()}
                   />
-                  <Button onClick={handleDecryptAndPreview} disabled={!importPassphrase || restoreLoading}>
-                    {restoreLoading ? "Unlocking..." : "Unlock"}
+                  <Button onClick={handleDecryptAndPreview} disabled={!importPassphrase} loading={restoreLoading}>
+                    Déverrouiller
                   </Button>
                 </div>
               </div>
@@ -583,13 +579,13 @@ export function DataManagementSettings() {
 
           {restorePreview && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted/50 p-3 text-sm md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted p-3 text-sm md:grid-cols-4">
                 <div>
                   <p className="text-muted-foreground">Transactions</p>
                   <p className="font-semibold">{restorePreview.counts.transactions}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Accounts</p>
+                  <p className="text-muted-foreground">Comptes</p>
                   <p className="font-semibold">{restorePreview.counts.accounts}</p>
                 </div>
                 <div>
@@ -597,28 +593,28 @@ export function DataManagementSettings() {
                   <p className="font-semibold">{restorePreview.counts.budgets}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Goals</p>
+                  <p className="text-muted-foreground">Objectifs</p>
                   <p className="font-semibold">{restorePreview.counts.goals}</p>
                 </div>
               </div>
 
               {restorePreview.transactionDateRange && (
                 <div className="text-sm text-muted-foreground">
-                  Transactions date range: {restorePreview.transactionDateRange.from} → {restorePreview.transactionDateRange.to}
+                  Période des transactions : {restorePreview.transactionDateRange.from} → {restorePreview.transactionDateRange.to}
                 </div>
               )}
 
               {restorePreview.issues.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Checks</p>
+                  <p className="text-sm font-medium">Contrôles</p>
                   <div className="space-y-2">
                     {restorePreview.issues.map((i, idx) => (
                       <div
                         key={idx}
                         className={cn(
                           "rounded-md border px-3 py-2 text-sm",
-                          i.level === "error" && "border-red-200 bg-red-50 text-red-800 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200",
-                          i.level === "warning" && "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-200"
+                          i.level === "error" && "border-destructive/40 bg-destructive/10 text-foreground",
+                          i.level === "warning" && "border-muted bg-muted/30 text-foreground"
                         )}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -635,7 +631,7 @@ export function DataManagementSettings() {
               )}
 
               <div className="space-y-3 border-t pt-3">
-                <Label>Restore Strategy</Label>
+                <Label>Mode de restauration</Label>
                 <RadioGroup
                   value={restoreStrategy}
                   onValueChange={(v) => setRestoreStrategy(v as "replace" | "merge")}
@@ -647,9 +643,9 @@ export function DataManagementSettings() {
                   )}>
                     <RadioGroupItem value="replace" id="r-replace" className="mt-1" />
                     <Label htmlFor="r-replace" className="font-normal cursor-pointer">
-                      <span className="font-medium block">Replace All (Dangerous)</span>
+                      <span className="font-medium block">Tout remplacer (destructif)</span>
                       <span className="text-muted-foreground text-xs">
-                        Deletes ALL current data and replaces it with the backup. Use when switching devices or full recovery.
+                        Efface toutes les données locales et les remplace par la sauvegarde. À utiliser pour changer d’appareil ou restaurer complètement.
                       </span>
                     </Label>
                   </div>
@@ -659,10 +655,10 @@ export function DataManagementSettings() {
                   )}>
                     <RadioGroupItem value="merge" id="r-merge" className="mt-1" />
                     <Label htmlFor="r-merge" className="font-normal cursor-pointer">
-                      <span className="font-medium block">Merge (Advanced)</span>
+                      <span className="font-medium block">Fusionner (avancé)</span>
                       <span className="text-muted-foreground text-xs">
-                        Keeps existing data. Adds missing records from backup. Updates records if IDs match.
-                        Warning: May create duplicates if IDs don't match.
+                        Conserve les données existantes, ajoute les éléments manquants et met à jour les identifiants correspondants.
+                        Attention : des doublons sont possibles si les identifiants diffèrent.
                       </span>
                     </Label>
                   </div>
@@ -676,7 +672,7 @@ export function DataManagementSettings() {
                   onCheckedChange={(v) => setCreatePreRestoreBackup(v === true)}
                 />
                 <Label htmlFor="pre-restore" className="text-sm">
-                  Create a pre-restore backup first (recommended)
+                  Créer d’abord une sauvegarde de sécurité (recommandé)
                 </Label>
               </div>
             </div>
@@ -684,14 +680,14 @@ export function DataManagementSettings() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setRestoreDialogOpen(false)} disabled={restoreLoading}>
-              Cancel
+              Annuler
             </Button>
             <Button
               variant={restoreStrategy === "replace" ? "destructive" : "default"}
               onClick={handleConfirmRestore}
               disabled={!restoreSnapshot || restoreLoading}
             >
-              {restoreLoading ? "Restoring…" : restoreStrategy === "replace" ? "Replace & Restore" : "Merge & Restore"}
+              {restoreLoading ? "Restauration…" : restoreStrategy === "replace" ? "Remplacer et restaurer" : "Fusionner et restaurer"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -701,23 +697,23 @@ export function DataManagementSettings() {
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-foreground">
               <AlertTriangle className="h-5 w-5" />
-              Reset App
+              Réinitialiser l’application
             </DialogTitle>
             <DialogDescription>
-              This clears all locally stored data in this browser profile. This cannot be undone.
+              Toutes les données locales de ce profil seront effacées. Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="rounded-lg bg-muted/50 p-3 text-sm">
-              <p className="font-medium">You are about to remove:</p>
+            <div className="rounded-lg bg-muted p-3 text-sm">
+              <p className="font-medium">Vous allez supprimer :</p>
               <ul className="mt-2 space-y-1 text-muted-foreground">
                 <li>• {stats.transactions} transactions</li>
-                <li>• {stats.goals} goals</li>
-                <li>• {stats.budgets} budget settings</li>
-                <li>• {stats.accounts} accounts</li>
+                <li>• {stats.goals} objectifs</li>
+                <li>• {stats.budgets} réglages de budget</li>
+                <li>• {stats.accounts} comptes</li>
               </ul>
             </div>
 
@@ -728,12 +724,12 @@ export function DataManagementSettings() {
                 onCheckedChange={(v) => setResetExportFirst(v === true)}
               />
               <Label htmlFor="reset-export-first" className="text-sm">
-                Export a backup first (recommended)
+                Exporter d’abord une sauvegarde (recommandé)
               </Label>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reset-confirm">Type RESET to confirm</Label>
+              <Label htmlFor="reset-confirm">Saisissez RESET pour confirmer</Label>
               <Input
                 id="reset-confirm"
                 value={resetConfirmText}
@@ -745,14 +741,14 @@ export function DataManagementSettings() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setResetDialogOpen(false)} disabled={resetLoading}>
-              Cancel
+              Annuler
             </Button>
             <Button
               variant="destructive"
               onClick={handleConfirmReset}
               disabled={resetLoading || resetConfirmText.trim() !== "RESET"}
             >
-              {resetLoading ? "Resetting…" : "Reset"}
+              {resetLoading ? "Réinitialisation…" : "Réinitialiser"}
             </Button>
           </DialogFooter>
         </DialogContent>

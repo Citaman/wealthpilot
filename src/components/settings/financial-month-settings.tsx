@@ -22,6 +22,7 @@ import { useState, useEffect, useCallback } from "react";
 import { FinancialMonthSettings, DEFAULT_FINANCIAL_MONTH_SETTINGS } from "@/lib/db";
 import { getFinancialMonthSettings, saveFinancialMonthSettings } from "@/lib/financial-month";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 export function FinancialMonthSettingsCard() {
   const { toast } = useToast();
@@ -53,15 +54,15 @@ export function FinancialMonthSettingsCard() {
       setFmSettings(newSettings);
       toast({
         variant: "success",
-        title: "Saved",
-        description: "Financial month settings updated.",
+        title: "Mois financier enregistré",
+        description: "La préférence est conservée. Les écrans compatibles utiliseront cette période.",
       });
     } catch (error) {
-      console.error("Failed to save financial month settings:", error);
+      logger.error("Failed to save financial month settings:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to save financial month settings.",
+        title: "Enregistrement impossible",
+        description: "Le mois financier n’a pas été modifié. Réessayez.",
       });
     } finally {
       setSavingFm(false);
@@ -73,39 +74,39 @@ export function FinancialMonthSettingsCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
-          Financial Month
+          Mois financier
         </CardTitle>
-        <CardDescription>Configure how your monthly budget periods are calculated</CardDescription>
+        <CardDescription>Définissez le début de vos périodes mensuelles. La période calendrier reste utilisée par certains écrans tant que leur migration n’est pas terminée.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label>Month Calculation Mode</Label>
+          <Label>Mode de calcul</Label>
           <Select
             value={fmSettings.mode}
             onValueChange={(value) =>
               setFmSettings({ ...fmSettings, mode: value as FinancialMonthSettings["mode"] })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Mode de calcul du mois financier">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="auto">
                 <div className="flex flex-col">
-                  <span>Auto-detect salary</span>
-                  <span className="text-xs text-muted-foreground">Month starts when your salary arrives</span>
+                  <span>Détecter le salaire</span>
+                  <span className="text-sm text-muted-foreground">La période commence à la réception du salaire</span>
                 </div>
               </SelectItem>
               <SelectItem value="fixed">
                 <div className="flex flex-col">
-                  <span>Fixed day of month</span>
-                  <span className="text-xs text-muted-foreground">Always start on the same day</span>
+                  <span>Jour fixe</span>
+                  <span className="text-sm text-muted-foreground">La période commence toujours le même jour</span>
                 </div>
               </SelectItem>
               <SelectItem value="calendar">
                 <div className="flex flex-col">
-                  <span>Calendar month</span>
-                  <span className="text-xs text-muted-foreground">Traditional 1st to 31st</span>
+                  <span>Mois calendrier</span>
+                  <span className="text-sm text-muted-foreground">Du premier au dernier jour du mois</span>
                 </div>
               </SelectItem>
             </SelectContent>
@@ -114,9 +115,9 @@ export function FinancialMonthSettingsCard() {
 
         {fmSettings.mode === "fixed" && (
           <div className="space-y-2">
-            <Label>Day of Month</Label>
+            <Label>Jour de début</Label>
             <Select value={fixedDay} onValueChange={setFixedDay}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger aria-label="Jour de début du mois financier" className="w-full sm:w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -127,26 +128,27 @@ export function FinancialMonthSettingsCard() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">Your financial month will start on this day</p>
+            <p className="text-sm text-muted-foreground">La période commencera ce jour chaque mois.</p>
           </div>
         )}
 
         {fmSettings.mode === "auto" && (
           <div className="space-y-2">
-            <Label>Minimum Salary Amount (€)</Label>
+            <Label htmlFor="minimum-salary">Montant minimal d’un salaire (€)</Label>
             <Input
               type="number"
+              id="minimum-salary"
               value={minSalary}
               onChange={(e) => setMinSalary(e.target.value)}
               placeholder="1000"
-              className="w-40"
+              className="w-full sm:w-40"
             />
-            <p className="text-xs text-muted-foreground">Only income above this amount will be detected as salary</p>
+            <p className="text-sm text-muted-foreground">Seuls les revenus au-dessus de ce montant pourront être reconnus comme salaire.</p>
           </div>
         )}
 
-        <Button onClick={handleSaveFinancialMonthSettings} disabled={savingFm}>
-          {savingFm ? "Saving..." : "Save Changes"}
+        <Button onClick={handleSaveFinancialMonthSettings} loading={savingFm}>
+          Enregistrer
         </Button>
       </CardContent>
     </Card>

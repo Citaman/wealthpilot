@@ -68,10 +68,10 @@ export function getGoalHealth(params: {
   if (progress >= 100 || params.goal.currentAmount >= params.goal.targetAmount) {
     return {
       health: "completed",
-      label: "Completed",
-      hint: "Target reached",
+      label: "Terminé",
+      hint: "Cible atteinte",
       badgeClassName:
-        "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+        "border-muted bg-muted/30 text-foreground",
       deadlineDaysLeft,
       forecast,
     };
@@ -84,10 +84,10 @@ export function getGoalHealth(params: {
     if (forecast.averageMonthlyNet + 1e-9 < forecast.requiredMonthlyForDeadline) {
       return {
         health: "atRisk",
-        label: "At risk",
-        hint: "Below pace for deadline",
+        label: "À risque",
+        hint: "Rythme insuffisant pour l’échéance",
         badgeClassName:
-          "border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+          "border-[#FF6B4A]/20 bg-[#FF6B4A]/10 text-foreground",
         deadlineDaysLeft,
         forecast,
       };
@@ -95,10 +95,10 @@ export function getGoalHealth(params: {
 
     return {
       health: "onTrack",
-      label: "On track",
-      hint: "Pace looks good",
+      label: "En bonne voie",
+      hint: "Rythme adapté",
       badgeClassName:
-        "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+        "border-muted bg-muted/30 text-foreground",
       deadlineDaysLeft,
       forecast,
     };
@@ -108,10 +108,10 @@ export function getGoalHealth(params: {
   if (deadlineDaysLeft !== null && deadlineDaysLeft <= 30) {
     return {
       health: "atRisk",
-      label: "At risk",
-      hint: deadlineDaysLeft < 0 ? "Overdue" : "Deadline is close",
+      label: "À risque",
+      hint: deadlineDaysLeft < 0 ? "Échéance dépassée" : "Échéance proche",
       badgeClassName:
-        "border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+        "border-[#FF6B4A]/20 bg-[#FF6B4A]/10 text-foreground",
       deadlineDaysLeft,
       forecast,
     };
@@ -120,10 +120,10 @@ export function getGoalHealth(params: {
   if (!hasForecast) {
     return {
       health: "needsData",
-      label: "No forecast",
-      hint: "Add a few contributions over time",
+      label: "Projection indisponible",
+      hint: "Ajoutez quelques mouvements pour obtenir une projection",
       badgeClassName:
-        "border-slate-500/20 bg-slate-500/10 text-slate-700 dark:text-slate-300",
+        "border-muted bg-muted/30 text-muted-foreground",
       deadlineDaysLeft,
       forecast,
     };
@@ -131,10 +131,10 @@ export function getGoalHealth(params: {
 
   return {
     health: "onTrack",
-    label: "On track",
-    hint: "Tracking",
+    label: "En bonne voie",
+    hint: "Suivi en cours",
     badgeClassName:
-      "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+      "border-muted bg-muted/30 text-foreground",
     deadlineDaysLeft,
     forecast,
   };

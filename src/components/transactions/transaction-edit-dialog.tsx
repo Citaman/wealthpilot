@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
-  X,
   Save,
   RotateCcw,
-  Copy,
   Trash2,
   ChevronDown,
   ChevronUp,
-  AlertCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -24,10 +22,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CategorySelect, CategoryBadge } from "./category-select";
+import { CategorySelect } from "./category-select";
 import { TagInput, COMMON_TAGS } from "./tag-input";
-import { type Transaction, CATEGORIES } from "@/lib/db";
-import { cn } from "@/lib/utils";
+import { type Transaction } from "@/lib/db";
 import { TransactionTypeButton } from "@/components/budgets";
 import { useMoney } from "@/hooks/use-money";
 import { Money } from "@/components/ui/money";
@@ -55,6 +52,7 @@ export function TransactionEditDialog({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [deleteArmed, setDeleteArmed] = useState(false);
 
   // Reset form when transaction changes
   useEffect(() => {
@@ -62,6 +60,7 @@ export function TransactionEditDialog({
       setEditedTx({ ...transaction });
       setApplyToSimilar(false);
       setHasChanges(false);
+      setDeleteArmed(false);
     }
   }, [transaction]);
 
@@ -104,10 +103,10 @@ export function TransactionEditDialog({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            Edit Transaction
+            Modifier la transaction
             {hasChanges && (
-              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
-                Unsaved changes
+              <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
+                Modifications non enregistrées
               </span>
             )}
           </DialogTitle>
@@ -118,21 +117,14 @@ export function TransactionEditDialog({
           <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div>
               <p className="text-sm text-muted-foreground">
-                {format(new Date(editedTx.date), "EEEE, MMMM d, yyyy")}
+                {format(new Date(editedTx.date), "EEEE d MMMM yyyy", { locale: fr })}
               </p>
               <p className="font-medium">{editedTx.merchantOriginal || editedTx.merchant}</p>
               <p className="text-xs text-muted-foreground truncate max-w-[300px]">
                 {editedTx.description}
               </p>
             </div>
-            <div
-              className={cn(
-                "text-2xl font-bold",
-                editedTx.direction === "credit"
-                  ? "text-green-600"
-                  : "text-red-600"
-              )}
-            >
+            <div className="text-2xl font-bold text-foreground">
               {editedTx.direction === "credit" ? "+" : "-"}
               <Money
                 amount={Math.abs(editedTx.amount)}
@@ -145,7 +137,7 @@ export function TransactionEditDialog({
 
           {/* Category Selection */}
           <div className="space-y-2">
-            <Label>Category</Label>
+            <Label>Catégorie</Label>
             <CategorySelect
               category={editedTx.category}
               subcategory={editedTx.subcategory}
@@ -160,31 +152,31 @@ export function TransactionEditDialog({
 
           {/* Merchant Name */}
           <div className="space-y-2">
-            <Label>Merchant Name</Label>
+            <Label>Nom du marchand</Label>
             <Input
               value={editedTx.merchant}
               onChange={(e) =>
                 setEditedTx((prev) => prev && { ...prev, merchant: e.target.value })
               }
-              placeholder="Clean merchant name"
+              placeholder="Nom normalisé du marchand"
             />
             {editedTx.merchantOriginal && editedTx.merchantOriginal !== editedTx.merchant && (
               <p className="text-xs text-muted-foreground">
-                Original: {editedTx.merchantOriginal}
+                Original : {editedTx.merchantOriginal}
               </p>
             )}
           </div>
 
           {/* Tags */}
           <div className="space-y-2">
-            <Label>Tags</Label>
+            <Label>Libellés</Label>
             <TagInput
               value={editedTx.tags || []}
               onChange={(tags) =>
                 setEditedTx((prev) => prev && { ...prev, tags })
               }
               suggestions={COMMON_TAGS}
-              placeholder="Add tags..."
+              placeholder="Ajouter des libellés…"
             />
           </div>
 
@@ -196,7 +188,7 @@ export function TransactionEditDialog({
               onChange={(e) =>
                 setEditedTx((prev) => prev && { ...prev, notes: e.target.value })
               }
-              placeholder="Add a note about this transaction..."
+              placeholder="Ajouter une note sur cette transaction…"
               rows={3}
             />
           </div>
@@ -210,7 +202,7 @@ export function TransactionEditDialog({
                   setEditedTx((prev) => prev && { ...prev, isRecurring: !!checked })
                 }
               />
-              <span className="text-sm">Recurring transaction</span>
+              <span className="text-sm">Transaction récurrente</span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer">
@@ -220,14 +212,14 @@ export function TransactionEditDialog({
                   setEditedTx((prev) => prev && { ...prev, isExcluded: !!checked })
                 }
               />
-              <span className="text-sm">Exclude from budgets & analytics</span>
+              <span className="text-sm">Exclure des budgets et analyses</span>
             </label>
           </div>
 
           {/* Budget Type Override */}
           {editedTx.id && (
             <div className="space-y-2">
-              <Label>Budget type (Needs / Wants / Savings)</Label>
+              <Label>Type de budget (besoin, envie ou épargne)</Label>
               <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                 <TransactionTypeButton
                   transactionId={editedTx.id}
@@ -236,7 +228,7 @@ export function TransactionEditDialog({
                   showLabel
                 />
                 <p className="text-xs text-muted-foreground">
-                  Overrides classification for this transaction only.
+                  Ce choix ne s’applique qu’à cette transaction.
                 </p>
               </div>
             </div>
@@ -244,16 +236,15 @@ export function TransactionEditDialog({
 
           {/* Bulk Apply Option */}
           {similarCount > 0 && (
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-muted">
               <Checkbox
                 id="apply-similar"
                 checked={applyToSimilar}
                 onCheckedChange={(checked) => setApplyToSimilar(!!checked)}
               />
               <label htmlFor="apply-similar" className="text-sm cursor-pointer">
-                Apply category & merchant to{" "}
-                <span className="font-semibold">{similarCount}</span> similar
-                transactions
+                Appliquer la catégorie et le marchand aux{" "}
+                <span className="font-semibold">{similarCount}</span> transaction(s) similaire(s)
               </label>
             </div>
           )}
@@ -263,32 +254,33 @@ export function TransactionEditDialog({
             type="button"
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
             onClick={() => setShowAdvanced(!showAdvanced)}
+            aria-expanded={showAdvanced}
           >
             {showAdvanced ? (
               <ChevronUp className="h-4 w-4" />
             ) : (
               <ChevronDown className="h-4 w-4" />
             )}
-            Advanced details
+            Détails avancés
           </button>
 
           {showAdvanced && (
-            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-4 p-4 bg-muted rounded-lg">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Transaction ID:</span>
+                  <span className="text-muted-foreground">Identifiant :</span>
                   <span className="ml-2 font-mono">{editedTx.id}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Payment Method:</span>
+                  <span className="text-muted-foreground">Moyen de paiement :</span>
                   <span className="ml-2">{editedTx.paymentMethod}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Value Date:</span>
+                  <span className="text-muted-foreground">Date de valeur :</span>
                   <span className="ml-2">{editedTx.valueDate}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Balance After:</span>
+                  <span className="text-muted-foreground">Solde après opération :</span>
                   <span className="ml-2">
                     <Money
                       amount={editedTx.balanceAfter}
@@ -300,7 +292,7 @@ export function TransactionEditDialog({
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground text-sm">Full Description:</span>
+                <span className="text-muted-foreground text-sm">Description complète :</span>
                 <p className="mt-1 text-xs font-mono bg-background p-2 rounded border">
                   {editedTx.description}
                 </p>
@@ -315,26 +307,25 @@ export function TransactionEditDialog({
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => {
-                  if (confirm("Are you sure you want to delete this transaction?")) {
-                    onDelete(editedTx.id!);
-                    onOpenChange(false);
-                  }
+                onClick={async () => {
+                  if (!deleteArmed) { setDeleteArmed(true); return; }
+                  await onDelete(editedTx.id!);
+                  onOpenChange(false);
                 }}
               >
                 <Trash2 className="h-4 w-4 mr-1" />
-                Delete
+                {deleteArmed ? "Confirmer la suppression" : "Supprimer"}
               </Button>
             )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleReset} disabled={!hasChanges}>
               <RotateCcw className="h-4 w-4 mr-1" />
-              Reset
+              Réinitialiser
             </Button>
             <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
               <Save className="h-4 w-4 mr-1" />
-              {isSaving ? "Saving..." : "Save Changes"}
+              {isSaving ? "Enregistrement…" : "Enregistrer"}
             </Button>
           </div>
         </DialogFooter>

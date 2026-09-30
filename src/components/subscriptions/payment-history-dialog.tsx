@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { type RecurringTransaction, type RecurringOccurrence } from "@/lib/db";
+import { type RecurringTransaction } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { Money } from "@/components/ui/money";
 import { useMoney } from "@/hooks/use-money";
@@ -89,7 +89,7 @@ export function PaymentHistoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{subscription.name} - Payment History</DialogTitle>
+          <DialogTitle>{subscription.name} — Historique des paiements</DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh] pr-4">
@@ -98,7 +98,7 @@ export function PaymentHistoryDialog({
             {upcomingPayments.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-muted-foreground">
-                  Upcoming
+                  À venir
                 </h4>
                 {upcomingPayments.map((payment, idx) => (
                   <div
@@ -111,7 +111,7 @@ export function PaymentHistoryDialog({
                       <p className="font-medium">
                         {format(payment.date, "MMMM d, yyyy")}
                       </p>
-                      <p className="text-sm text-muted-foreground">Expected</p>
+                      <p className="text-sm text-muted-foreground">Prévu</p>
                     </div>
 
                     <p className="font-semibold text-muted-foreground">
@@ -137,7 +137,7 @@ export function PaymentHistoryDialog({
             {occurrences.length > 0 ? (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-muted-foreground">
-                  Past Payments
+                  Paiements passés
                 </h4>
                 {sortedOccurrences.map((occ, index) => {
                   const variance = getVariance(occ.amount, subscription.averageAmount);
@@ -147,9 +147,9 @@ export function PaymentHistoryDialog({
                       <div
                         className={cn(
                           "w-3 h-3 rounded-full flex-shrink-0",
-                          occ.status === "paid" && "bg-green-500",
-                          occ.status === "pending" && "bg-yellow-500",
-                          occ.status === "missed" && "bg-red-500"
+                          occ.status === "paid" && "bg-[#FF6B4A]",
+                          occ.status === "pending" && "bg-[#FFAB96]",
+                          occ.status === "missed" && "bg-[#E8E8EC]"
                         )}
                       />
 
@@ -158,17 +158,12 @@ export function PaymentHistoryDialog({
                           {format(new Date(occ.date), "MMMM d, yyyy")}
                         </p>
                         <p className="text-sm text-muted-foreground capitalize">
-                          {occ.status === "paid" ? "Paid" : occ.status}
+                          {occ.status === "paid" ? "Payé" : occ.status === "pending" ? "En attente" : "Manqué"}
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <p
-                          className={cn(
-                            "font-semibold",
-                            occ.amount < 0 ? "text-red-500" : "text-green-500"
-                          )}
-                        >
+                        <p className="font-semibold text-foreground">
                           <Money
                             amount={Math.abs(occ.amount)}
                             currency={getAccountCurrency(subscription.accountId)}
@@ -181,10 +176,7 @@ export function PaymentHistoryDialog({
                         {variance !== null && (
                           <Badge
                             variant="outline"
-                            className={cn(
-                              "text-xs",
-                              variance > 0 ? "text-red-500" : "text-green-500"
-                            )}
+                            className="text-xs text-muted-foreground"
                           >
                             {variance > 0 ? "+" : ""}
                             {variance.toFixed(0)}%
@@ -197,7 +189,7 @@ export function PaymentHistoryDialog({
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                No payment history recorded yet.
+                Aucun paiement enregistré pour le moment.
               </div>
             )}
 
@@ -208,14 +200,14 @@ export function PaymentHistoryDialog({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-muted rounded-lg">
                     <p className="text-xs text-muted-foreground">
-                      Total Payments
+                      Nombre de paiements
                     </p>
                     <p className="font-semibold text-lg">
                       {occurrences.filter((o) => o.status === "paid").length}
                     </p>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-xs text-muted-foreground">Total Paid</p>
+                    <p className="text-xs text-muted-foreground">Total payé</p>
                     <p className="font-semibold text-lg">
                       <Money
                         amount={occurrences
@@ -230,7 +222,7 @@ export function PaymentHistoryDialog({
                   {subscription.averageAmount && (
                     <div className="p-3 bg-muted rounded-lg">
                       <p className="text-xs text-muted-foreground">
-                        Average Payment
+                        Paiement moyen
                       </p>
                       <p className="font-semibold text-lg">
                         <Money
@@ -243,9 +235,9 @@ export function PaymentHistoryDialog({
                     </div>
                   )}
                   {subscription.missedCount && subscription.missedCount > 0 && (
-                    <div className="p-3 bg-red-50 rounded-lg">
-                      <p className="text-xs text-red-600">Missed Payments</p>
-                      <p className="font-semibold text-lg text-red-600">
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground">Paiements manqués</p>
+                      <p className="font-semibold text-lg text-foreground">
                         {subscription.missedCount}
                       </p>
                     </div>

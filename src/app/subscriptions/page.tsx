@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { addMonths, format } from "date-fns";
 import {
   Plus,
   RefreshCw,
@@ -11,13 +10,11 @@ import {
   Wallet,
   Archive,
   TrendingUp,
-  Wrench,
   CheckCircle,
-  AlertCircle,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -42,28 +39,23 @@ import {
   type RecurringType,
   type RecurringStatus,
 } from "@/lib/db";
-import { getPrimaryAccount } from "@/lib/accounts";
-import {
-  detectRecurringTransactions, 
-  mergeRecurringItems,
-  syncRecurringWithTransactions,
-  fullRepairRecurring,
-  type SyncResult,
-} from "@/lib/csv-parser";
+import { mergeRecurringItems } from "@/lib/csv-parser";
+import { detectRecurringForAccounts, toMonthlyRecurringAmount } from "@/lib/recurring";
 import { cn } from "@/lib/utils";
 import { useMoney } from "@/hooks/use-money";
 import { Money } from "@/components/ui/money";
 import { EmptyState } from "@/components/ui/empty-state";
+import { logger } from "@/lib/logger";
+import { useAccount } from "@/contexts/account-context";
 
 type TabValue = "subscriptions" | "bills" | "loans" | "income" | "ended";
 
 export default function SubscriptionsPage() {
   const { convertFromAccount } = useMoney();
+  const { selectedAccountId, accounts } = useAccount();
   const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDetecting, setIsDetecting] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
   const [activeTab, setActiveTab] = useState<TabValue>("subscriptions");
   const [typeChangeMessage, setTypeChangeMessage] = useState<string | null>(null);
   
@@ -79,19 +71,25 @@ export default function SubscriptionsPage() {
   const loadRecurring = useCallback(async () => {
     try {
       const items = await db.recurringTransactions
-        .filter((r) => !r.isExcluded)
+        .filter((r) => !r.isExcluded && (selectedAccountId === "all" || r.accountId === selectedAccountId))
         .toArray();
       setRecurring(items);
     } catch (error) {
-      console.error("Failed to load recurring transactions:", error);
+      logger.error("Failed to load recurring transactions:", error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedAccountId]);
 
   useEffect(() => {
     loadRecurring();
   }, [loadRecurring]);
+
+  useEffect(() => {
+    if (!typeChangeMessage) return;
+    const timeout = window.setTimeout(() => setTypeChangeMessage(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [typeChangeMessage]);
 
   // Filter items by tab
   const filteredItems = useMemo(() => {
@@ -141,23 +139,9 @@ export default function SubscriptionsPage() {
         r.type !== "income"
     );
 
-    const calculateMonthly = (items: RecurringTransaction[]) => {
-      return items.reduce((sum, r) => {
-        const amount = Math.abs(convertFromAccount(r.amount, r.accountId));
-        switch (r.frequency) {
-          case "weekly":
-            return sum + amount * 4.33;
-          case "biweekly":
-            return sum + amount * 2.17;
-          case "quarterly":
-            return sum + amount / 3;
-          case "yearly":
-            return sum + amount / 12;
-          default:
-            return sum + amount;
-        }
-      }, 0);
-    };
+    const calculateMonthly = (items: RecurringTransaction[]) => items.reduce(
+      (sum, item) => sum + Math.abs(convertFromAccount(toMonthlyRecurringAmount(item), item.accountId)), 0
+    );
 
     const subscriptions = calculateMonthly(
       activeItems.filter((r) => r.type === "subscription" || !r.type)
@@ -182,66 +166,56 @@ export default function SubscriptionsPage() {
   // Auto-detect recurring transactions
   const handleDetect = async () => {
     setIsDetecting(true);
-    setSyncResult(null);
     try {
-      const account = await getPrimaryAccount();
-      if (!account?.id) {
-        console.error("No active account found");
+      const accountIds = selectedAccountId === "all"
+        ? accounts.filter((candidate) => candidate.isActive !== false && candidate.id).map((candidate) => candidate.id!)
+        : accounts.filter((candidate) => candidate.id === selectedAccountId && candidate.id).map((candidate) => candidate.id!);
+      if (accountIds.length === 0) {
+        logger.error("No active account found");
+        setTypeChangeMessage("Aucun compte actif n’est disponible pour la détection.");
         return;
       }
 
       // Call the detection function which handles DB operations internally
-      await detectRecurringTransactions();
+      const { created, byAccount } = await detectRecurringForAccounts(accountIds);
 
-      console.log("Recurring detection complete");
+      logger.log("Recurring detection complete");
+      const detail = accounts
+        .filter((account) => account.id && byAccount[account.id] !== undefined)
+        .map((account) => `${account.name} : ${byAccount[account.id!]} trouvé${byAccount[account.id!] > 1 ? "s" : ""}`)
+        .join(" · ");
+      setTypeChangeMessage(created > 0
+        ? `${created} récurrent${created > 1 ? "s" : ""} détecté${created > 1 ? "s" : ""}. ${detail}`
+        : `Aucun nouveau récurrent fiable. ${detail}`);
       await loadRecurring();
     } catch (error) {
-      console.error("Failed to detect recurring:", error);
+      logger.error("Failed to detect recurring:", error);
     } finally {
       setIsDetecting(false);
-    }
-  };
-
-  // Sync & Repair - links transactions to existing recurring items
-  const handleSyncRepair = async () => {
-    setIsSyncing(true);
-    setSyncResult(null);
-    try {
-      const result = await fullRepairRecurring();
-      setSyncResult(result);
-      await loadRecurring();
-    } catch (error) {
-      console.error("Failed to sync:", error);
-      setSyncResult({
-        added: 0,
-        updated: 0,
-        removed: 0,
-        recurringUpdated: 0,
-        transactionsLinked: 0,
-        newRecurringCreated: 0,
-        errors: [error instanceof Error ? error.message : 'Unknown error'],
-      });
-    } finally {
-      setIsSyncing(false);
     }
   };
 
   // Save (add or update) a recurring item
   const handleSave = async (data: Partial<RecurringTransaction>) => {
     const now = new Date().toISOString();
-    const account = await getPrimaryAccount();
+    const accountId = data.accountId ?? editingItem?.accountId ?? (selectedAccountId === "all" ? undefined : selectedAccountId);
+    if (accountId === undefined) {
+      setTypeChangeMessage("Choisissez le compte concerné avant d’enregistrer ce récurrent.");
+      return;
+    }
 
     if (editingItem?.id) {
       // Update existing
       await db.recurringTransactions.update(editingItem.id, {
         ...data,
+        accountId,
         updatedAt: now,
       });
     } else {
       // Add new
       await db.recurringTransactions.add({
         ...data,
-        accountId: account?.id || 1,
+        accountId,
         lastDetected: now,
         nextExpected: data.startDate || now,
         occurrences: [],
@@ -251,6 +225,7 @@ export default function SubscriptionsPage() {
     }
 
     setEditingItem(null);
+    setTypeChangeMessage(editingItem?.id ? "Récurrent mis à jour." : "Récurrent ajouté au bon compte.");
     await loadRecurring();
   };
 
@@ -343,12 +318,12 @@ export default function SubscriptionsPage() {
     
     // Show message and switch to appropriate tab
     const typeLabels: Record<RecurringType, string> = {
-      subscription: "Subscriptions",
-      bill: "Bills",
-      loan: "Loans",
-      income: "Income",
+      subscription: "Abonnements",
+      bill: "Factures",
+      loan: "Crédits",
+      income: "Revenus",
     };
-    setTypeChangeMessage(`"${item.name}" moved to ${typeLabels[newType]} tab`);
+    setTypeChangeMessage(`« ${item.name} » a été déplacé vers ${typeLabels[newType]}.`);
     
     // Auto-switch to the new tab
     const tabMap: Record<RecurringType, TabValue> = {
@@ -359,20 +334,21 @@ export default function SubscriptionsPage() {
     };
     setActiveTab(tabMap[newType]);
     
-    // Clear message after 3 seconds
-    setTimeout(() => setTypeChangeMessage(null), 3000);
-    
     await loadRecurring();
   };
 
   // Merge recurring items
   const handleMerge = async (targetId: number, sourceId: number) => {
     try {
-      await mergeRecurringItems(targetId, sourceId);
+      const result = await mergeRecurringItems(targetId, sourceId);
+      if ((result.errors?.length ?? 0) > 0) {
+        throw new Error(result.errors?.join(" "));
+      }
       setMergeSource(null);
+      setTypeChangeMessage("Les récurrences ont été fusionnées.");
       await loadRecurring();
     } catch (error) {
-      console.error("Failed to merge items:", error);
+      logger.error("Failed to merge items:", error);
     }
   };
 
@@ -403,24 +379,24 @@ export default function SubscriptionsPage() {
   const SubscriptionsEmptyState = ({ type }: { type: TabValue }) => {
     const messages: Record<TabValue, { title: string; desc: string }> = {
       subscriptions: {
-        title: "No subscriptions found",
-        desc: "Add your recurring subscriptions like Netflix, Spotify, gym memberships",
+        title: "Aucun abonnement",
+        desc: "Ajoutez vos abonnements récurrents : streaming, salle de sport ou logiciels.",
       },
       bills: {
-        title: "No bills tracked",
-        desc: "Track recurring bills like rent, utilities, insurance",
+        title: "Aucune facture suivie",
+        desc: "Suivez le loyer, l’énergie, les assurances et les autres factures récurrentes.",
       },
       loans: {
-        title: "No loans tracked",
-        desc: "Track loans with principal, interest rate, and payment progress",
+        title: "Aucun crédit suivi",
+        desc: "Suivez le capital, le taux et l’avancement de chaque crédit.",
       },
       income: {
-        title: "No income sources",
-        desc: "Track regular income like salary, dividends, or rental income",
+        title: "Aucun revenu récurrent",
+        desc: "Suivez les salaires, dividendes ou revenus locatifs réguliers.",
       },
       ended: {
-        title: "No ended items",
-        desc: "Cancelled or completed subscriptions and loans will appear here",
+        title: "Aucun élément terminé",
+        desc: "Les abonnements annulés et crédits terminés apparaîtront ici.",
       },
     };
 
@@ -432,7 +408,7 @@ export default function SubscriptionsPage() {
           type === "ended"
             ? undefined
             : {
-                label: "Add manually",
+                label: "Ajouter manuellement",
                 onClick: () => openAddDialog(type === "subscriptions" ? "subscription" : type as RecurringType),
               }
         }
@@ -440,7 +416,7 @@ export default function SubscriptionsPage() {
           type === "ended"
             ? undefined
             : {
-                label: isDetecting ? "Detecting..." : "Auto-detect",
+                label: isDetecting ? "Détection…" : "Détecter automatiquement",
                 onClick: handleDetect,
               }
         }
@@ -454,61 +430,22 @@ export default function SubscriptionsPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            Track subscriptions, bills, loans, and recurring income
+            Suivez les abonnements, factures, crédits et revenus récurrents du foyer.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleSyncRepair} 
-              disabled={isSyncing || isDetecting}
-            >
-              <Wrench className={cn("mr-2 h-4 w-4", isSyncing && "animate-spin")} />
-              {isSyncing ? "Syncing..." : "Sync & Repair"}
-            </Button>
-            <Button variant="outline" onClick={handleDetect} disabled={isDetecting || isSyncing}>
+            <Button variant="outline" onClick={handleDetect} disabled={isDetecting}>
               <RefreshCw className={cn("mr-2 h-4 w-4", isDetecting && "animate-spin")} />
-              {isDetecting ? "Detecting..." : "Auto-Detect"}
+              {isDetecting ? "Détection…" : "Détecter automatiquement"}
             </Button>
           </div>
         </div>
 
-        {/* Sync Result Alert */}
-        {syncResult && (
-          <Alert variant={(syncResult.errors?.length ?? 0) > 0 ? "destructive" : "default"}>
-            {(syncResult.errors?.length ?? 0) > 0 ? (
-              <AlertCircle className="h-4 w-4" />
-            ) : (
-              <CheckCircle className="h-4 w-4" />
-            )}
-            <AlertTitle>
-              {(syncResult.errors?.length ?? 0) > 0 ? "Sync completed with errors" : "Sync completed successfully"}
-            </AlertTitle>
-            <AlertDescription>
-              <div className="mt-2 space-y-1 text-sm">
-                <p>• {syncResult.transactionsLinked ?? 0} transactions linked to recurring items</p>
-                <p>• {syncResult.recurringUpdated ?? 0} recurring items updated with payment history</p>
-                {(syncResult.errors?.length ?? 0) > 0 && (
-                  <p className="text-red-600">• Errors: {syncResult.errors?.join(", ")}</p>
-                )}
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="mt-2"
-                onClick={() => setSyncResult(null)}
-              >
-                Dismiss
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Type Change Message */}
         {typeChangeMessage && (
-          <Alert className="border-blue-200 bg-blue-50">
-            <CheckCircle className="h-4 w-4 text-blue-600" />
-            <AlertTitle className="text-blue-700">Type Changed</AlertTitle>
-            <AlertDescription className="text-blue-600">
+          <Alert>
+            <CheckCircle className="h-4 w-4" />
+            <AlertTitle>Éléments récurrents mis à jour</AlertTitle>
+            <AlertDescription>
               {typeChangeMessage}
             </AlertDescription>
           </Alert>
@@ -519,37 +456,37 @@ export default function SubscriptionsPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-2 mb-1">
-                <CreditCard className="h-4 w-4 text-info" />
-                <p className="text-sm text-muted-foreground">Monthly Subscriptions</p>
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Abonnements mensuels</p>
               </div>
-              <p className="text-2xl font-bold"><Money amount={totals.subscriptions} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
+              <p className="text-2xl font-semibold"><Money amount={totals.subscriptions} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-2 mb-1">
-                <Receipt className="h-4 w-4 text-blue-500" />
-                <p className="text-sm text-muted-foreground">Monthly Bills</p>
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Factures mensuelles</p>
               </div>
-              <p className="text-2xl font-bold"><Money amount={totals.bills} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
+              <p className="text-2xl font-semibold"><Money amount={totals.bills} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-2 mb-1">
-                <Landmark className="h-4 w-4 text-orange-500" />
-                <p className="text-sm text-muted-foreground">Monthly Loan Payments</p>
+                <Landmark className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mensualités de crédits</p>
               </div>
-              <p className="text-2xl font-bold"><Money amount={totals.loans} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
+              <p className="text-2xl font-semibold"><Money amount={totals.loans} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
+          <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <p className="text-sm text-muted-foreground">Total Monthly</p>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total mensuel</p>
               </div>
-              <p className="text-2xl font-bold"><Money amount={totals.total} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
+              <p className="text-2xl font-semibold"><Money amount={totals.total} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </CardContent>
           </Card>
         </div>
@@ -560,7 +497,7 @@ export default function SubscriptionsPage() {
             <TabsList>
               <TabsTrigger value="subscriptions" className="gap-2">
                 <CreditCard className="h-4 w-4" />
-                Subscriptions
+                Abonnements
                 {counts.subscriptions > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {counts.subscriptions}
@@ -569,7 +506,7 @@ export default function SubscriptionsPage() {
               </TabsTrigger>
               <TabsTrigger value="bills" className="gap-2">
                 <Receipt className="h-4 w-4" />
-                Bills
+                Factures
                 {counts.bills > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {counts.bills}
@@ -578,7 +515,7 @@ export default function SubscriptionsPage() {
               </TabsTrigger>
               <TabsTrigger value="loans" className="gap-2">
                 <Landmark className="h-4 w-4" />
-                Loans
+                Crédits
                 {counts.loans > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {counts.loans}
@@ -587,7 +524,7 @@ export default function SubscriptionsPage() {
               </TabsTrigger>
               <TabsTrigger value="income" className="gap-2">
                 <Wallet className="h-4 w-4" />
-                Income
+                Revenus
                 {counts.income > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {counts.income}
@@ -596,7 +533,7 @@ export default function SubscriptionsPage() {
               </TabsTrigger>
               <TabsTrigger value="ended" className="gap-2">
                 <Archive className="h-4 w-4" />
-                Ended
+                Terminés
                 {counts.ended > 0 && (
                   <Badge variant="outline" className="ml-1">
                     {counts.ended}
@@ -616,14 +553,14 @@ export default function SubscriptionsPage() {
                 }
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add{" "}
+                Ajouter {" "}
                 {activeTab === "subscriptions"
-                  ? "Subscription"
+                  ? "un abonnement"
                   : activeTab === "bills"
-                  ? "Bill"
+                  ? "une facture"
                   : activeTab === "loans"
-                  ? "Loan"
-                  : "Income"}
+                  ? "un crédit"
+                  : "un revenu"}
               </Button>
             )}
           </div>
@@ -788,22 +725,21 @@ export default function SubscriptionsPage() {
 
         {/* Summary Info */}
         {totals.total > 0 && (
-          <Card className="bg-muted/30">
+          <Card className="bg-muted">
             <CardContent className="py-4">
               <div className="flex items-start gap-3">
                 <TrendingUp className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
                   <p className="font-medium text-foreground mb-1">
-                    Your recurring expenses cost <Money amount={totals.total * 12} minimumFractionDigits={2} maximumFractionDigits={2} /> per
-                    year
+                    Vos dépenses récurrentes représentent <Money amount={totals.total * 12} minimumFractionDigits={2} maximumFractionDigits={2} /> par an.
                   </p>
                   <p className="text-muted-foreground">
-                    That's <Money amount={totals.total} minimumFractionDigits={2} maximumFractionDigits={2} /> per month, or about{" "}
-                    <Money amount={totals.total / 30} minimumFractionDigits={2} maximumFractionDigits={2} /> per day.
+                    Soit <Money amount={totals.total} minimumFractionDigits={2} maximumFractionDigits={2} /> par mois, environ{" "}
+                    <Money amount={totals.total / 30} minimumFractionDigits={2} maximumFractionDigits={2} /> par jour.
                     {totals.income > 0 && (
                       <>
                         {" "}
-                        Your recurring income is <Money amount={totals.income} minimumFractionDigits={2} maximumFractionDigits={2} />/month.
+                        Vos revenus récurrents sont de <Money amount={totals.income} minimumFractionDigits={2} maximumFractionDigits={2} /> par mois.
                       </>
                     )}
                   </p>
@@ -826,6 +762,7 @@ export default function SubscriptionsPage() {
         recurring={editingItem}
         onSave={handleSave}
         defaultType={editingItem?.type || addDialogType}
+        defaultAccountId={selectedAccountId === "all" ? undefined : selectedAccountId}
       />
 
       {/* Payment History Dialog */}
@@ -842,21 +779,20 @@ export default function SubscriptionsPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Item</DialogTitle>
+            <DialogTitle>Supprimer l’élément</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this recurring item? This action cannot be
-              undone.
+              Voulez-vous vraiment supprimer cet élément récurrent ? Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              Cancel
+              Annuler
             </Button>
             <Button
               variant="destructive"
               onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
             >
-              Delete
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>

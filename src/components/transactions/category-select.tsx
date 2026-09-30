@@ -1,7 +1,5 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -10,8 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CATEGORIES } from "@/lib/db";
+import { CATEGORIES, db } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { useLiveQuery } from "dexie-react-hooks";
 
 interface CategorySelectProps {
   category: string;
@@ -32,8 +31,18 @@ export function CategorySelect({
   suggestions = [],
   compact = false,
 }: CategorySelectProps) {
-  const categories = Object.keys(CATEGORIES);
-  const subcategories = category ? CATEGORIES[category]?.subcategories || [] : [];
+  const customCategories = useLiveQuery(() => db.customCategories.toArray(), []) ?? [];
+  const customCategory = customCategories.find((item) => item.name === category);
+  const categories = Array.from(new Set([
+    ...Object.keys(CATEGORIES),
+    ...customCategories.map((item) => item.name),
+  ]));
+  const subcategories = category
+    ? Array.from(new Set([
+        ...(CATEGORIES[category]?.subcategories || []),
+        ...(customCategory?.subcategories || []),
+      ]))
+    : [];
   
   const categoryData = CATEGORIES[category];
   const IconComponent = categoryData?.icon;
@@ -43,8 +52,8 @@ export function CategorySelect({
       {/* Category Select */}
       <div className="flex-1">
         <Select value={category} onValueChange={onCategoryChange}>
-          <SelectTrigger className={cn(compact && "h-8 text-xs")}>
-            <SelectValue placeholder="Select category">
+          <SelectTrigger className={cn(compact && "h-8 text-xs")} aria-label="Catégorie">
+            <SelectValue placeholder="Choisir une catégorie">
               {category && (
                 <div className="flex items-center gap-2">
                   {IconComponent && (
@@ -61,6 +70,7 @@ export function CategorySelect({
           <SelectContent>
             {categories.map((cat) => {
               const catData = CATEGORIES[cat];
+              const customData = customCategories.find((item) => item.name === cat);
               const CatIcon = catData?.icon;
               return (
                 <SelectItem key={cat} value={cat}>
@@ -69,6 +79,12 @@ export function CategorySelect({
                       <CatIcon 
                         className="h-4 w-4" 
                         style={{ color: catData?.color }}
+                      />
+                    )}
+                    {!CatIcon && customData && (
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: customData.color }}
                       />
                     )}
                     <span>{cat}</span>
@@ -87,8 +103,8 @@ export function CategorySelect({
           onValueChange={onSubcategoryChange}
           disabled={!category}
         >
-          <SelectTrigger className={cn(compact && "h-8 text-xs")}>
-            <SelectValue placeholder="Select subcategory" />
+          <SelectTrigger className={cn(compact && "h-8 text-xs")} aria-label="Sous-catégorie">
+            <SelectValue placeholder="Choisir une sous-catégorie" />
           </SelectTrigger>
           <SelectContent>
             {subcategories.map((sub) => (
@@ -130,7 +146,7 @@ export function CategorySelect({
 interface CategoryBadgeProps {
   category: string;
   subcategory?: string;
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
   size?: "sm" | "md";
 }
 

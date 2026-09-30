@@ -16,6 +16,7 @@ import { CategorySelect } from "./category-select";
 import { TagInput } from "./tag-input";
 import { useToast } from "@/hooks/use-toast";
 import { db, type Transaction } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 interface BulkWorkbenchProps {
   open: boolean;
@@ -66,7 +67,7 @@ export function BulkWorkbench({
       }
 
       if (Object.keys(updates).length === 0) {
-        toast({ title: "No changes selected", variant: "destructive" });
+        toast({ title: "Aucune modification sélectionnée", variant: "destructive" });
         return;
       }
 
@@ -76,18 +77,18 @@ export function BulkWorkbench({
 
       toast({
         variant: "success",
-        title: "Bulk Update Successful",
-        description: `Updated ${selectedIds.length} transactions.`,
+        title: "Mise à jour terminée",
+        description: `${selectedIds.length} transaction(s) mise(s) à jour.`,
       });
       
       onComplete();
       onOpenChange(false);
     } catch (error) {
-      console.error("Bulk update failed:", error);
+      logger.error("Bulk update failed:", error);
       toast({
         variant: "destructive",
-        title: "Update Failed",
-        description: "An error occurred while updating transactions.",
+        title: "Échec de la mise à jour",
+        description: "Une erreur est survenue pendant la mise à jour.",
       });
     } finally {
       setIsSaving(false);
@@ -98,9 +99,9 @@ export function BulkWorkbench({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Bulk Update Transactions</DialogTitle>
+          <DialogTitle>Modifier plusieurs transactions</DialogTitle>
           <DialogDescription>
-            Applying changes to {selectedIds.length} selected transactions.
+            Les modifications s’appliqueront aux {selectedIds.length} transactions sélectionnées.
           </DialogDescription>
         </DialogHeader>
 
@@ -113,7 +114,7 @@ export function BulkWorkbench({
                 checked={applyCategory} 
                 onCheckedChange={(v) => setApplyCategory(!!v)} 
               />
-              <Label htmlFor="apply-cat" className="font-semibold">Update Category</Label>
+              <Label htmlFor="apply-cat" className="font-semibold">Modifier la catégorie</Label>
             </div>
             {applyCategory && (
               <div className="pl-6">
@@ -135,7 +136,7 @@ export function BulkWorkbench({
                 checked={applyTags} 
                 onCheckedChange={(v) => setApplyTags(!!v)} 
               />
-              <Label htmlFor="apply-tags" className="font-semibold">Update Tags</Label>
+              <Label htmlFor="apply-tags" className="font-semibold">Modifier les libellés</Label>
             </div>
             {applyTags && (
               <div className="pl-6">
@@ -153,7 +154,7 @@ export function BulkWorkbench({
                   checked={applyRecurring} 
                   onCheckedChange={(v) => setApplyRecurring(!!v)} 
                 />
-                <Label htmlFor="apply-rec">Set Recurring</Label>
+                <Label htmlFor="apply-rec">Modifier la récurrence</Label>
               </div>
               {applyRecurring && (
                 <div className="pl-6 flex items-center gap-2">
@@ -162,7 +163,7 @@ export function BulkWorkbench({
                     checked={isRecurring} 
                     onCheckedChange={(v) => setIsRecurring(!!v)} 
                   />
-                  <Label htmlFor="val-rec" className="text-xs">Yes, recurring</Label>
+                  <Label htmlFor="val-rec" className="text-xs">Oui, récurrente</Label>
                 </div>
               )}
             </div>
@@ -174,7 +175,7 @@ export function BulkWorkbench({
                   checked={applyExcluded} 
                   onCheckedChange={(v) => setApplyExcluded(!!v)} 
                 />
-                <Label htmlFor="apply-ex">Set Excluded</Label>
+                <Label htmlFor="apply-ex">Modifier l’exclusion</Label>
               </div>
               {applyExcluded && (
                 <div className="pl-6 flex items-center gap-2">
@@ -183,7 +184,7 @@ export function BulkWorkbench({
                     checked={isExcluded} 
                     onCheckedChange={(v) => setIsExcluded(!!v)} 
                   />
-                  <Label htmlFor="val-ex" className="text-xs">Yes, exclude</Label>
+                  <Label htmlFor="val-ex" className="text-xs">Oui, exclure</Label>
                 </div>
               )}
             </div>
@@ -191,9 +192,9 @@ export function BulkWorkbench({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
           <Button onClick={handleApply} disabled={isSaving}>
-            {isSaving ? "Updating..." : "Apply Changes"}
+            {isSaving ? "Mise à jour…" : "Appliquer"}
           </Button>
         </DialogFooter>
       </DialogContent>

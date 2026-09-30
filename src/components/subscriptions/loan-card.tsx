@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { MoreHorizontal, Calendar, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,21 +43,16 @@ export function LoanCard({
   const getStatusBadge = () => {
     if (isCompleted) {
       return (
-        <Badge variant="default" className="bg-green-500">
-          Paid Off
+        <Badge variant="default">
+          Remboursé
         </Badge>
       );
     }
     if (loan.status === "paused") {
-      return <Badge variant="secondary">Paused</Badge>;
+      return <Badge variant="secondary">En pause</Badge>;
     }
-    return <Badge variant="default">Active</Badge>;
+    return <Badge variant="default">Actif</Badge>;
   };
-
-  // Calculate progress
-  const progressPercent = loanDetails
-    ? (loanDetails.totalPaid / loanDetails.principalAmount) * 100
-    : 0;
 
   const paymentProgress = loanDetails
     ? (loanDetails.paymentsMade / loanDetails.termMonths) * 100
@@ -95,31 +91,31 @@ export function LoanCard({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Actions pour ${loan.name}`}>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(loan)}>
                 <Edit className="mr-2 h-4 w-4" />
-                Edit
+                Modifier
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onViewHistory(loan)}>
                 <Calendar className="mr-2 h-4 w-4" />
-                Payment History
+                Historique des paiements
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {!isCompleted && (
                 <DropdownMenuItem onClick={() => onMarkComplete(loan)}>
-                  Mark as Paid Off
+                  Marquer comme remboursé
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
                 onClick={() => onDelete(loan)}
-                className="text-red-500"
+                className="text-foreground"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                Supprimer
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -129,15 +125,15 @@ export function LoanCard({
         {loanDetails && (
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-1">
-              <span>Progress</span>
+              <span>Progression</span>
               <span>
-                {loanDetails.paymentsMade} / {loanDetails.termMonths} payments
+                {loanDetails.paymentsMade} / {loanDetails.termMonths} paiements
               </span>
             </div>
             <Progress value={paymentProgress} className="h-3" />
             <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>Paid: <Money amount={Math.abs(convertFromAccount(loanDetails.totalPaid, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} /></span>
-              <span>Remaining: <Money amount={Math.abs(convertFromAccount(loanDetails.remainingBalance, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} /></span>
+              <span>Payé : <Money amount={Math.abs(convertFromAccount(loanDetails.totalPaid, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} /></span>
+              <span>Restant : <Money amount={Math.abs(convertFromAccount(loanDetails.remainingBalance, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} /></span>
             </div>
           </div>
         )}
@@ -146,15 +142,15 @@ export function LoanCard({
         {loanDetails && (
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="text-center p-2 bg-muted rounded">
-              <p className="text-xs text-muted-foreground">Monthly</p>
+              <p className="text-xs text-muted-foreground">Mensualité</p>
               <p className="font-semibold"><Money amount={Math.abs(convertFromAccount(loan.amount, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} /></p>
             </div>
             <div className="text-center p-2 bg-muted rounded">
-              <p className="text-xs text-muted-foreground">Interest Rate</p>
+              <p className="text-xs text-muted-foreground">Taux</p>
               <p className="font-semibold">{loanDetails.interestRate}%</p>
             </div>
             <div className="text-center p-2 bg-muted rounded">
-              <p className="text-xs text-muted-foreground">Months Left</p>
+              <p className="text-xs text-muted-foreground">Mois restants</p>
               <p className="font-semibold">{loanDetails.paymentsRemaining}</p>
             </div>
           </div>
@@ -164,7 +160,7 @@ export function LoanCard({
         {loanDetails && loanDetails.totalPaid > 0 && (
           <div className="p-3 bg-muted rounded-lg mb-4">
             <div className="flex justify-between mb-1">
-              <span className="text-sm">Principal Paid</span>
+              <span className="text-sm">Capital remboursé</span>
               <span className="font-medium">
                 <Money
                   amount={Math.abs(convertFromAccount(loanDetails.totalPaid - loanDetails.totalInterestPaid, loan.accountId))}
@@ -174,8 +170,8 @@ export function LoanCard({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm">Interest Paid</span>
-              <span className="font-medium text-orange-500">
+              <span className="text-sm">Intérêts payés</span>
+              <span className="font-medium text-foreground">
                 <Money amount={Math.abs(convertFromAccount(loanDetails.totalInterestPaid, loan.accountId))} minimumFractionDigits={2} maximumFractionDigits={2} />
               </span>
             </div>
@@ -185,9 +181,9 @@ export function LoanCard({
         {/* Next Payment */}
         {nextPaymentDate && isActive && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Next payment:</span>
+            <span className="text-muted-foreground">Prochaine échéance :</span>
             <span className="font-medium">
-              {format(nextPaymentDate, "MMM d, yyyy")}
+              {format(nextPaymentDate, "d MMM yyyy", { locale: fr })}
             </span>
           </div>
         )}

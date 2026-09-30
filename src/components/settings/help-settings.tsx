@@ -22,10 +22,10 @@ export function HelpSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5" />
-            Help & Documentation
+            Aide et documentation
           </CardTitle>
           <CardDescription>
-            Learn how WealthPilot protects your data and how to use key features.
+            Comprendre la protection de vos données et les fonctions essentielles de WealthPilot.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -33,16 +33,16 @@ export function HelpSettings() {
             <AccordionItem value="item-1">
               <AccordionTrigger className="flex gap-2">
                 <Database className="h-4 w-4 text-primary" />
-                Where is my data stored?
+                Où mes données sont-elles stockées ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 <p>
-                  WealthPilot follows a <strong>Local-First</strong> architecture. All your transactions,
-                  accounts, and settings are stored in a database <strong>inside your browser</strong> (IndexedDB).
+                  WealthPilot fonctionne en <strong>local-first</strong>. Vos transactions, comptes et réglages
+                  sont stockés dans une base <strong>dans ce navigateur</strong> (IndexedDB).
                 </p>
                 <p className="mt-2">
-                  We do not have a backend server. We cannot see, sell, or lose your data. However, this means
-                  <strong> if you clear your browser data, you lose your finance data</strong> unless you have a backup.
+                  Aucun serveur distant ne reçoit ces données. En revanche,
+                  <strong> effacer les données du navigateur efface aussi vos données financières</strong>, sauf si vous disposez d’une sauvegarde.
                 </p>
               </AccordionContent>
             </AccordionItem>
@@ -50,16 +50,16 @@ export function HelpSettings() {
             <AccordionItem value="item-2">
               <AccordionTrigger className="flex gap-2">
                 <Shield className="h-4 w-4 text-primary" />
-                How do backups work?
+                Comment fonctionnent les sauvegardes ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 <p>
-                  You can create a <strong>Backup File (.json)</strong> at any time from the <em>Data</em> tab.
-                  This file contains a complete snapshot of your database.
+                  Vous pouvez créer un <strong>fichier de sauvegarde (.json)</strong> depuis la section <em>Données</em>.
+                  Il contient une copie complète de la base locale.
                 </p>
                 <p className="mt-2">
-                  <strong>Recommendation:</strong> Download a backup once a month or after major changes.
-                  Store this file in a secure location (Google Drive, iCloud, USB stick).
+                  <strong>Conseil :</strong> téléchargez une sauvegarde chaque mois ou après une modification importante,
+                  puis conservez-la dans un emplacement sûr (espace chiffré, disque externe ou clé USB).
                 </p>
               </AccordionContent>
             </AccordionItem>
@@ -67,31 +67,31 @@ export function HelpSettings() {
             <AccordionItem value="item-3">
               <AccordionTrigger className="flex gap-2">
                 <FileText className="h-4 w-4 text-primary" />
-                How do I move data to a new device?
+                Comment transférer les données vers un nouvel appareil ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 <ol className="list-decimal pl-5 space-y-1">
-                  <li>On your old device, go to Settings &gt; Data.</li>
-                  <li>Click <strong>Export Backup</strong>.</li>
-                  <li>Transfer the downloaded file to your new device.</li>
-                  <li>On the new device, open WealthPilot &gt; Settings &gt; Data.</li>
-                  <li>Click <strong>Import Backup</strong> and select the file.</li>
-                  <li>Choose <strong>Replace All</strong> to restore your exact state.</li>
+                  <li>Sur l’ancien appareil, ouvrez Réglages &gt; Données.</li>
+                  <li>Choisissez <strong>Exporter une sauvegarde</strong>.</li>
+                  <li>Transférez le fichier téléchargé vers le nouvel appareil.</li>
+                  <li>Sur le nouvel appareil, ouvrez WealthPilot &gt; Réglages &gt; Données.</li>
+                  <li>Choisissez <strong>Importer une sauvegarde</strong>, puis sélectionnez le fichier.</li>
+                  <li>Choisissez <strong>Tout remplacer</strong> pour retrouver exactement l’état sauvegardé.</li>
                 </ol>
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-4">
-              <AccordionTrigger>What is the difference between Replace and Merge?</AccordionTrigger>
+              <AccordionTrigger>Quelle différence entre remplacer et fusionner ?</AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 <ul className="list-disc pl-5 space-y-1">
                   <li>
-                    <strong>Replace All (Default):</strong> Wipes the current device and restores the backup exactly.
-                    Best for moving to a new phone or restoring after a mistake.
+                    <strong>Tout remplacer :</strong> efface les données locales actuelles et restaure la sauvegarde à l’identique.
+                    C’est le choix recommandé pour un nouvel appareil ou une restauration complète.
                   </li>
                   <li>
-                    <strong>Merge (Advanced):</strong> Keeps your current data and adds the backup data to it.
-                    Useful if you want to combine data, but be careful: it can create duplicates if the data sources aren't clean.
+                    <strong>Fusionner (avancé) :</strong> conserve les données actuelles et y ajoute celles de la sauvegarde.
+                    Cette option peut créer des doublons si les deux sources se recoupent.
                   </li>
                 </ul>
               </AccordionContent>

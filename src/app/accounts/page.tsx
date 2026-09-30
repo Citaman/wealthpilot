@@ -13,6 +13,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/app-layout";
 import {
   Card,
@@ -22,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/ui/filter-bar";
-import { DataTable } from "@/components/ui/data-table";
 import {
   Select,
   SelectContent,
@@ -42,24 +42,25 @@ import { db, type Account, type Transaction } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { useMoney } from "@/hooks/use-money";
 import { Money } from "@/components/ui/money";
+import { logger } from "@/lib/logger";
+import { deleteAccountSafely, getAccountTrust } from "@/lib/accounts";
+import { addBalanceCheckpoint } from "@/lib/balance";
 
 const ACCOUNT_TYPES = [
-  { value: "checking", label: "Checking", icon: Building2 },
-  { value: "savings", label: "Savings", icon: PiggyBank },
-  { value: "credit", label: "Credit Card", icon: CreditCard },
-  { value: "investment", label: "Investment", icon: TrendingUp },
-  { value: "cash", label: "Cash", icon: Wallet },
+  { value: "checking", label: "Compte courant", icon: Building2 },
+  { value: "savings", label: "Épargne", icon: PiggyBank },
+  { value: "credit", label: "Carte de crédit", icon: CreditCard },
+  { value: "investment", label: "Investissement", icon: TrendingUp },
 ];
 
 const ACCOUNT_COLORS = [
-  "#3b82f6", // blue
-  "#10b981", // emerald
-  "#8b5cf6", // violet
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#ec4899", // pink
-  "#06b6d4", // cyan
+  "#FF6B4A", // coral
+  "#FF8B70", // coral light
+  "#FFAB96", // coral lighter
+  "#FFCBBC", // coral lightest
+  "#E8E8EC", // gray
 ];
+const SUPPORTED_CURRENCIES = ["EUR", "USD", "GBP", "CHF", "CAD"];
 
 export default function AccountsPage() {
   const { convertFromAccount } = useMoney();
@@ -70,13 +71,17 @@ export default function AccountsPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
     name: "",
     type: "checking",
     balance: "",
+    currency: "EUR",
+    institution: "",
     color: ACCOUNT_COLORS[0],
+    balanceDate: format(new Date(), "yyyy-MM-dd"),
   });
 
   const loadData = async () => {
@@ -89,7 +94,7 @@ export default function AccountsPage() {
       setAccounts(accountsData);
       setTransactions(txData);
     } catch (error) {
-      console.error("Error loading accounts:", error);
+      logger.error("Error loading accounts:", error);
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +109,10 @@ export default function AccountsPage() {
       name: "",
       type: "checking",
       balance: "",
+      currency: "EUR",
+      institution: "",
       color: ACCOUNT_COLORS[Math.floor(Math.random() * ACCOUNT_COLORS.length)],
+      balanceDate: format(new Date(), "yyyy-MM-dd"),
     });
   };
 
@@ -119,7 +127,10 @@ export default function AccountsPage() {
       name: account.name,
       type: account.type,
       balance: account.balance.toString(),
+      currency: account.currency || "EUR",
+      institution: account.institution || "",
       color: account.color,
+      balanceDate: format(new Date(), "yyyy-MM-dd"),
     });
     setEditingAccount(account);
     setAddDialogOpen(true);
@@ -133,18 +144,34 @@ export default function AccountsPage() {
       name: formData.name,
       type: formData.type as Account["type"],
       balance: parseFloat(formData.balance) || 0,
+      currency: formData.currency.trim().toUpperCase() || "EUR",
+      institution: formData.institution.trim(),
       color: formData.color,
       isActive: true,
     };
 
     if (editingAccount) {
+      const balanceChanged = accountData.balance !== editingAccount.balance;
       await db.accounts.update(editingAccount.id!, {
         ...accountData,
+        // A balance is derived once transactions exist; preserve its audit trail
+        // by adding a dated known-balance checkpoint below.
+        balance: balanceChanged ? editingAccount.balance : accountData.balance,
         updatedAt: now,
       });
+      if (balanceChanged) {
+        await addBalanceCheckpoint(
+          editingAccount.id!,
+          formData.balanceDate,
+          accountData.balance,
+          "Ajustement manuel du solde"
+        );
+      }
     } else {
       await db.accounts.add({
         ...accountData,
+        initialBalance: accountData.balance,
+        initialBalanceDate: formData.balanceDate,
         createdAt: now,
         updatedAt: now,
       } as Account);
@@ -157,9 +184,14 @@ export default function AccountsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    await db.accounts.delete(id);
-    setDeleteConfirm(null);
-    await loadData();
+    setDeleteError(null);
+    try {
+      await deleteAccountSafely(id);
+      setDeleteConfirm(null);
+      await loadData();
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Ce compte ne peut pas être supprimé.");
+    }
   };
 
   // Calculate totals
@@ -206,58 +238,50 @@ export default function AccountsPage() {
   };
 
   const tableColumns = [
-    { key: "account", label: "Account", className: "min-w-[240px]" },
+    { key: "account", label: "Compte", className: "min-w-[240px]" },
     { key: "type", label: "Type", className: "text-sm" },
-    { key: "updated", label: "Updated", className: "text-right w-32", align: "right" as const },
-    { key: "balance", label: "Balance", className: "text-right w-32", align: "right" as const },
+    { key: "updated", label: "Actualisé", className: "text-right w-32", align: "right" as const },
+    { key: "balance", label: "Solde", className: "text-right w-32", align: "right" as const },
     { key: "actions", label: "", className: "text-right w-20" },
   ];
-
-  const gridTemplate = "minmax(240px,2fr) 140px 140px 140px 100px";
 
   const renderRow = (account: Account) => {
     const accountTypeInfo = ACCOUNT_TYPES.find((t) => t.value === account.type);
     return [
       <div key="account" className="flex items-center gap-3">
         <div
-          className="flex h-10 w-10 items-center justify-center rounded-xl"
-          style={{
-            backgroundColor: `${account.color}15`,
-            color: account.color,
-          }}
+          className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground"
         >
           {getAccountIcon(account.type)}
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium">{account.name}</span>
-            <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
               {accountTypeInfo?.label || account.type}
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {account.institution || "Personal account"}
+            {account.institution || "Compte personnel"}
           </p>
+          <p className="text-xs text-muted-foreground">{getAccountTrust(account).label}</p>
         </div>
       </div>,
       <div key="type" className="text-sm text-muted-foreground capitalize">
-        {account.type}
+        {accountTypeInfo?.label || account.type}
       </div>,
       <div key="updated" className="text-right text-sm text-muted-foreground">
-        {format(new Date(account.updatedAt), "MMM d, yyyy")}
+        {format(new Date(account.updatedAt), "d MMM yyyy", { locale: fr })}
       </div>,
       <div
         key="balance"
-        className={cn(
-          "text-right font-semibold tabular-nums",
-          account.balance < 0 && "text-destructive"
-        )}
+        className="text-right font-semibold tabular-nums"
       >
         <Money amount={account.balance} currency={account.currency} />
       </div>,
       <div
         key="actions"
-        className="flex items-center justify-end gap-1 opacity-0 transition group-hover:opacity-100"
+        className="flex items-center justify-end gap-1"
         onClick={(event) => event.stopPropagation()}
       >
         <Button
@@ -265,6 +289,7 @@ export default function AccountsPage() {
           size="sm"
           className="h-8 w-8 p-0"
           onClick={() => handleOpenEdit(account)}
+          aria-label={`Modifier ${account.name}`}
         >
           <Edit2 className="h-4 w-4" />
         </Button>
@@ -272,7 +297,11 @@ export default function AccountsPage() {
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-          onClick={() => setDeleteConfirm(account.id!)}
+          onClick={() => {
+            setDeleteError(null);
+            setDeleteConfirm(account.id!);
+          }}
+          aria-label={`Supprimer ${account.name}`}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -285,49 +314,46 @@ export default function AccountsPage() {
       <div className="space-y-6">
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="bg-success/5 border-success/20">
+          <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10">
-                  <TrendingUp className="h-5 w-5 text-success" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
+                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Assets</p>
-                  <p className="text-xl font-semibold text-success tabular-nums">
-                    <Money amount={totals.assets || latestBalance} />
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total des actifs</p>
+                  <p className="text-2xl font-semibold tabular-nums">
+                    <Money amount={accounts.length === 0 ? latestBalance : totals.assets} />
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-destructive/5 border-destructive/20">
+          <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
-                  <TrendingDown className="h-5 w-5 text-destructive" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
+                  <TrendingDown className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Liabilities</p>
-                  <p className="text-xl font-semibold text-destructive tabular-nums">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Dettes</p>
+                  <p className="text-2xl font-semibold tabular-nums">
                     <Money amount={totals.liabilities} />
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-info/5 border-info/20">
+          <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10">
-                  <Wallet className="h-5 w-5 text-info" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
+                  <Wallet className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Net Worth</p>
-                  <p className={cn(
-                    "text-xl font-semibold tabular-nums",
-                    (totals.netWorth || latestBalance) >= 0 ? "text-info" : "text-destructive"
-                  )}>
-                    <Money amount={totals.netWorth || latestBalance} />
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Patrimoine net</p>
+                  <p className="text-2xl font-semibold tabular-nums">
+                    <Money amount={accounts.length === 0 ? latestBalance : totals.netWorth} />
                   </p>
                 </div>
               </div>
@@ -338,11 +364,11 @@ export default function AccountsPage() {
         <FilterBar
           search={search}
           onSearchChange={setSearch}
-          placeholder="Search accounts..."
+          placeholder="Rechercher un compte…"
           actions={
             <Button onClick={handleOpenAdd}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Account
+              Ajouter un compte
             </Button>
           }
         />
@@ -350,29 +376,29 @@ export default function AccountsPage() {
         {/* Accounts List */}
         <div className="space-y-3">
           <div>
-            <h2 className="text-lg font-semibold">Your Accounts</h2>
+            <h2 className="text-lg font-semibold">Vos comptes</h2>
             <p className="text-sm text-muted-foreground">
               {filteredAccounts.length > 0
-                ? `${filteredAccounts.length} account${filteredAccounts.length !== 1 ? "s" : ""} tracked`
-                : "Add your accounts to track balances across institutions"}
+                ? `${filteredAccounts.length} compte${filteredAccounts.length !== 1 ? "s" : ""} suivi${filteredAccounts.length !== 1 ? "s" : ""}`
+                : "Ajoutez vos comptes pour consolider les soldes du foyer"}
             </p>
           </div>
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 rounded-2xl bg-muted/60 animate-pulse" />
+                <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
               ))}
             </div>
           ) : filteredAccounts.length === 0 ? (
             <div className="space-y-4">
               <EmptyState
-                title="No accounts yet"
-                description="Add your bank accounts, credit cards, and investment accounts to get a complete view of your finances."
-                primaryAction={{ label: "Add your first account", onClick: handleOpenAdd }}
+                title="Aucun compte"
+                description="Ajoutez vos comptes bancaires, cartes et placements pour obtenir une vue fiable du foyer."
+                primaryAction={{ label: "Ajouter le premier compte", onClick: handleOpenAdd }}
                 icon={<Wallet className="h-6 w-6 text-primary" />}
               />
               {latestBalance !== 0 && (
-                <div className="rounded-2xl border border-border/70 bg-card/90 p-4 text-sm text-muted-foreground">
+                <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
                   Based on recent transactions, your current balance is approximately{" "}
                   <span className="font-semibold text-foreground">
                     <Money amount={latestBalance} />
@@ -382,16 +408,33 @@ export default function AccountsPage() {
               )}
             </div>
           ) : (
-            <DataTable
-              columns={tableColumns}
-              rows={filteredAccounts}
-              rowKey={(row) => row.id!}
-              renderRow={renderRow}
-              gridTemplate={gridTemplate}
-              onRowClick={handleOpenEdit}
-              rowClassName={() => "group transition-colors hover:bg-muted/40"}
-              emptyState={null}
-            />
+            <>
+            <div className="space-y-3 md:hidden">
+              {filteredAccounts.map((account) => (
+                <Card key={account.id}>
+                  <CardContent className="space-y-3 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div><p className="font-semibold">{account.name}</p><p className="text-sm text-muted-foreground">{account.institution || "Institution non renseignée"}</p></div>
+                      <p className="font-semibold"><Money amount={account.balance} currency={account.currency} /></p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{getAccountTrust(account).label} · {account.currency}</p>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => handleOpenEdit(account)}><Edit2 className="mr-2 h-4 w-4" />Modifier</Button>
+                      <Button variant="outline" onClick={() => { setDeleteError(null); setDeleteConfirm(account.id!); }}><Trash2 className="mr-2 h-4 w-4" />Supprimer</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="hidden md:block">
+            <div className="overflow-x-auto rounded-lg border bg-card">
+              <table className="w-full min-w-[780px] text-sm">
+                <thead><tr className="border-b bg-muted/30 text-left text-xs uppercase tracking-wide text-muted-foreground">{tableColumns.map((column) => <th key={column.key} scope="col" className={cn("px-4 py-3", column.className)}>{column.label || <span className="sr-only">Actions</span>}</th>)}</tr></thead>
+                <tbody>{filteredAccounts.map((account) => <tr key={account.id} className="border-b last:border-0 hover:bg-muted/40" onDoubleClick={() => handleOpenEdit(account)}>{renderRow(account).map((cell, index) => <td key={tableColumns[index].key} className="px-4 py-3">{cell}</td>)}</tr>)}</tbody>
+              </table>
+            </div>
+            </div>
+            </>
           )}
         </div>
       </div>
@@ -400,18 +443,18 @@ export default function AccountsPage() {
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingAccount ? "Edit Account" : "Add Account"}</DialogTitle>
+            <DialogTitle>{editingAccount ? "Modifier le compte" : "Ajouter un compte"}</DialogTitle>
             <DialogDescription>
               {editingAccount
-                ? "Update your account details"
-                : "Add a new financial account to track"}
+                ? "Mettez à jour les informations et le point de solde."
+                : "Ajoutez un compte financier avec un solde daté."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Account Name</label>
+              <label className="text-sm font-medium mb-1.5 block">Nom du compte</label>
               <Input
-                placeholder="e.g., Main Checking"
+                placeholder="Ex. Compte courant principal"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
@@ -436,7 +479,7 @@ export default function AccountsPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Current Balance</label>
+                <label className="text-sm font-medium mb-1.5 block">Solde actuel</label>
                 <Input
                   type="number"
                   placeholder="0.00"
@@ -446,8 +489,30 @@ export default function AccountsPage() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Institution</label>
+                <Input
+                  placeholder="Ex. Société Générale"
+                  value={formData.institution}
+                  onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Devise</label>
+                <Select value={formData.currency} onValueChange={(currency) => setFormData({ ...formData, currency })}>
+                  <SelectTrigger aria-label="Devise du compte"><SelectValue /></SelectTrigger>
+                  <SelectContent>{SUPPORTED_CURRENCIES.map((currency) => <SelectItem key={currency} value={currency}>{currency}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Color</label>
+              <label className="text-sm font-medium mb-1.5 block" htmlFor="account-balance-date">Date du solde connu</label>
+              <Input id="account-balance-date" type="date" value={formData.balanceDate} onChange={(event) => setFormData({ ...formData, balanceDate: event.target.value })} />
+              <p className="mt-1 text-sm text-muted-foreground">Ce point daté sert de base au recalcul du compte.</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Couleur</label>
               <div className="flex gap-2">
                 {ACCOUNT_COLORS.map((color) => (
                   <button
@@ -459,6 +524,8 @@ export default function AccountsPage() {
                     )}
                     style={{ backgroundColor: color }}
                     onClick={() => setFormData({ ...formData, color })}
+                    aria-label={`Couleur ${color}`}
+                    aria-pressed={formData.color === color}
                   />
                 ))}
               </div>
@@ -466,10 +533,10 @@ export default function AccountsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
-              Cancel
+              Annuler
             </Button>
             <Button onClick={handleSubmit} disabled={!formData.name}>
-              {editingAccount ? "Save Changes" : "Add Account"}
+              {editingAccount ? "Enregistrer" : "Ajouter le compte"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -482,20 +549,21 @@ export default function AccountsPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Account</DialogTitle>
+            <DialogTitle>Supprimer le compte</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this account? This will only remove it from tracking, not affect your actual bank account.
+              La suppression est possible uniquement si aucune transaction, échéance, checkpoint, détection de salaire ou objectif ne référence ce compte.
             </DialogDescription>
           </DialogHeader>
+          {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              Cancel
+              Annuler
             </Button>
             <Button
               variant="destructive"
               onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
             >
-              Delete
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>

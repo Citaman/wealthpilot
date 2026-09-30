@@ -14,16 +14,16 @@ export function AboutSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <SettingsIcon className="h-5 w-5" />
-          About
+          À propos
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 text-sm text-muted-foreground">
         <p>
-          <strong className="text-foreground">WealthPilot</strong> - Personal Finance Dashboard
+          <strong className="text-foreground">WealthPilot</strong> — Pilotage financier du foyer
         </p>
         <p>Version {process.env.NEXT_PUBLIC_APP_VERSION ?? "0.12.1"}</p>
         <p>
-          Your data is stored locally in your browser using IndexedDB. Nothing is sent to any server.
+          Vos données sont conservées localement dans ce navigateur avec IndexedDB. Rien n’est envoyé à un serveur.
         </p>
       </CardContent>
     </Card>
