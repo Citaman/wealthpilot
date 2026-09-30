@@ -3,7 +3,7 @@
  * Run with: npx vitest run src/lib/__tests__/budget-types.test.ts
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   DEFAULT_CATEGORY_TYPES,
   type BudgetType,

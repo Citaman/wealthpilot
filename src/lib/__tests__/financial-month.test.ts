@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { calculateIncomeStatistics } from "../financial-month";
+import { calculateIncomeStatistics, collapseHouseholdSalaryAnchors, getAllFinancialMonths, getFinancialMonth } from "../financial-month";
 import type { Transaction } from "../db";
 
 // Helper to create mock salary transactions
@@ -116,5 +116,46 @@ describe("Income Statistics Calculation", () => {
       const stats = calculateIncomeStatistics(transactions);
       expect(stats.confidence).toBe("low");
     });
+  });
+});
+
+describe("Household financial month", () => {
+  it("groups both account salaries into one monthly household anchor", () => {
+    const salaries = createMockSalaries([3_700, 1_900, 3_750, 1_950]).map((salary, index) => ({
+      ...salary,
+      id: index + 1,
+      accountId: index % 2 + 1,
+      date: index < 2 ? `2026-08-${index === 0 ? "25" : "28"}` : `2026-09-${index === 2 ? "25" : "28"}`,
+    }));
+    const anchors = collapseHouseholdSalaryAnchors(salaries);
+    expect(anchors).toHaveLength(2);
+    expect(anchors[0].date).toBe("2026-08-25");
+    expect(anchors[0].amount).toBe(5_600);
+    expect(anchors[1].amount).toBe(5_700);
+  });
+
+  it("returns a usable calendar period when auto detection has no salary", () => {
+    const [month] = getAllFinancialMonths([], "calendar", undefined, new Date(2026, 8, 15));
+    expect(month.startDate.getDate()).toBe(1);
+    expect(month.endDate.getMonth()).toBe(month.startDate.getMonth());
+  });
+
+  it("keeps the latest salary cycle continuous into the following month", () => {
+    const [salary] = createMockSalaries([3_700]).map((transaction) => ({
+      ...transaction,
+      date: "2026-08-25",
+    }));
+    const month = getFinancialMonth(new Date(2026, 8, 10), [salary], "auto");
+    expect(month.startDate).toEqual(new Date(2026, 7, 25));
+    expect(month.endDate).toEqual(new Date(2026, 8, 24));
+  });
+
+  it("includes empty calendar months in period navigation", () => {
+    const [salary] = createMockSalaries([3_700]).map((transaction) => ({
+      ...transaction,
+      date: "2026-06-25",
+    }));
+    const months = getAllFinancialMonths([salary], "calendar", undefined, new Date(2026, 8, 15));
+    expect(months.map((month) => month.id)).toEqual(["2026-06", "2026-07", "2026-08", "2026-09"]);
   });
 });

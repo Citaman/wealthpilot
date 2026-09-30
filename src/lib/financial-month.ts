@@ -1,6 +1,6 @@
 // Financial Month System - Dynamic salary-based month boundaries
-import { db, Transaction, DetectedSalary, FinancialMonthSettings, DEFAULT_FINANCIAL_MONTH_SETTINGS } from './db';
-import { startOfMonth, endOfMonth, subDays, addDays, format, parseISO, isBefore, isAfter, isSameDay, subMonths } from 'date-fns';
+import { db, Transaction, FinancialMonthSettings, DEFAULT_FINANCIAL_MONTH_SETTINGS } from './db';
+import { startOfMonth, endOfMonth, subDays, subMonths, addMonths, format, parseISO, isBefore, isAfter, isSameDay } from 'date-fns';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 // Salary detection patterns (built-in)
@@ -21,6 +21,30 @@ export interface FinancialMonth {
   startDate: Date;               // Same as salaryDate
   endDate: Date;                 // Day before next salaryDate or end of month
   salaryTransactionId?: number;  // Link to the transaction
+}
+
+export type FinancialAccountScope = number | "all" | number[];
+
+function isAllAccounts(scope: FinancialAccountScope): boolean {
+  return scope === "all" || (Array.isArray(scope) && scope.length === 0);
+}
+
+/** One household cycle per month: earliest salary opens the cycle, all salaries fund it. */
+export function collapseHouseholdSalaryAnchors(salaries: Transaction[]): Transaction[] {
+  const byMonth = new Map<string, Transaction[]>();
+  for (const salary of salaries) {
+    const month = salary.date.slice(0, 7);
+    byMonth.set(month, [...(byMonth.get(month) || []), salary]);
+  }
+  return [...byMonth.values()].map((items) => {
+    const sorted = [...items].sort((a, b) => a.date.localeCompare(b.date));
+    return {
+      ...sorted[0],
+      amount: items.reduce((sum, item) => sum + Math.abs(item.amount), 0),
+      merchant: "Revenus du foyer",
+      description: items.map((item) => item.merchant || item.description).join(" · "),
+    };
+  }).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export interface IncomeStatistics {
@@ -155,18 +179,22 @@ export function isSalaryTransaction(
 
 // Detect all salary transactions from the database
 export async function detectSalaryTransactions(
-  accountId: number = 1,
+  accountScope: FinancialAccountScope = 1,
   settings?: FinancialMonthSettings
 ): Promise<Transaction[]> {
   const effectiveSettings = settings || await getFinancialMonthSettings();
-  
-  const transactions = await db.transactions
-    .where('accountId')
-    .equals(accountId)
-    .filter(tx => tx.direction === 'credit' && tx.amount >= effectiveSettings.minimumSalaryAmount)
-    .sortBy('date');
-  
-  return transactions.filter(tx => isSalaryTransaction(tx, effectiveSettings));
+  const transactions = isAllAccounts(accountScope)
+    ? await db.transactions.toArray()
+    : Array.isArray(accountScope)
+      ? await db.transactions.where("accountId").anyOf(accountScope).toArray()
+      : await db.transactions.where('accountId').equals(accountScope).toArray();
+  const salaries = transactions
+    .filter(tx => tx.direction === 'credit' && Math.abs(tx.amount) >= effectiveSettings.minimumSalaryAmount)
+    .filter(tx => isSalaryTransaction(tx, effectiveSettings))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return isAllAccounts(accountScope) || Array.isArray(accountScope)
+    ? collapseHouseholdSalaryAnchors(salaries)
+    : salaries;
 }
 
 // Get financial month settings from database
@@ -276,10 +304,12 @@ export function getFinancialMonth(
     }
   }
   
-  // End date is day before next salary, or end of month if no next salary
+  // Without the next observed salary, keep a full salary-to-salary cycle.
+  // Ending at the salary's calendar month would leave the following days
+  // uncovered (for example Aug 25-31, then nothing until September's salary).
   const endDate = nextSalary 
     ? subDays(parseISO(nextSalary.date), 1)
-    : endOfMonth(startDate);
+    : subDays(addMonths(startDate, 1), 1);
   
   return {
     id: format(startDate, 'yyyy-MM'),
@@ -295,10 +325,29 @@ export function getFinancialMonth(
 export function getAllFinancialMonths(
   salaryTransactions: Transaction[],
   mode: FinancialMonthSettings['mode'] = 'auto',
-  fixedDay?: number
+  fixedDay?: number,
+  referenceDate: Date = new Date()
 ): FinancialMonth[] {
+  if (mode !== 'auto') {
+    const earliestDate = salaryTransactions.length > 0
+      ? parseISO([...salaryTransactions].sort((a, b) => a.date.localeCompare(b.date))[0].date)
+      : referenceDate;
+    const byId = new Map<string, FinancialMonth>();
+    let cursor = startOfMonth(earliestDate);
+    const lastMonth = startOfMonth(referenceDate);
+    while (!isAfter(cursor, lastMonth)) {
+      const representativeDate = mode === 'fixed' && fixedDay
+        ? new Date(cursor.getFullYear(), cursor.getMonth(), fixedDay)
+        : cursor;
+      const month = getFinancialMonth(representativeDate, [], mode, fixedDay);
+      byId.set(month.id, month);
+      cursor = addMonths(cursor, 1);
+    }
+    return [...byId.values()].sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+  }
+
   if (salaryTransactions.length === 0) {
-    return [];
+    return [getFinancialMonth(referenceDate, [], mode, fixedDay)];
   }
   
   const months: FinancialMonth[] = [];
@@ -311,9 +360,9 @@ export function getAllFinancialMonths(
     const nextSalary = sortedSalaries[i + 1];
     const startDate = parseISO(salary.date);
     
-    const endDate = nextSalary 
+    const endDate = nextSalary
       ? subDays(parseISO(nextSalary.date), 1)
-      : endOfMonth(startDate);
+      : subDays(addMonths(startDate, 1), 1);
     
     months.push({
       id: format(startDate, 'yyyy-MM'),
@@ -329,15 +378,18 @@ export function getAllFinancialMonths(
 }
 
 // Sync detected salaries to the database
-export async function syncDetectedSalaries(accountId: number = 1): Promise<void> {
+export async function syncDetectedSalaries(accountScope: FinancialAccountScope = 1): Promise<void> {
   const settings = await getFinancialMonthSettings();
   if (settings.mode !== 'auto') return;
-  
-  const salaryTransactions = await detectSalaryTransactions(accountId, settings);
-  const existingSalaries = await db.detectedSalaries
-    .where('accountId')
-    .equals(accountId)
-    .toArray();
+
+  const rawScopes = isAllAccounts(accountScope)
+    ? (await db.accounts.toArray()).flatMap((account) => account.id === undefined ? [] : [account.id])
+    : Array.isArray(accountScope) ? accountScope : [accountScope];
+  const salaryTransactions = (await Promise.all(rawScopes.map((scope) => detectSalaryTransactions(scope, settings)))).flat();
+  const accountIds = salaryTransactions.map((salary) => salary.accountId);
+  const existingSalaries = isAllAccounts(accountScope)
+    ? await db.detectedSalaries.toArray()
+    : accountIds.length > 0 ? await db.detectedSalaries.where('accountId').anyOf(accountIds).toArray() : [];
   
   const existingTxIds = new Set(existingSalaries.map(s => s.transactionId));
   const now = new Date().toISOString();
@@ -350,7 +402,7 @@ export async function syncDetectedSalaries(accountId: number = 1): Promise<void>
         amount: tx.amount,
         isConfirmed: false,
         financialMonthId: format(parseISO(tx.date), 'yyyy-MM'),
-        accountId,
+        accountId: tx.accountId,
         createdAt: now,
       });
     }
@@ -358,25 +410,27 @@ export async function syncDetectedSalaries(accountId: number = 1): Promise<void>
 }
 
 // Get current financial month boundaries
-export async function getCurrentFinancialMonth(accountId: number = 1): Promise<FinancialMonth> {
+export async function getCurrentFinancialMonth(accountScope: FinancialAccountScope = 1): Promise<FinancialMonth> {
   const settings = await getFinancialMonthSettings();
-  const salaryTransactions = await detectSalaryTransactions(accountId, settings);
+  const salaryTransactions = await detectSalaryTransactions(accountScope, settings);
   return getFinancialMonth(new Date(), salaryTransactions, settings.mode, settings.fixedDay);
 }
 
 // Get transactions within a financial month
 export async function getTransactionsInFinancialMonth(
   financialMonth: FinancialMonth,
-  accountId: number = 1
+  accountScope: FinancialAccountScope = 1
 ): Promise<Transaction[]> {
   const startStr = format(financialMonth.startDate, 'yyyy-MM-dd');
   const endStr = format(financialMonth.endDate, 'yyyy-MM-dd');
   
-  return db.transactions
+  const transactions = await db.transactions
     .where('date')
     .between(startStr, endStr, true, true)
-    .filter(tx => tx.accountId === accountId)
     .sortBy('date');
+  if (isAllAccounts(accountScope)) return transactions;
+  const ids = Array.isArray(accountScope) ? new Set(accountScope) : new Set([accountScope]);
+  return transactions.filter((transaction) => ids.has(transaction.accountId));
 }
 
 /**

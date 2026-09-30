@@ -16,6 +16,7 @@ export interface ExchangeRates {
   base: string;
   rates: Record<string, number>;
   updatedAt: string;
+  source?: 'fallback' | 'external';
 }
 
 // In a real 100x app, we'd fetch these from an API like Frankfurter or ExchangeRate-API
@@ -28,6 +29,8 @@ export const FALLBACK_RATES: Record<string, number> = {
   JPY: 162.50,
 };
 
+import { logger } from "@/lib/logger";
+
 export async function fetchExchangeRates(base: string = 'EUR'): Promise<ExchangeRates> {
   try {
     // Try to fetch from a free API
@@ -37,13 +40,15 @@ export async function fetchExchangeRates(base: string = 'EUR'): Promise<Exchange
       base: data.base,
       rates: data.rates,
       updatedAt: new Date().toISOString(),
+      source: 'external',
     };
   } catch (error) {
-    console.warn("Failed to fetch FX rates, using fallbacks:", error);
+    logger.warn("Failed to fetch FX rates, using fallbacks:", error);
     return {
       base: 'EUR',
       rates: FALLBACK_RATES,
       updatedAt: new Date().toISOString(),
+      source: 'fallback',
     };
   }
 }

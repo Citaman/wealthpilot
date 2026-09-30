@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { db, initializeDatabase } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 export type DatabaseStatus = "initializing" | "ready" | "blocked" | "error";
 
@@ -26,71 +27,67 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<DatabaseStatus>("initializing");
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const isOpening = useRef(false);
+  const initializationRef = useRef<Promise<void> | null>(null);
 
   const retry = useCallback(() => {
-    console.log("[WealthPilot] Manual retry requested");
-    isOpening.current = false;
+    logger.log("[WealthPilot] Manual retry requested");
+    initializationRef.current = null;
     setStatus("initializing");
     setError(null);
     setAttempt((a) => a + 1);
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const openAndInit = async () => {
-      // Prevent concurrent opens
-      if (isOpening.current) {
-        console.log("[WealthPilot] Already opening, skipping duplicate call");
-        return;
-      }
-      isOpening.current = true;
-
-      console.log("[WealthPilot] Starting database initialization...");
-      
-      try {
-        // Check if DB is already open
-        if (!db.isOpen()) {
-          console.log("[WealthPilot] Opening Dexie database...");
-          
-          // Set up blocked handler BEFORE opening
-          db.on("blocked", () => {
-            console.warn("[WealthPilot] Database upgrade blocked by another tab/window");
-            if (!cancelled) {
-              setStatus("blocked");
-            }
-          });
-
-          await db.open();
-          console.log("[WealthPilot] Dexie database opened successfully");
-        } else {
-          console.log("[WealthPilot] Database already open");
-        }
-
-        // Initialize default data
-        console.log("[WealthPilot] Running initializeDatabase...");
-        await initializeDatabase();
-        console.log("[WealthPilot] Database initialization complete");
-
-        if (!cancelled) {
-          setStatus("ready");
-        }
-      } catch (err) {
-        console.error("[WealthPilot] Database init failed:", err);
-        if (!cancelled) {
-          setStatus("error");
-          setError(formatDbError(err));
-        }
-      } finally {
-        isOpening.current = false;
-      }
+    const handleBlocked = () => {
+      logger.warn("[WealthPilot] Database upgrade blocked by another tab/window");
+      setStatus("blocked");
     };
 
-    openAndInit();
+    db.on("blocked", handleBlocked);
+    return () => db.on("blocked").unsubscribe(handleBlocked);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const initialize = async () => {
+      logger.log("[WealthPilot] Starting database initialization...");
+
+      if (!db.isOpen()) {
+        logger.log("[WealthPilot] Opening Dexie database...");
+        await db.open();
+        logger.log("[WealthPilot] Dexie database opened successfully");
+      } else {
+        logger.log("[WealthPilot] Database already open");
+      }
+
+      logger.log("[WealthPilot] Running initializeDatabase...");
+      await initializeDatabase();
+      logger.log("[WealthPilot] Database initialization complete");
+    };
+
+    // React Strict Mode remounts effects in development. Reuse the same pending
+    // initialization so the second effect can observe its completion instead of
+    // skipping it and leaving the provider permanently in `initializing`.
+    initializationRef.current ??= initialize();
+    const pendingInitialization = initializationRef.current;
+
+    pendingInitialization.then(
+      () => {
+        if (!active) return;
+        setStatus("ready");
+        setError(null);
+      },
+      (err: unknown) => {
+        logger.error("[WealthPilot] Database init failed:", err);
+        if (!active) return;
+        setStatus("error");
+        setError(formatDbError(err));
+      }
+    );
 
     return () => {
-      cancelled = true;
+      active = false;
     };
   }, [attempt]);
 

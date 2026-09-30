@@ -1,5 +1,6 @@
 import { db, type Transaction } from "./db";
 import { format, subDays } from "date-fns";
+import { logger } from "@/lib/logger";
 
 const MERCHANTS = [
   "Amazon", "Uber", "Carrefour", "Starbucks", "Netflix", "Spotify", 
@@ -19,7 +20,7 @@ export async function runStressTest(count: number = 10000, accountId: number) {
   const transactions: Omit<Transaction, "id">[] = [];
   const now = new Date();
   
-  console.time("Stress Test Generation");
+  logger.time("Stress Test Generation");
   
   for (let i = 0; i < count; i++) {
     const daysAgo = Math.floor(Math.random() * 365);
@@ -51,13 +52,13 @@ export async function runStressTest(count: number = 10000, accountId: number) {
     });
   }
   
-  console.timeEnd("Stress Test Generation");
-  console.time("Stress Test Insertion");
+  logger.timeEnd("Stress Test Generation");
+  logger.time("Stress Test Insertion");
   
   // Batch insert
   await db.transactions.bulkAdd(transactions as Transaction[]);
   
-  console.timeEnd("Stress Test Insertion");
+  logger.timeEnd("Stress Test Insertion");
   
   return transactions.length;
 }

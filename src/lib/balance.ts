@@ -1,6 +1,7 @@
 // Balance Calculation - Calculate running balance from transactions
-import { db, Transaction, Account, BalanceCheckpoint } from './db';
+import { db, Transaction, BalanceCheckpoint } from './db';
 import { parseISO } from 'date-fns';
+import { fromCents, toCents } from './money';
 
 // Transaction with calculated running balance
 export interface TransactionWithBalance extends Transaction {
@@ -9,7 +10,7 @@ export interface TransactionWithBalance extends Transaction {
 
 // Get the signed amount (positive for credit, negative for debit)
 export function getSignedAmount(tx: Transaction): number {
-  return tx.direction === 'credit' ? tx.amount : -tx.amount;
+  return fromCents(tx.direction === 'credit' ? toCents(tx.amount) : -toCents(tx.amount));
 }
 
 /**
@@ -25,13 +26,13 @@ export function calculateRunningBalances(
     (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()
   );
   
-  let runningBalance = initialBalance;
+  let runningBalanceCents = toCents(initialBalance);
   
   return sorted.map(tx => {
-    runningBalance += getSignedAmount(tx);
+    runningBalanceCents += toCents(getSignedAmount(tx));
     return {
       ...tx,
-      runningBalance,
+      runningBalance: fromCents(runningBalanceCents),
     };
   });
 }
@@ -51,13 +52,13 @@ export function calculateInitialBalance(
   );
   
   // Calculate the total change from all transactions
-  const totalChange = relevantTxs.reduce(
-    (sum, tx) => sum + getSignedAmount(tx),
+  const totalChangeCents = relevantTxs.reduce(
+    (sum, tx) => sum + toCents(getSignedAmount(tx)),
     0
   );
   
   // Initial balance = Final balance - total change
-  return finalBalance - totalChange;
+  return fromCents(toCents(finalBalance) - totalChangeCents);
 }
 
 /**
@@ -72,12 +73,12 @@ export async function getCurrentBalance(accountId: number = 1): Promise<number> 
     .equals(accountId)
     .toArray();
   
-  const totalChange = transactions.reduce(
-    (sum, tx) => sum + getSignedAmount(tx),
+  const totalChangeCents = transactions.reduce(
+    (sum, tx) => sum + toCents(getSignedAmount(tx)),
     0
   );
   
-  return account.initialBalance + totalChange;
+  return fromCents(toCents(account.initialBalance) + totalChangeCents);
 }
 
 /**
@@ -110,13 +111,13 @@ export async function calculateInitialBalanceFromCheckpoint(
     .toArray();
   
   // Sum up all transactions
-  const totalChange = transactions.reduce(
-    (sum, tx) => sum + getSignedAmount(tx),
+  const totalChangeCents = transactions.reduce(
+    (sum, tx) => sum + toCents(getSignedAmount(tx)),
     0
   );
   
   // Initial balance = checkpoint balance - sum of all transactions up to checkpoint
-  return checkpoint.balance - totalChange;
+  return fromCents(toCents(checkpoint.balance) - totalChangeCents);
 }
 
 /**
@@ -146,24 +147,27 @@ export async function recalculateBalances(accountId: number = 1): Promise<void> 
     .equals(accountId)
     .sortBy('date');
   
-  let runningBalance = startingBalance;
+  let runningBalanceCents = toCents(startingBalance);
+  const updates: Transaction[] = [];
   
   // Update each transaction's balanceAfter
   for (const tx of transactions) {
-    runningBalance += getSignedAmount(tx);
+    runningBalanceCents += toCents(getSignedAmount(tx));
+    const runningBalance = fromCents(runningBalanceCents);
     
     // Only update if different to avoid unnecessary writes
     if (tx.balanceAfter !== runningBalance) {
-      await db.transactions.update(tx.id!, { 
-        balanceAfter: runningBalance,
-        updatedAt: new Date().toISOString()
-      });
+      updates.push({ ...tx, balanceAfter: runningBalance, updatedAt: new Date().toISOString() });
     }
+  }
+
+  if (updates.length > 0) {
+    await db.transactions.bulkPut(updates);
   }
   
   // Update account's current balance
   await db.accounts.update(accountId, {
-    balance: runningBalance,
+    balance: fromCents(runningBalanceCents),
     lastRecalculated: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   });
@@ -327,12 +331,12 @@ export async function getBalanceAtDate(
     .filter(tx => tx.date <= dateStr)
     .toArray();
   
-  const totalChange = transactions.reduce(
-    (sum, tx) => sum + getSignedAmount(tx),
+  const totalChangeCents = transactions.reduce(
+    (sum, tx) => sum + toCents(getSignedAmount(tx)),
     0
   );
   
-  return account.initialBalance + totalChange;
+  return fromCents(toCents(account.initialBalance) + totalChangeCents);
 }
 
 /**
@@ -357,10 +361,10 @@ export async function getBalanceHistory(
     .sortBy('date');
   
   // Calculate balance before start date
-  let balanceBeforeStart = account.initialBalance;
+  let balanceBeforeStartCents = toCents(account.initialBalance);
   const txsBeforeStart = allTxs.filter(tx => tx.date < startStr);
-  balanceBeforeStart += txsBeforeStart.reduce(
-    (sum, tx) => sum + getSignedAmount(tx),
+  balanceBeforeStartCents += txsBeforeStart.reduce(
+    (sum, tx) => sum + toCents(getSignedAmount(tx)),
     0
   );
   
@@ -376,7 +380,7 @@ export async function getBalanceHistory(
   
   // Build history
   const history: Array<{ date: string; balance: number }> = [];
-  let currentBalance = balanceBeforeStart;
+  let currentBalanceCents = balanceBeforeStartCents;
   
   // Iterate through each day
   const current = new Date(startDate);
@@ -388,12 +392,12 @@ export async function getBalanceHistory(
     
     // Add day's transactions
     for (const tx of dayTxs) {
-      currentBalance += getSignedAmount(tx);
+      currentBalanceCents += toCents(getSignedAmount(tx));
     }
     
     history.push({
       date: dateStr,
-      balance: currentBalance
+      balance: fromCents(currentBalanceCents)
     });
     
     current.setDate(current.getDate() + 1);

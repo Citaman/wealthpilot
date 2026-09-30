@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { db, Transaction, FinancialMonthSettings, DEFAULT_FINANCIAL_MONTH_SETTINGS } from "@/lib/db";
+import { Transaction, FinancialMonthSettings, DEFAULT_FINANCIAL_MONTH_SETTINGS } from "@/lib/db";
 import {
   FinancialMonth,
   getFinancialMonth,
@@ -11,8 +11,10 @@ import {
   saveFinancialMonthSettings,
   getTransactionsInFinancialMonth,
   syncDetectedSalaries,
+  type FinancialAccountScope,
 } from "@/lib/financial-month";
-import { subMonths, addMonths, format, parseISO } from "date-fns";
+import { logger } from "@/lib/logger";
+import { calculateFinancialMetrics } from "@/lib/financial-metrics";
 
 export interface UseFinancialMonthResult {
   isLoading: boolean;
@@ -33,7 +35,7 @@ export interface UseFinancialMonthResult {
   refresh: () => Promise<void>;
 }
 
-export function useFinancialMonth(accountId: number = 1): UseFinancialMonthResult {
+export function useFinancialMonth(accountScope: FinancialAccountScope = "all"): UseFinancialMonthResult {
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<FinancialMonthSettings>(DEFAULT_FINANCIAL_MONTH_SETTINGS);
   const [salaryTransactions, setSalaryTransactions] = useState<Transaction[]>([]);
@@ -42,9 +44,6 @@ export function useFinancialMonth(accountId: number = 1): UseFinancialMonthResul
 
   // Calculate current month based on settings and salary transactions
   const currentMonth = useMemo(() => {
-    if (salaryTransactions.length === 0 && settings.mode === 'auto') {
-      return null;
-    }
     return getFinancialMonth(new Date(), salaryTransactions, settings.mode, settings.fixedDay);
   }, [salaryTransactions, settings]);
 
@@ -63,7 +62,7 @@ export function useFinancialMonth(accountId: number = 1): UseFinancialMonthResul
       setSettings(loadedSettings);
 
       // Detect salary transactions
-      const salaries = await detectSalaryTransactions(accountId, loadedSettings);
+      const salaries = await detectSalaryTransactions(accountScope, loadedSettings);
       setSalaryTransactions(salaries);
 
       // Get all financial months
@@ -71,16 +70,16 @@ export function useFinancialMonth(accountId: number = 1): UseFinancialMonthResul
       setAllMonths(months);
 
       // Sync to database
-      await syncDetectedSalaries(accountId);
+      await syncDetectedSalaries(accountScope);
 
       // Reset selection to current month
       setSelectedMonthIndex(null);
     } catch (error) {
-      console.error("Error loading financial month data:", error);
+      logger.error("Error loading financial month data:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [accountId]);
+  }, [accountScope]);
 
   // Initial load
   useEffect(() => {
@@ -129,7 +128,7 @@ export function useFinancialMonth(accountId: number = 1): UseFinancialMonthResul
     setSettings(newSettings);
     
     // Recalculate with new settings
-    const salaries = await detectSalaryTransactions(accountId, newSettings);
+    const salaries = await detectSalaryTransactions(accountScope, newSettings);
     setSalaryTransactions(salaries);
     
     const months = getAllFinancialMonths(salaries, newSettings.mode, newSettings.fixedDay);
@@ -137,7 +136,7 @@ export function useFinancialMonth(accountId: number = 1): UseFinancialMonthResul
     
     // Reset to current month
     setSelectedMonthIndex(null);
-  }, [accountId]);
+  }, [accountScope]);
 
   return {
     isLoading,
@@ -160,7 +159,7 @@ export function useFinancialMonth(accountId: number = 1): UseFinancialMonthResul
  */
 export function useFinancialMonthTransactions(
   financialMonth: FinancialMonth | null,
-  accountId: number = 1
+  accountScope: FinancialAccountScope = "all"
 ) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -175,10 +174,10 @@ export function useFinancialMonthTransactions(
 
       setIsLoading(true);
       try {
-        const txs = await getTransactionsInFinancialMonth(financialMonth, accountId);
+        const txs = await getTransactionsInFinancialMonth(financialMonth, accountScope);
         setTransactions(txs);
       } catch (error) {
-        console.error("Error loading financial month transactions:", error);
+        logger.error("Error loading financial month transactions:", error);
         setTransactions([]);
       } finally {
         setIsLoading(false);
@@ -186,25 +185,16 @@ export function useFinancialMonthTransactions(
     }
 
     loadTransactions();
-  }, [financialMonth, accountId]);
+  }, [financialMonth, accountScope]);
 
   // Calculate totals
   const totals = useMemo(() => {
-    const income = transactions
-      .filter(t => t.direction === "credit")
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    const expenses = Math.abs(
-      transactions
-        .filter(t => t.direction === "debit")
-        .reduce((sum, t) => sum + t.amount, 0)
-    );
-    
+    const { income, expenses, net } = calculateFinancialMetrics(transactions);
     return {
       income,
       expenses,
-      net: income - expenses,
-      savingsRate: income > 0 ? ((income - expenses) / income) * 100 : 0,
+      net,
+      savingsRate: income > 0 ? (net / income) * 100 : 0,
     };
   }, [transactions]);
 

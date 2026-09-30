@@ -1,5 +1,13 @@
 import { addDays, differenceInDays, format, parseISO, subDays } from "date-fns";
 import type { GoalContribution } from "@/lib/db";
+import { db } from "@/lib/db";
+
+export async function deleteGoalWithHistory(goalId: number): Promise<void> {
+  await db.transaction("rw", db.goals, db.goalContributions, async () => {
+    await db.goalContributions.where("goalId").equals(goalId).delete();
+    await db.goals.delete(goalId);
+  });
+}
 
 export function computeGoalForecast(params: {
   contributions: GoalContribution[];

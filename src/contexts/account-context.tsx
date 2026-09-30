@@ -2,9 +2,10 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type Account, initializeDatabase } from "@/lib/db";
+import { db, type Account } from "@/lib/db";
 import { recalculateAllBalances } from "@/lib/balance";
 import { useCurrency } from "./currency-context";
+import { logger } from "@/lib/logger";
 
 interface AccountContextValue {
   accounts: Account[];
@@ -53,15 +54,21 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem("selectedAccountId");
     if (saved) {
       const parsed = saved === "all" ? "all" : parseInt(saved, 10);
-      setSelectedAccountId(parsed);
+      if (parsed === "all" || Number.isInteger(parsed)) {
+        setSelectedAccountId(parsed);
+      }
     }
   }, []);
 
+  // A persisted account can disappear after a deletion or backup restore. Never
+  // leave the application scoped to a non-existent account.
   useEffect(() => {
-    initializeDatabase().catch((err) => {
-      console.error("[WealthPilot] Failed to initialize database:", err);
-    });
-  }, []);
+    if (!accounts || selectedAccountId === "all") return;
+    if (!accounts.some((account) => account.id === selectedAccountId)) {
+      setSelectedAccountId("all");
+      localStorage.setItem("selectedAccountId", "all");
+    }
+  }, [accounts, selectedAccountId]);
 
   // Auto-recalculate balances on app load (once)
   useEffect(() => {
@@ -74,9 +81,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       if (txCount === 0) return;
       
       hasRecalculated.current = true;
-      console.log("[WealthPilot] Auto-recalculating balances on app load...");
+      logger.log("[WealthPilot] Auto-recalculating balances on app load...");
       await recalculateAllBalances();
-      console.log("[WealthPilot] Balance recalculation complete");
+      logger.log("[WealthPilot] Balance recalculation complete");
     };
 
     autoRecalculate();

@@ -33,8 +33,15 @@ const createTransaction = (overrides: Partial<Transaction> & Pick<Transaction, '
 describe('Analytics Intelligence', () => {
   const history: Transaction[] = [
     createTransaction({ id: 1, merchant: 'Amazon', amount: -50, date: '2025-01-01', direction: 'debit', category: 'Shopping' }),
-    createTransaction({ id: 2, merchant: 'Amazon', amount: -55, date: '2025-02-01', direction: 'debit', category: 'Shopping' }),
-    createTransaction({ id: 3, merchant: 'Amazon', amount: -48, date: '2025-03-01', direction: 'debit', category: 'Shopping' }),
+    createTransaction({ id: 2, merchant: 'Amazon', amount: -55, date: '2025-01-05', direction: 'debit', category: 'Shopping' }),
+    createTransaction({ id: 3, merchant: 'Amazon', amount: -48, date: '2025-01-10', direction: 'debit', category: 'Shopping' }),
+    createTransaction({ id: 5, merchant: 'Amazon', amount: -52, date: '2025-01-15', direction: 'debit', category: 'Shopping' }),
+    createTransaction({ id: 6, merchant: 'Amazon', amount: -51, date: '2025-02-01', direction: 'debit', category: 'Shopping' }),
+    createTransaction({ id: 7, merchant: 'Amazon', amount: -49, date: '2025-02-05', direction: 'debit', category: 'Shopping' }),
+    createTransaction({ id: 8, merchant: 'Amazon', amount: -53, date: '2025-02-10', direction: 'debit', category: 'Shopping' }),
+    createTransaction({ id: 9, merchant: 'Amazon', amount: -50, date: '2025-02-15', direction: 'debit', category: 'Shopping' }),
+    createTransaction({ id: 10, merchant: 'Amazon', amount: -47, date: '2025-03-01', direction: 'debit', category: 'Shopping' }),
+    createTransaction({ id: 11, merchant: 'Amazon', amount: -54, date: '2025-03-05', direction: 'debit', category: 'Shopping' }),
   ];
 
   it('detects a spending spike as an anomaly', () => {

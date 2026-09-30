@@ -36,6 +36,9 @@ export interface Transaction {
   isExcluded?: boolean;  // Exclude from budgets/analytics
   accountId: number;
   linkedTransferId?: number; // Link to paired transfer transaction (v0.5.0)
+  classificationSource?: 'historical' | 'rule' | 'learned' | 'local-model' | 'fallback' | 'manual';
+  classificationConfidence?: number;
+  classificationReason?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -640,45 +643,6 @@ class WealthPilotDB extends Dexie {
 }
 
 export const db = new WealthPilotDB();
-
-// Auto-open database when module is loaded (client-side only)
-if (typeof window !== 'undefined') {
-  console.log('[WealthPilot] Attempting to open database...');
-  
-  // Listen for blocked event (another tab has older version open)
-  db.on('blocked', () => {
-    console.warn('[WealthPilot] Database blocked! Close other tabs and refresh.');
-    alert('Database upgrade blocked. Please close other WealthPilot tabs and refresh.');
-  });
-
-  // Add a timeout to detect hanging
-  const openTimeout = setTimeout(() => {
-    console.error('[WealthPilot] Database open timed out after 5 seconds. Possible causes:');
-    console.error('  1. Another tab has the database open - close all other tabs');
-    console.error('  2. IndexedDB is corrupted - may need to clear site data');
-    console.error('  3. Browser extension blocking IndexedDB');
-  }, 5000);
-
-  db.open()
-    .then(() => {
-      clearTimeout(openTimeout);
-      console.log('[WealthPilot] Database opened successfully, version:', db.verno);
-      // Log table counts for debugging
-      return Promise.all([
-        db.transactions.count(),
-        db.accounts.count(),
-        db.budgets.count(),
-        db.goals.count(),
-      ]);
-    })
-    .then(([transactions, accounts, budgets, goals]) => {
-      console.log('[WealthPilot] Data counts:', { transactions, accounts, budgets, goals });
-    })
-    .catch((err) => {
-      clearTimeout(openTimeout);
-      console.error('[WealthPilot] Failed to open database:', err);
-    });
-}
 
 // Default financial month settings
 export const DEFAULT_FINANCIAL_MONTH_SETTINGS: FinancialMonthSettings = {

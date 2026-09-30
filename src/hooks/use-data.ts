@@ -15,6 +15,11 @@ import {
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { recalculateBalances } from "@/lib/balance";
 import { useMoney } from "@/hooks/use-money";
+import { deleteAccountSafely } from "@/lib/accounts";
+import { deleteGoalWithHistory } from "@/lib/goals";
+import { saveBudgetAmount } from "@/lib/budgets";
+import { calculateFinancialMetrics, isRealExpense } from "@/lib/financial-metrics";
+import { buildMonthlyFinancialHistory } from "@/lib/monthly-analysis";
 
 // Simple category stats type for dashboard
 export interface SimpleCategoryStats {
@@ -46,9 +51,9 @@ export interface DashboardData {
   expenseChange: number;
 }
 
-export function useDashboard() {
+export function useDashboard(accountId: number | "all" = "all") {
   const { convertFromAccount } = useMoney();
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const start = startOfMonth(now);
   const end = endOfMonth(now);
   const startStr = format(start, 'yyyy-MM-dd');
@@ -69,16 +74,16 @@ export function useDashboard() {
     () => db.transactions
       .where("date")
       .between(startStr, endStr, true, true)
-      .toArray(),
-    [startStr, endStr]
+      .toArray().then((txs) => accountId === "all" ? txs : txs.filter((tx) => tx.accountId === accountId)),
+    [startStr, endStr, accountId]
   );
 
   const prevMonthTx = useLiveQuery(
     () => db.transactions
       .where("date")
       .between(prevStartStr, prevEndStr, true, true)
-      .toArray(),
-    [prevStartStr, prevEndStr]
+      .toArray().then((txs) => accountId === "all" ? txs : txs.filter((tx) => tx.accountId === accountId)),
+    [prevStartStr, prevEndStr, accountId]
   );
 
   // Last 6 months transactions for cash flow chart
@@ -86,17 +91,24 @@ export function useDashboard() {
     () => db.transactions
       .where("date")
       .between(sixMonthsAgoStr, endStr, true, true)
-      .toArray(),
-    [sixMonthsAgoStr, endStr]
+      .toArray().then((txs) => accountId === "all" ? txs : txs.filter((tx) => tx.accountId === accountId)),
+    [sixMonthsAgoStr, endStr, accountId]
   );
 
   const recentTransactions = useLiveQuery(
-    () => db.transactions.orderBy("date").reverse().limit(10).toArray()
+    async () => {
+      const txs = await db.transactions.orderBy("date").reverse().toArray();
+      return (accountId === "all" ? txs : txs.filter((tx) => tx.accountId === accountId)).slice(0, 10);
+    },
+    [accountId]
   );
 
   const goals = useLiveQuery(() => db.goals.toArray());
   const budgets = useLiveQuery(() => db.budgets.toArray());
-  const accounts = useLiveQuery(() => db.accounts.toArray());
+  const accounts = useLiveQuery(async () => {
+    const allAccounts = await db.accounts.toArray();
+    return accountId === "all" ? allAccounts : allAccounts.filter((account) => account.id === accountId);
+  }, [accountId]);
 
   // Compute derived values
   const data = useMemo((): DashboardData => {
@@ -121,26 +133,14 @@ export function useDashboard() {
     }
 
     // Calculate totals for current month
-    const totalIncome = currentMonthTx
-      .filter((t) => t.direction === "credit")
-      .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
-
-    const totalExpenses = Math.abs(
-      currentMonthTx
-        .filter((t) => t.direction === "debit")
-        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
-    );
+    const currentMetrics = calculateFinancialMetrics(currentMonthTx, convertFromAccount);
+    const totalIncome = currentMetrics.income;
+    const totalExpenses = currentMetrics.expenses;
 
     // Calculate totals for previous month
-    const prevIncome = prevMonthTx
-      .filter((t) => t.direction === "credit")
-      .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
-
-    const prevExpenses = Math.abs(
-      prevMonthTx
-        .filter((t) => t.direction === "debit")
-        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
-    );
+    const previousMetrics = calculateFinancialMetrics(prevMonthTx, convertFromAccount);
+    const prevIncome = previousMetrics.income;
+    const prevExpenses = previousMetrics.expenses;
 
     // Calculate changes
     const incomeChange = prevIncome > 0 ? ((totalIncome - prevIncome) / prevIncome) * 100 : 0;
@@ -151,40 +151,19 @@ export function useDashboard() {
     const balance = accounts.reduce((sum, acc) => sum + convertFromAccount(acc.balance, acc.id), 0);
 
     // Monthly stats for last 6 months (for cash flow chart)
-    const monthlyStats: { month: string; income: number; expenses: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthDate = subMonths(now, i);
-      const monthStart = startOfMonth(monthDate);
-      const monthEnd = endOfMonth(monthDate);
-      const monthLabel = format(monthDate, 'MMM');
-      
-      const monthTxs = last6MonthsTx.filter((tx) => {
-        const txDate = new Date(tx.date);
-        return txDate >= monthStart && txDate <= monthEnd;
-      });
-      
-      const monthIncome = monthTxs
-        .filter((t) => t.direction === "credit")
-        .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0);
-      
-      const monthExpenses = Math.abs(
-        monthTxs
-          .filter((t) => t.direction === "debit")
-          .reduce((sum, t) => sum + convertFromAccount(t.amount, t.accountId), 0)
-      );
-      
-      monthlyStats.push({
-        month: monthLabel,
-        income: monthIncome,
-        expenses: monthExpenses,
-      });
-    }
+    const monthlyStats = buildMonthlyFinancialHistory(
+      last6MonthsTx,
+      sixMonthsAgo,
+      end,
+      convertFromAccount,
+      now
+    ).map((point) => ({ month: point.label, income: point.income, expenses: point.expenses }));
 
     // Category stats for current month
     const categoryStats: SimpleCategoryStats[] = [];
     const categoryMap = new Map<string, { amount: number; count: number }>();
     currentMonthTx
-      .filter((t) => t.direction === "debit")
+      .filter(isRealExpense)
       .forEach((t) => {
         const existing = categoryMap.get(t.category) || { amount: 0, count: 0 };
         categoryMap.set(t.category, { 
@@ -211,14 +190,20 @@ export function useDashboard() {
       monthlyStats,
       categoryStats,
       recentTransactions,
-      goals: goals || [],
+      goals: (goals || [])
+        .filter((goal) => accountId === "all" || !goal.linkedAccountId || goal.linkedAccountId === accountId)
+        .map((goal) => {
+          if (!goal.linkedAccountId) return goal;
+          const linkedAccount = accounts.find((account) => account.id === goal.linkedAccountId);
+          return linkedAccount ? { ...goal, currentAmount: linkedAccount.balance } : goal;
+        }),
       budgets: budgets || [],
       accounts,
       insights: [],
       incomeChange,
       expenseChange,
     };
-  }, [currentMonthTx, prevMonthTx, last6MonthsTx, recentTransactions, goals, budgets, accounts, convertFromAccount]);
+  }, [currentMonthTx, prevMonthTx, last6MonthsTx, recentTransactions, goals, budgets, accounts, accountId, convertFromAccount, now, sixMonthsAgo, end]);
 
   return data;
 }
@@ -376,7 +361,7 @@ export function useGoals() {
   }, []);
 
   const deleteGoal = useCallback(async (id: number) => {
-    await db.goals.delete(id);
+    await deleteGoalWithHistory(id);
   }, []);
 
   return {
@@ -425,6 +410,9 @@ export function useGoalContributionActions() {
       await db.transaction("rw", db.goalContributions, db.goals, async () => {
         const goal = await db.goals.get(goalId);
         if (!goal) throw new Error("Goal not found");
+        if (goal.linkedAccountId) {
+          throw new Error("Linked goals follow their account balance and cannot receive virtual contributions");
+        }
 
         const newAmount = goal.currentAmount + amount;
         if (newAmount < 0) {
@@ -490,29 +478,7 @@ export function useBudgets() {
   const budgets = useLiveQuery(() => db.budgets.toArray());
 
   const setBudget = useCallback(async (category: string, amount: number, year: number, month?: number) => {
-    const existing = await db.budgets
-      .where("[category+year]")
-      .equals([category, year])
-      .first();
-
-    const now = new Date().toISOString();
-
-    if (existing) {
-      await db.budgets.update(existing.id!, {
-        amount,
-        updatedAt: now,
-      });
-    } else {
-      await db.budgets.add({
-        category,
-        amount,
-        period: month ? "monthly" : "yearly",
-        year,
-        month,
-        createdAt: now,
-        updatedAt: now,
-      } as Budget);
-    }
+    await saveBudgetAmount(category, amount, year, month);
   }, []);
 
   return {
@@ -547,7 +513,7 @@ export function useAccounts() {
   }, []);
 
   const deleteAccount = useCallback(async (id: number) => {
-    await db.accounts.delete(id);
+    await deleteAccountSafely(id);
   }, []);
 
   return {

@@ -3,3 +3,5 @@ export { PrivacyProvider, usePrivacy } from "./privacy-context";
 export { CurrencyProvider, useCurrency } from "./currency-context";
 export { DatabaseProvider, useDatabase } from "./database-context";
 export { ThemeProvider, useTheme } from "./theme-context";
+export { AccentProvider, useAccent, ACCENT_PRESETS } from "./accent-context";
+export type { AccentPreset, AccentPresetId } from "./accent-context";

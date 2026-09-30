@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import {
   db,
   type Account,
@@ -560,7 +561,7 @@ export async function decryptData(encryptedJson: string, passphrase: string) {
 
     return decoder.decode(decrypted);
   } catch (error) {
-    console.error("Decryption failed:", error);
+    logger.error("Decryption failed:", error);
     throw new Error("Invalid passphrase or corrupted file.");
   }
 }
