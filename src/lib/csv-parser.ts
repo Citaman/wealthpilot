@@ -277,15 +277,18 @@ export async function importTransactions(transactions: Omit<Transaction, 'id'>[]
   return Array.isArray(ids) ? ids.length : 1;
 }
 
-export async function detectRecurringTransactions(): Promise<void> {
-  const transactions = await db.transactions.orderBy('date').toArray();
+export async function detectRecurringTransactions(accountId?: number): Promise<number> {
+  const allTransactions = await db.transactions.orderBy('date').toArray();
+  const transactions = accountId === undefined
+    ? allTransactions
+    : allTransactions.filter((tx) => tx.accountId === accountId);
   
   // Group by merchant and approximate amount
   const merchantGroups: Record<string, Transaction[]> = {};
   
   for (const tx of transactions) {
-    if (tx.direction === 'debit' && tx.amount < 0) {
-      const key = `${tx.merchant}|${Math.round(Math.abs(tx.amount))}`;
+    if (tx.direction === 'debit' && tx.amount > 0 && tx.merchant && tx.merchant !== 'Unknown') {
+      const key = `${tx.accountId}|${tx.merchant}|${Math.round(tx.amount)}`;
       if (!merchantGroups[key]) {
         merchantGroups[key] = [];
       }
@@ -294,7 +297,8 @@ export async function detectRecurringTransactions(): Promise<void> {
   }
   
   // Find recurring patterns (at least 3 occurrences with ~30 day gaps)
-  for (const [key, txs] of Object.entries(merchantGroups)) {
+  let created = 0;
+  for (const txs of Object.values(merchantGroups)) {
     if (txs.length >= 3) {
       const dates = txs.map(t => new Date(t.date).getTime()).sort((a, b) => a - b);
       const gaps = [];
@@ -307,7 +311,9 @@ export async function detectRecurringTransactions(): Promise<void> {
       
       // Monthly recurring (25-35 days average gap)
       if (avgGap >= 25 && avgGap <= 35) {
-        const existing = await db.recurringTransactions.where('name').equals(txs[0].merchant).first();
+        const existing = await db.recurringTransactions
+          .filter((item) => item.name === txs[0].merchant && item.accountId === txs[0].accountId)
+          .first();
         
         if (!existing) {
           const lastTx = txs[txs.length - 1];
@@ -315,7 +321,9 @@ export async function detectRecurringTransactions(): Promise<void> {
           nextDate.setMonth(nextDate.getMonth() + 1);
           
           await db.recurringTransactions.add({
-            type: 'subscription',
+            type: txs[0].category === 'Bills' && txs[0].subcategory !== 'Subscriptions'
+              ? 'bill'
+              : 'subscription',
             status: 'active',
             name: txs[0].merchant,
             amount: Math.abs(txs[0].amount),
@@ -327,17 +335,53 @@ export async function detectRecurringTransactions(): Promise<void> {
             lastDetected: lastTx.date,
             nextExpected: nextDate.toISOString().split('T')[0],
             accountId: txs[0].accountId,
+            occurrences: txs.map((tx) => ({
+              id: `transaction-${tx.id}`,
+              transactionId: tx.id,
+              date: tx.date,
+              amount: tx.amount,
+              status: 'paid' as const,
+            })),
           } as RecurringTransaction);
+          created += 1;
         }
       }
     }
   }
+
+  return created;
 }
 
 // Merge duplicate recurring items
 export async function mergeRecurringItems(targetId?: number, sourceId?: number): Promise<SyncResult> {
-  // This is a placeholder - implement actual merge logic
-  return { added: 0, updated: 0, removed: 0, transactionsLinked: 0, recurringUpdated: 0, errors: [] };
+  if (!targetId || !sourceId || targetId === sourceId) {
+    return { added: 0, updated: 0, removed: 0, transactionsLinked: 0, recurringUpdated: 0, errors: ['Choose two different recurring items.'] };
+  }
+
+  return db.transaction('rw', db.recurringTransactions, async () => {
+    const [target, source] = await Promise.all([
+      db.recurringTransactions.get(targetId),
+      db.recurringTransactions.get(sourceId),
+    ]);
+    if (!target || !source) {
+      return { added: 0, updated: 0, removed: 0, transactionsLinked: 0, recurringUpdated: 0, errors: ['Recurring item not found.'] };
+    }
+    if (target.accountId !== source.accountId) {
+      return { added: 0, updated: 0, removed: 0, transactionsLinked: 0, recurringUpdated: 0, errors: ['Recurring items from different accounts cannot be merged.'] };
+    }
+
+    const occurrences = new Map(
+      [...(target.occurrences || []), ...(source.occurrences || [])]
+        .map((occurrence) => [occurrence.transactionId || occurrence.id, occurrence])
+    );
+    await db.recurringTransactions.update(targetId, {
+      occurrences: [...occurrences.values()].sort((a, b) => a.date.localeCompare(b.date)),
+      lastDetected: target.lastDetected > source.lastDetected ? target.lastDetected : source.lastDetected,
+      updatedAt: new Date().toISOString(),
+    });
+    await db.recurringTransactions.delete(sourceId);
+    return { added: 0, updated: 1, removed: 1, transactionsLinked: 0, recurringUpdated: 1, errors: [] };
+  });
 }
 
 // Sync recurring items with transactions

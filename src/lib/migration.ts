@@ -1,10 +1,11 @@
 // Migration System - Analyze historical data and build merchant mappings
-import { db, Transaction, CATEGORIES } from './db';
+import { Transaction, CATEGORIES } from './db';
 
 // Known salary patterns (employer names)
 export const SALARY_EMPLOYERS = [
   'DIGITAL CLASSIFIEDS',
   'DIGITAL CLASSIFIEDS FRANCE',
+  'BABILOU',
 ];
 
 // Known rent/transfer patterns that shouldn't be "Other"
@@ -26,7 +27,8 @@ export const MERCHANT_RULES: Array<{
   isRecurring?: boolean;
 }> = [
   // === INCOME ===
-  { pattern: /DIGITAL CLASSIFIEDS|VIREMENT.*SALAIRE/i, category: 'Income', subcategory: 'Salary', merchant: 'Salary', isRecurring: true },
+  { pattern: /DIGITAL CLASSIFIEDS|BABILOU|VIREMENT.*SALAIRE/i, category: 'Income', subcategory: 'Salary', merchant: 'Salary', isRecurring: true },
+  { pattern: /\bCAF\b|ALLOCATIONS?\s+FAMILIALES?/i, category: 'Income', subcategory: 'Benefits', merchant: 'CAF', isRecurring: true },
   { pattern: /DGFIP|FINANCES PUBLIQUES|D\.G\.F\.I\.P/i, category: 'Income', subcategory: 'Refunds', merchant: 'Tax Refund' },
   { pattern: /GENERATION.*MOTIF:/i, category: 'Income', subcategory: 'Other', merchant: 'Generation' },
   { pattern: /VIR RECU.*DE:/i, category: 'Income', subcategory: 'Other', merchant: 'Transfer In' },
@@ -305,8 +307,39 @@ export const CATEGORY_SIMPLIFICATION: Record<string, { category: string; subcate
 /**
  * Apply merchant rules to get category/subcategory/merchant
  */
-export function applyMerchantRules(description: string): { category: string; subcategory: string; merchant: string; isRecurring: boolean } | null {
+export function applyMerchantRules(
+  description: string,
+  direction?: 'debit' | 'credit'
+): { category: string; subcategory: string; merchant: string; isRecurring: boolean } | null {
   const upperDesc = description.toUpperCase();
+
+  // Some bank labels describe opposite economic events depending on the flow
+  // direction. Resolve them before the generic, ordered merchant rules.
+  if (/DGFIP|FINANCES PUBLIQUES|D\.G\.F\.I\.P/.test(upperDesc)) {
+    return direction === 'debit'
+      ? { category: 'Taxes', subcategory: 'Income Tax', merchant: 'Tax Payment', isRecurring: false }
+      : { category: 'Income', subcategory: 'Refunds', merchant: 'Tax Refund', isRecurring: false };
+  }
+
+  if (direction === 'credit' && /REMBT|REMBOURSEMENT/.test(upperDesc)) {
+    return { category: 'Income', subcategory: 'Refunds', merchant: 'Refund', isRecurring: false };
+  }
+
+  if (direction === 'credit' && /\bCAF\b|ALLOCATIONS?\s+FAMILIALES?/.test(upperDesc)) {
+    return { category: 'Income', subcategory: 'Benefits', merchant: 'CAF', isRecurring: true };
+  }
+
+  if (direction === 'credit' && /DIGITAL CLASSIFIEDS|BABILOU|VIREMENT.*SALAIRE/.test(upperDesc)) {
+    return { category: 'Income', subcategory: 'Salary', merchant: 'Salary', isRecurring: true };
+  }
+
+  if (direction === 'credit' && /VIR\s+(?:INSTANTANE\s+)?RECU/.test(upperDesc)) {
+    // Salaries stay income; other incoming transfers must not inflate revenue.
+    if (/DIGITAL CLASSIFIEDS|BABILOU|VIREMENT.*SALAIRE/.test(upperDesc)) {
+      return { category: 'Income', subcategory: 'Salary', merchant: 'Salary', isRecurring: true };
+    }
+    return { category: 'Transfers', subcategory: 'From Others', merchant: 'Transfer In', isRecurring: false };
+  }
   
   for (const rule of MERCHANT_RULES) {
     if (rule.pattern.test(upperDesc)) {
