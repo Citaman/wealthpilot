@@ -153,6 +153,10 @@ See [ROADMAP](./ROADMAP.md) for full version planning.
 | v0.15.0 | UI Foundation & System | 📋 Planned |
 | v1.0.0 | Production Ready | 🎯 Target |
 
+## Application installable et IA locale
+
+WealthPilot peut être ajouté au Dock comme PWA et dispose d’une seconde passe locale optionnelle pour les transactions que les règles ne savent pas catégoriser. Voir [Installation locale et catégorisation hybride](docs/LOCAL_AI_AND_INSTALLATION.md).
+
 ---
 
 ## 🏦 v0.5.0 - Multi-Account Support
