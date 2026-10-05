@@ -1,0 +1,87 @@
+.balance-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+}
+
+.balance-delta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--fs-text-s);
+}
+
+@container card (max-width: 359px) {
+  .balance-mode {
+    display: none;
+  }
+}
+
+.balance-chart {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.balance-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.balance-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--h-compact);
+  padding: 0 var(--space-3);
+  border: var(--border-pill) solid var(--card-hairline);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-text-s);
+  font-weight: 600;
+  transition: background-color var(--dur-press) var(--ease);
+}
+
+.balance-legend-item:hover {
+  background: var(--card-sunk);
+}
+
+.balance-legend-item[aria-pressed="true"] {
+  border-color: var(--card-text);
+  background: var(--card-sunk);
+}
+
+.balance-legend-item .ui-money {
+  color: var(--card-muted);
+  font-weight: 500;
+}
+
+.balance-unknown {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+}
+
+.balance-unknown-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
+  letter-spacing: var(--tracking-display);
+  color: var(--card-muted);
+}
+
+.balance-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.balance-form-actions {
+  display: flex;
+  gap: var(--space-2);
+  grid-column: 1 / -1;
+}
