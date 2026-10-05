@@ -191,3 +191,12 @@ table {
     scroll-behavior: auto !important;
   }
 }
+
+/* Inline values and links stay visually compact but get a ≥ 24px hit area. */
+.card-link,
+.available-toggle {
+  padding-block: 4px;
+  margin-block: -4px;
+  padding-inline: 4px;
+  margin-inline: -4px;
+}

@@ -57,7 +57,7 @@
   grid-area: handle;
   display: grid;
   place-items: center;
-  width: var(--space-5);
+  width: var(--space-6);
   height: var(--h-icon);
   border-radius: var(--r-bubble);
   color: var(--card-muted);
