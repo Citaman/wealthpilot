@@ -1,0 +1,9 @@
+.occurrence-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: var(--h-icon);
+  min-height: var(--h-icon);
+  font-family: var(--font-mono);
+  font-size: var(--fs-text-s);
+}
