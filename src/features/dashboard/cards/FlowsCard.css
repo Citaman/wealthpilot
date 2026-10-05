@@ -1,0 +1,38 @@
+.flows-legend {
+  display: flex;
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+  color: var(--card-muted);
+}
+
+.flows-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flows-legend li::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--series-1);
+  box-shadow: inset 0 0 0 1px var(--card-mark-stroke);
+}
+
+.flows-legend [data-series="spending"]::before {
+  background: var(--series-2);
+}
+
+.flows-legend [data-series="net"]::before {
+  border-radius: var(--r-pill);
+  background: var(--series-3);
+  box-shadow: inset 0 0 0 1.5px var(--card-text);
+}
+
+@container card (max-width: 559px) {
+  .flows-legend {
+    display: none;
+  }
+}

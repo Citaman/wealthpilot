@@ -1,0 +1,202 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  scrollbar-gutter: stable;
+  scroll-padding-bottom: calc(var(--dock-h) + var(--space-8));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--card-text);
+  font-family: var(--font-text);
+  font-size: var(--fs-text);
+  line-height: var(--lh-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: inherit;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  overflow-wrap: break-word;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+::selection {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: var(--focus-width) solid var(--card-focus);
+  outline-offset: var(--focus-offset);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--lh-l);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  line-height: var(--lh-mono);
+  font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  line-height: var(--lh-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--card-muted);
+}
+
+/* Shared surface of menus, pickers and popovers. */
+.ui-float {
+  z-index: var(--z-popover);
+  min-width: 200px;
+  max-width: min(360px, calc(100vw - 16px));
+  max-height: var(--radix-popper-available-height, 70vh);
+  overflow: auto;
+  padding: var(--space-1);
+  background: var(--surface);
+  color: var(--card-text);
+  border: var(--border-pill) solid var(--card-border);
+  border-radius: var(--r-tile);
+  box-shadow: var(--shadow-pop);
+}
+
+.ui-float-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--h-compact);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-field);
+  font-size: var(--fs-text-s);
+  line-height: var(--lh-text-s);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.ui-float-item[data-highlighted] {
+  background: var(--surface-sunk);
+}
+
+.ui-float-item[data-disabled] {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.ui-float-label {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ui-float-separator {
+  height: 1px;
+  margin: var(--space-1) var(--space-2);
+  background: var(--hairline);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Inline values and links stay visually compact but get a ≥ 24px hit area. */
+.card-link,
+.available-toggle {
+  padding-block: 4px;
+  margin-block: -4px;
+  padding-inline: 4px;
+  margin-inline: -4px;
+}

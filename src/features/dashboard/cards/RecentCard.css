@@ -1,0 +1,104 @@
+.recent {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.recent-day {
+  display: grid;
+  gap: 2px;
+}
+
+.recent-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--h-compact);
+  padding: 0 var(--space-3);
+  border-radius: var(--r-field);
+  background: var(--card-sunk);
+  font-weight: 500;
+}
+
+.recent-date {
+  display: inline-block;
+}
+
+.recent-date::first-letter {
+  text-transform: uppercase;
+}
+
+.recent-rows {
+  display: grid;
+  padding: 0;
+  list-style: none;
+}
+
+.recent-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--h-row);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--r-field);
+  color: var(--card-text);
+  text-align: left;
+  transition: background-color var(--dur-press) var(--ease);
+}
+
+.recent-row:hover {
+  background: var(--card-sunk);
+}
+
+.recent-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-name,
+.recent-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-name {
+  font-weight: 600;
+  font-size: var(--fs-text-s);
+}
+
+.recent-meta {
+  color: var(--card-muted);
+  font-size: var(--fs-text-s);
+}
+
+.recent-row[data-internal] .recent-name,
+.recent-row[data-internal] .recent-amount {
+  color: var(--card-muted);
+}
+
+.recent-category {
+  display: flex;
+  flex: 0 1 260px;
+  min-width: 0;
+}
+
+.recent-account {
+  display: flex;
+  flex: 0 0 11ch;
+  min-width: 0;
+}
+
+.recent-amount {
+  flex: none;
+  min-width: 10ch;
+  text-align: right;
+  font-weight: 600;
+}
+
+.recent-foot {
+  display: flex;
+  justify-content: flex-end;
+}

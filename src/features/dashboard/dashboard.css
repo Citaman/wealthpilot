@@ -1,0 +1,350 @@
+/* Board ------------------------------------------------------------------- */
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--grid-gap);
+  align-items: stretch;
+}
+
+.board-cell {
+  grid-column: span var(--span, 12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  border-radius: var(--r-card);
+}
+
+@media (min-width: 720px) and (max-width: 1100px) {
+  .board-cell {
+    grid-column: span var(--span-t, 12);
+  }
+}
+
+@media (max-width: 719px) {
+  .board-cell {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Wide screens keep 12 columns; the dashboard alone may use up to 2000 px. */
+@media (min-width: 2200px) {
+  .app:has(> .page[data-page="dashboard"]:not([hidden])) {
+    max-width: calc(var(--content-max) * 1.25);
+  }
+}
+
+.board-card {
+  flex: 1;
+  display: grid;
+  min-width: 0;
+}
+
+.board-card > * {
+  min-width: 0;
+}
+
+.board[data-editing] .board-card .ui-card-body {
+  opacity: 0.7;
+}
+
+.board-cell[data-highlight] .board-card > .ui-card {
+  animation: board-flash 1.2s var(--ease);
+}
+
+@keyframes board-flash {
+  0%,
+  60% {
+    box-shadow: 0 0 0 4px var(--yellow);
+  }
+  100% {
+    box-shadow: 0 0 0 4px transparent;
+  }
+}
+
+/* Edit bar: dark strip above the card, same height for every card. */
+.board-editbar {
+  container: editbar / inline-size;
+  --card-text: var(--on-dark);
+  --card-bg: var(--ink);
+  --card-sunk: var(--ink-2);
+  --card-muted: var(--on-dark-muted);
+  --card-focus: var(--on-dark);
+  --swatch-ring: var(--on-dark-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: calc(var(--h-pill) + var(--space-2));
+  padding: var(--space-1);
+  border-radius: var(--r-tile);
+  background: var(--ink);
+  color: var(--on-dark);
+}
+
+.board-handle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--h-icon);
+  height: var(--h-pill);
+  border-radius: var(--r-field);
+  color: var(--on-dark);
+  transition: background-color var(--dur-press) var(--ease);
+}
+
+.board-handle:hover,
+.board-handle[aria-pressed="true"] {
+  background: var(--ink-2);
+}
+
+.board-editbar-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-text-s);
+  font-weight: 600;
+}
+
+.board-editbar-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.board-editbar .ui-segmented {
+  border-color: var(--hairline-dark);
+}
+
+.board-source {
+  max-width: 110px;
+}
+
+@container editbar (max-width: 400px) {
+  .board-editbar-name {
+    display: none;
+  }
+}
+
+@media (max-width: 719px) {
+  .board-editbar {
+    flex-wrap: wrap;
+  }
+}
+
+/* Palette swatches */
+.board-swatch-trigger {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--h-icon);
+  height: var(--h-icon);
+  border-radius: var(--r-pill);
+  transition: background-color var(--dur-press) var(--ease);
+}
+
+.board-swatch-trigger:hover,
+.board-swatch-trigger[data-state="open"] {
+  background: var(--ink-2);
+}
+
+.board-swatch {
+  display: block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  background: var(--card-bg);
+  box-shadow: 0 0 0 var(--border-pill) var(--swatch-ring, var(--ink));
+}
+
+.board-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.board-palette-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--h-compact);
+  padding: 0 var(--space-2);
+  border-radius: var(--r-field);
+  font-size: var(--fs-text-s);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color var(--dur-press) var(--ease);
+}
+
+.board-palette-option:hover {
+  background: var(--surface-sunk);
+}
+
+.board-palette-option[aria-pressed="true"] {
+  background: var(--yellow-soft);
+  font-weight: 600;
+}
+
+/* Dock commands sit on the dark dock. */
+.dash-dock {
+  display: contents;
+  --card-text: var(--on-dark);
+  --card-bg: var(--ink);
+  --card-sunk: var(--ink-2);
+  --card-focus: var(--on-dark);
+  --card-accent: var(--yellow);
+  --card-on-accent: var(--ink);
+}
+
+.dash-dock-button {
+  min-height: 48px;
+  border-radius: var(--r-dock-item);
+}
+
+.dashboard > .ui-empty {
+  justify-content: center;
+  min-height: 40vh;
+}
+
+/* Add card sheet --------------------------------------------------------- */
+
+.add-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--h-field);
+  padding: 0 var(--space-3);
+  border: var(--border-pill) solid var(--card-text);
+  border-radius: var(--r-field);
+  background: var(--card-field);
+  color: var(--card-muted);
+}
+
+.add-search:focus-within {
+  outline: var(--focus-width) solid var(--card-focus);
+  outline-offset: var(--focus-offset);
+}
+
+.add-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--card-text);
+}
+
+.add-list {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.add-item {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: var(--border-pill) solid var(--hairline);
+  border-radius: var(--r-tile);
+}
+
+.add-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.add-item-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+  letter-spacing: var(--tracking-display);
+}
+
+.add-item-question {
+  color: var(--card-muted);
+  font-size: var(--fs-text-s);
+  line-height: var(--lh-text-s);
+}
+
+.add-preview {
+  position: relative;
+  overflow: hidden;
+  margin-top: var(--space-1);
+  border-radius: var(--r-tile);
+  background: var(--bg);
+}
+
+.add-preview-inner {
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.add-item-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.add-widths {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.add-width {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  color: var(--card-muted);
+}
+
+.add-width[data-default] {
+  border-color: var(--ink);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.add-none {
+  padding: var(--space-6) 0;
+  font-size: var(--fs-text-s);
+}
+
+.add-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-text-s);
+  font-weight: 600;
+}
+
+.add-confirm > span {
+  margin-right: auto;
+}
+
+@media (max-width: 719px) {
+  .dash-dock-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

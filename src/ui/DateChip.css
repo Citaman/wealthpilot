@@ -1,0 +1,32 @@
+.ui-date-chip {
+  display: inline-grid;
+  flex: none;
+  place-content: center;
+  justify-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-field);
+  background: var(--card-sunk);
+  color: var(--card-text);
+}
+
+.ui-date-chip[data-soon] {
+  background: var(--pink-soft);
+  color: var(--ink);
+}
+
+.ui-date-chip-day {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-s);
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-date-chip-month {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}

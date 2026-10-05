@@ -1,0 +1,63 @@
+.ui-disclosure-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--h-compact);
+  padding: 0 var(--space-1);
+  margin: 0 calc(-1 * var(--space-1));
+  border-radius: var(--r-bubble);
+  color: var(--card-text);
+  font-size: var(--fs-text-s);
+  font-weight: 600;
+  text-decoration: underline transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--dur-press) var(--ease);
+}
+
+.ui-disclosure-button:hover {
+  text-decoration-color: currentColor;
+}
+
+.ui-disclosure-chevron {
+  flex: none;
+  transition: rotate var(--dur-panel) var(--ease);
+}
+
+.ui-disclosure[data-open="true"]
+  > .ui-disclosure-button
+  .ui-disclosure-chevron {
+  rotate: 180deg;
+}
+
+.ui-disclosure-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows var(--dur-panel) var(--ease),
+    visibility 0s linear var(--dur-panel);
+}
+
+.ui-disclosure[data-open="true"] > .ui-disclosure-panel {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition:
+    grid-template-rows var(--dur-panel) var(--ease),
+    visibility 0s;
+}
+
+.ui-disclosure-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ui-disclosure-content {
+  padding-top: var(--space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-disclosure-panel,
+  .ui-disclosure[data-open="true"] > .ui-disclosure-panel {
+    transition: none;
+  }
+}

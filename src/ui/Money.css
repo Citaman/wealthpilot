@@ -1,0 +1,48 @@
+.ui-money {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ui-money[data-font="display"] {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+}
+
+.ui-money[data-size="hero"] {
+  font-size: var(--fs-hero);
+  line-height: var(--lh-hero);
+}
+.ui-money[data-size="xl"] {
+  font-size: var(--fs-xl);
+  line-height: var(--lh-xl);
+}
+.ui-money[data-size="l"] {
+  font-size: var(--fs-l);
+  line-height: var(--lh-l);
+}
+.ui-money[data-size="m"] {
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
+}
+.ui-money[data-size="s"] {
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+}
+.ui-money[data-size="text"] {
+  font-size: var(--fs-text);
+  font-weight: 600;
+}
+
+.ui-money[data-tone="negative"] {
+  color: var(--card-negative);
+}
+
+.ui-money[data-tone="positive"] {
+  color: var(--card-positive);
+}
+
+.ui-money[data-unknown] {
+  color: var(--card-muted);
+  cursor: help;
+}

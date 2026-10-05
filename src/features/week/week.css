@@ -1,0 +1,660 @@
+/* Dock controls sit on the ink dock: re-point the card roles they read. */
+.week-dock {
+  --card-text: var(--on-dark);
+  --card-bg: var(--dock-bg);
+  --card-sunk: var(--ink-2);
+  --card-focus: var(--on-dark);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  color: var(--on-dark);
+}
+
+.week-dock-weeks {
+  display: flex;
+  align-items: center;
+}
+
+.week-dock-label {
+  min-width: 112px;
+  padding: 0 var(--space-1);
+  text-align: center;
+  font-size: var(--fs-text-s);
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Page grid: hero, then two independent columns (⅔ envelopes + days, ⅓ tools). */
+.week {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--grid-gap);
+  align-items: start;
+}
+
+.week-hero,
+.week-days-row {
+  grid-column: 1 / -1;
+}
+
+.week-col {
+  display: grid;
+  gap: var(--grid-gap);
+  min-width: 0;
+}
+
+@media (max-width: 899px) {
+  .week {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .week-col {
+    display: contents;
+  }
+  .week-hero {
+    order: 0;
+  }
+  .week-envelopes {
+    order: 1;
+  }
+  .week-tester {
+    order: 2;
+  }
+  .week-days-row {
+    order: 3;
+  }
+  .week-charges {
+    order: 4;
+  }
+  .week-reserve {
+    order: 5;
+  }
+}
+
+@media (max-width: 719px) {
+  .week-dock {
+    flex-wrap: wrap;
+  }
+}
+
+.week-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--h-compact);
+  font-size: var(--fs-text-s);
+  font-weight: 600;
+  border-radius: var(--r-bubble);
+}
+
+.week-muted {
+  color: var(--card-muted);
+  font-size: var(--fs-text-s);
+}
+
+/* Hero ------------------------------------------------------------------- */
+.week-hero .ui-card-body {
+  gap: var(--space-5);
+}
+
+.week-hero .ui-card-motif {
+  top: -48px;
+  right: -48px;
+  width: 176px;
+}
+
+.week-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+  gap: var(--space-6) var(--space-10);
+  align-items: stretch;
+}
+
+.week-hero-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.week-hero-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.week-hero-amount {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  color: var(--card-highlight);
+}
+
+.week-hero-amount .ui-money {
+  --fs-hero: clamp(64px, 11cqi, 128px);
+}
+
+.week-hero-none {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-xl);
+  letter-spacing: var(--tracking-display);
+}
+
+.week-hero-lead {
+  color: var(--card-text);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
+  letter-spacing: var(--tracking-display);
+}
+
+.week-hero-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-text-l);
+  line-height: var(--lh-text-l);
+}
+
+.week-hero-sub a {
+  color: var(--card-text);
+}
+
+.week-hero .ui-segbar-track {
+  height: 18px;
+}
+
+.week-facts {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.week-fact {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--r-tile);
+  background: var(--card-sunk);
+}
+
+.week-fact[data-alert] {
+  box-shadow: inset 0 0 0 var(--border-pill) var(--card-threshold);
+}
+
+.week-fact dt {
+  font-size: var(--fs-text-s);
+  font-weight: 500;
+  color: var(--card-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.week-fact dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
+.week-fact-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  color: var(--card-muted);
+}
+
+.week-fact-meta .ui-badge[data-tone="estimated"] {
+  color: var(--card-text);
+}
+
+.week-calc {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--card-hairline);
+}
+
+.week-calc-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4) var(--space-6);
+}
+
+.week-calc-list dt {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--card-muted);
+}
+
+.week-calc-list dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-top: var(--space-1);
+  font-size: var(--fs-text-s);
+}
+
+.week-calc-list .ui-money {
+  font-weight: 600;
+}
+
+@container card (max-width: 760px) {
+  .week-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container card (max-width: 560px) {
+  .week-hero .ui-card-motif {
+    top: -40px;
+    right: -52px;
+    width: 128px;
+  }
+}
+
+/* Days ------------------------------------------------------------------- */
+.week-days-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-4);
+  color: var(--card-muted);
+}
+
+.week-days-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.week-days-legend span[data-kind]::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--card-text);
+}
+
+.week-days-legend span[data-kind="charge"]::before {
+  background: var(--pink-soft);
+  box-shadow: inset 0 0 0 1px var(--card-hairline);
+}
+
+.week-days-legend span[data-kind="income"]::before {
+  background: var(--cyan-soft);
+  box-shadow: inset 0 0 0 1px var(--card-hairline);
+}
+
+@container card (max-width: 640px) {
+  .week-days-legend {
+    display: none;
+  }
+}
+
+.week-day-panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--r-tile);
+  background: var(--card-sunk);
+}
+
+.week-day-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.week-day-panel-head h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+  letter-spacing: var(--tracking-display);
+}
+
+.week-ops {
+  display: grid;
+  padding: 0;
+  list-style: none;
+}
+
+.week-op {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--h-row);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--card-hairline);
+}
+
+.week-op:first-child {
+  border-top: 0;
+}
+
+.week-op-name {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: var(--fs-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.week-op-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--fs-text-s);
+  font-weight: 400;
+  color: var(--card-muted);
+}
+
+.week-op-meta > * + *::before {
+  content: "·";
+  margin-right: var(--space-2);
+}
+
+.week-op-expected {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: var(--border-dash) dashed var(--card-text);
+  border-radius: 50%;
+}
+
+.week-op > .ui-money {
+  font-weight: 600;
+}
+
+/* Envelopes -------------------------------------------------------------- */
+.week-env-list {
+  display: grid;
+  padding: 0;
+  list-style: none;
+}
+
+.week-env {
+  --bar: var(--card-text);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name amount"
+    "bar bar"
+    "subs subs"
+    "detail detail";
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--card-hairline);
+}
+
+.week-env:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.week-env-name {
+  grid-area: name;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  font-weight: 600;
+  font-size: var(--fs-text-l);
+}
+
+.week-env-name > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.week-env-amount {
+  grid-area: amount;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.week-env-amount .ui-money {
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
+}
+
+.week-env-amount-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  color: var(--card-muted);
+}
+
+.week-env[data-over] .week-env-amount-label {
+  color: var(--card-negative);
+}
+
+.week-env-bar {
+  grid-area: bar;
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: var(--card-track);
+}
+
+.week-env-bar > span[data-kind] {
+  flex: none;
+  min-width: 4px;
+  height: 100%;
+}
+
+.week-env-bar > span[data-kind]:first-child {
+  border-top-left-radius: var(--r-pill);
+  border-bottom-left-radius: var(--r-pill);
+}
+
+.week-env-bar > span[data-kind="paid"] {
+  background: var(--bar);
+  box-shadow: inset 0 0 0 1px var(--card-mark-stroke);
+}
+
+.week-env-bar > span[data-kind="committed"] {
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--card-text) 55%, transparent) 0 2px,
+    transparent 2px 5px
+  );
+  box-shadow: inset 0 0 0 1.5px
+    color-mix(in srgb, var(--card-text) 55%, transparent);
+}
+
+.week-env-bar > span[data-kind="possible"] {
+  background: color-mix(in srgb, var(--bar) 32%, var(--card-bg));
+  box-shadow: inset 0 0 0 1.5px var(--bar);
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+}
+
+.week-env-tick {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--card-text);
+}
+
+.week-env-detail {
+  grid-area: detail;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  color: var(--card-muted);
+}
+
+.week-env-limit {
+  color: var(--card-text);
+}
+
+.week-env-limit .ui-editable {
+  font-weight: 600;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+
+.week-env-proposed {
+  margin-left: auto;
+  min-height: var(--h-compact);
+  padding: 0 var(--space-2);
+  border-radius: var(--r-bubble);
+  color: var(--card-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.week-env-proposed:hover {
+  background: var(--card-sunk);
+}
+
+.week-env-list[data-idle] .week-env {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "name detail";
+  padding: var(--space-2) 0;
+}
+
+.week-env-list[data-idle] .week-env-name {
+  font-size: var(--fs-text);
+  font-weight: 500;
+}
+
+.week-env-list[data-idle] .week-env-bar,
+.week-env-list[data-idle] .week-env-amount {
+  display: none;
+}
+
+.week-env-subs {
+  grid-area: subs;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-text-s);
+}
+
+.week-env-subs li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.week-env-subs li > span:first-child {
+  font-weight: 600;
+}
+
+.week-env-subs .ui-money {
+  color: var(--card-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+}
+
+.week-env-idle {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--card-hairline);
+}
+
+.week-env-idle-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+@container card (min-width: 641px) {
+  .week-env {
+    grid-template-columns: minmax(140px, 1fr) minmax(0, 2.2fr) auto;
+    grid-template-areas:
+      "name bar amount"
+      ". subs subs"
+      ". detail detail";
+    column-gap: var(--space-6);
+  }
+  .week-env-amount {
+    justify-content: flex-end;
+    min-width: 136px;
+  }
+}
+
+/* Side column ------------------------------------------------------------ */
+.week-charge-list {
+  display: grid;
+  padding: 0;
+  list-style: none;
+}
+
+.week-charge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--h-row);
+  border-top: 1px solid var(--card-hairline);
+}
+
+.week-charge:first-child {
+  border-top: 0;
+}
+
+.week-charge-date {
+  flex: none;
+  width: 52px;
+  color: var(--card-muted);
+}
+
+.week-charge-name {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.week-charge-meta {
+  overflow: hidden;
+  font-size: var(--fs-text-s);
+  font-weight: 400;
+  color: var(--card-muted);
+  text-overflow: ellipsis;
+}
+
+.week-charge > .ui-money {
+  font-weight: 600;
+}
+
+.week-reserve .ui-card-body {
+  gap: var(--space-2);
+}

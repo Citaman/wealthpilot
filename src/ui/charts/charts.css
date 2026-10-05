@@ -1,0 +1,241 @@
+.ui-chart {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  color: var(--card-text);
+}
+
+.ui-chart svg {
+  overflow: visible;
+}
+
+.ui-chart-plot {
+  position: relative;
+  border-radius: var(--r-bubble);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ui-chart-plot[data-clickable] {
+  cursor: pointer;
+}
+
+.ui-chart-plot:focus-visible {
+  outline-offset: 4px;
+}
+
+.ui-chart-grid line {
+  stroke: var(--card-hairline);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+
+.ui-chart-grid line[data-base] {
+  stroke: color-mix(in srgb, var(--card-text) 40%, transparent);
+  stroke-dasharray: none;
+}
+
+.ui-chart-axis text,
+.ui-chart-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  fill: var(--card-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-chart-series path {
+  fill: none;
+  stroke: var(--card-text);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.ui-chart-series .ui-chart-dot {
+  fill: var(--card-text);
+}
+
+.ui-chart-series[data-kind="forecast"] path {
+  stroke: var(--card-forecast);
+  stroke-dasharray: 8 6;
+  stroke-linecap: butt;
+}
+
+.ui-chart-series[data-kind="context"] path {
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.ui-chart-gap {
+  stroke: var(--card-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+
+.ui-chart-band {
+  fill: var(--card-forecast);
+  fill-opacity: 0.14;
+  stroke: none;
+}
+
+.ui-chart-threshold line {
+  stroke: var(--card-threshold);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+
+.ui-chart-threshold text {
+  paint-order: stroke;
+  stroke: var(--card-bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  font-weight: 500;
+  fill: var(--card-threshold);
+}
+
+.ui-chart-today line {
+  stroke: var(--card-text);
+  stroke-width: 1;
+}
+
+.ui-chart-today circle {
+  fill: var(--card-text);
+  stroke: var(--card-bg);
+  stroke-width: 2;
+}
+
+.ui-chart-annotations rect {
+  fill: var(--card-tooltip-bg);
+}
+
+.ui-chart-annotations text {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  font-weight: 500;
+  fill: var(--card-tooltip-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-chart-annotations line {
+  stroke: var(--card-text);
+  stroke-width: 1;
+}
+
+.ui-chart-annotations circle {
+  fill: var(--card-text);
+  stroke: var(--card-bg);
+  stroke-width: 2;
+}
+
+.ui-chart-annotations [data-forecast] rect {
+  fill: var(--card-bg);
+  stroke: var(--card-text);
+  stroke-width: 1.5;
+}
+
+.ui-chart-annotations [data-forecast] text {
+  fill: var(--card-text);
+}
+
+.ui-chart-annotations [data-forecast] circle {
+  fill: var(--card-forecast);
+  stroke: var(--card-text);
+  stroke-width: 1.5;
+}
+
+.ui-chart-cursor line {
+  stroke: var(--card-text);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.ui-chart-cursor circle {
+  fill: var(--card-bg);
+  stroke: var(--card-text);
+  stroke-width: 2;
+}
+
+.ui-chart-cursor circle[data-kind="forecast"] {
+  stroke: var(--card-forecast);
+}
+
+.ui-chart-bubble {
+  position: absolute;
+  z-index: var(--z-raised);
+  translate: -50% -100%;
+  padding: 4px 10px;
+  border-radius: var(--r-bubble);
+  background: var(--card-tooltip-bg);
+  color: var(--card-tooltip-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ui-chart-hatch line {
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.ui-flow-bar {
+  transition: opacity var(--dur-press) var(--ease);
+}
+
+.ui-flow-bar[data-dim] {
+  opacity: 0.45;
+}
+
+.ui-flow-income {
+  fill: var(--series-1);
+  stroke: var(--card-mark-stroke);
+}
+
+.ui-flow-spending {
+  fill: var(--series-2);
+  stroke: var(--card-mark-stroke);
+}
+
+.ui-flow-bar[data-incomplete] .ui-flow-income,
+.ui-flow-bar[data-incomplete] .ui-flow-spending {
+  fill-opacity: 0.35;
+}
+
+.ui-flow-hatch {
+  color: var(--card-text);
+  opacity: 0.45;
+}
+
+.ui-flow-net-line {
+  fill: none;
+  stroke: var(--card-threshold);
+  stroke-width: 1.5;
+}
+
+.ui-flow-net {
+  fill: var(--series-3);
+  stroke: var(--card-text);
+  stroke-width: 1.5;
+}
+
+.ui-sparkline {
+  width: 100%;
+  min-width: 0;
+}
+
+.ui-sparkline path {
+  fill: none;
+  stroke: var(--card-text);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.ui-sparkline circle {
+  fill: var(--card-text);
+}

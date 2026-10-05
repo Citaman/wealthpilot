@@ -1,0 +1,176 @@
+.env {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.env[data-size="medium"] {
+  grid-template-columns: minmax(140px, 0.75fr) minmax(0, 1.25fr);
+  gap: var(--space-5);
+}
+
+.env[data-size="wide"] {
+  grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+  gap: var(--space-8);
+}
+
+.env-center-label {
+  font-size: var(--fs-text-s);
+  font-weight: 500;
+}
+
+.env-list-wrap {
+  container: envlist / inline-size;
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.env-list {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.env-row {
+  display: grid;
+  grid-template-columns: var(--space-5) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "handle head remaining"
+    ". amounts amounts"
+    ". bar bar"
+    ". subs subs";
+  column-gap: var(--space-2);
+  row-gap: 2px;
+  align-items: center;
+  padding: var(--space-2) var(--space-2) var(--space-2) 0;
+  border-radius: var(--r-field);
+  background: var(--card-bg);
+  transition: background-color var(--dur-press) var(--ease);
+}
+
+.env-row[data-active] {
+  background: var(--card-sunk);
+}
+
+.env-handle {
+  grid-area: handle;
+  display: grid;
+  place-items: center;
+  width: var(--space-6);
+  height: var(--h-icon);
+  border-radius: var(--r-bubble);
+  color: var(--card-muted);
+  opacity: 0;
+  transition: opacity var(--dur-press) var(--ease);
+}
+
+.env-row:hover .env-handle,
+.env-row:focus-within .env-handle,
+.env-handle[aria-pressed="true"] {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .env-handle {
+    opacity: 1;
+  }
+}
+
+.env-head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.env-name {
+  font-size: var(--fs-text);
+}
+
+.env-amounts {
+  grid-area: amounts;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.env-allocated {
+  font-weight: 500;
+}
+
+.env-remaining {
+  grid-area: remaining;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.env-over {
+  color: var(--card-negative);
+}
+
+.env-bar {
+  grid-area: bar;
+  min-width: 0;
+  padding-top: var(--space-1);
+}
+
+/* A roomy list puts each envelope on one line. */
+@container envlist (min-width: 520px) {
+  .env-row {
+    grid-template-columns:
+      var(--space-5) minmax(96px, 0.9fr) minmax(120px, 1.4fr)
+      minmax(112px, auto) minmax(96px, auto);
+    grid-template-areas:
+      "handle head bar amounts remaining"
+      ". subs subs subs subs";
+    column-gap: var(--space-4);
+  }
+
+  .env-bar {
+    padding-top: 0;
+  }
+
+  .env-amounts {
+    text-align: right;
+  }
+}
+
+.env-subs {
+  grid-area: subs;
+  min-width: 0;
+  overflow: hidden;
+  padding-top: var(--space-1);
+  color: var(--card-muted);
+  font-size: var(--fs-text-s);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.env-subs b {
+  color: var(--card-text);
+  font-weight: 500;
+}
+
+.env-legend {
+  display: flex;
+  padding-left: calc(var(--space-5) + var(--space-2));
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.env-legend-swatch {
+  width: 16px;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--card-text) 30%, transparent) 0 2px,
+      transparent 2px 5px
+    ),
+    var(--card-track);
+}

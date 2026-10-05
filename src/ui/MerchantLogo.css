@@ -1,0 +1,23 @@
+.ui-logo {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--logo-size);
+  height: var(--logo-size);
+  overflow: hidden;
+  /* Squircle, like app icons. */
+  border-radius: 30%;
+  background: var(--logo-bg, var(--surface));
+  color: var(--logo-fg, var(--ink));
+  box-shadow: inset 0 0 0 1px var(--card-hairline);
+}
+
+.ui-logo[data-kind="image"] {
+  background: var(--cream);
+}
+
+.ui-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

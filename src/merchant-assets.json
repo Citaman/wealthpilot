@@ -1,0 +1,433 @@
+[
+  {
+    "slug": "g20",
+    "title": "G20",
+    "hex": "E42028",
+    "src": "/merchant-assets/g20.jpg",
+    "source": "https://www.supermarchesg20.com/favicon.jpg"
+  },
+  {
+    "slug": "free-fr",
+    "title": "Free",
+    "hex": "CD1719",
+    "src": "/merchant-assets/free.png",
+    "source": "https://mobile.free.fr/static/favicons/favicon-196x196.png"
+  },
+  {
+    "slug": "societe-generale",
+    "title": "Société Générale",
+    "hex": "E60028",
+    "src": "/merchant-assets/sg.svg",
+    "source": "https://particuliers.sg.fr/static/Resources/img/logo_SG.svg"
+  },
+  {
+    "slug": "amazon",
+    "title": "Amazon",
+    "hex": "FF9900",
+    "src": "/merchant-assets/amazon.svg",
+    "source": "https://github.com/simple-icons/simple-icons/blob/13.0.0/icons/amazon.svg"
+  },
+  {
+    "slug": "maif",
+    "title": "MAIF",
+    "hex": "25221D",
+    "src": "/merchant-assets/maif.png",
+    "source": "https://www.maif.fr/static/editorial/7.0.0/img/rwd/apple-touch-icon-120x120.png",
+    "website": "https://www.maif.fr/"
+  },
+  {
+    "slug": "edf",
+    "title": "EDF",
+    "hex": "25221D",
+    "src": "/merchant-assets/edf.png",
+    "source": "https://www.edf.fr/favicon/default/apple-touch-icon.png",
+    "website": "https://www.edf.fr/"
+  },
+  {
+    "slug": "paul",
+    "title": "Paul",
+    "hex": "25221D",
+    "src": "/merchant-assets/paul.ico",
+    "source": "https://www.paul.fr/media/favicon/stores/1/favicon.ico",
+    "website": "https://www.paul.fr/"
+  },
+  {
+    "slug": "caf",
+    "title": "CAF",
+    "hex": "25221D",
+    "src": "/merchant-assets/caf.ico",
+    "source": "https://www.caf.fr/themes/custom/caf_bootstrap5/favicon.ico",
+    "website": "https://www.caf.fr/"
+  },
+  {
+    "slug": "fitnesspark",
+    "title": "Fitness Park",
+    "hex": "25221D",
+    "src": "/merchant-assets/fitnesspark.png",
+    "source": "https://www.fitnesspark.fr/themes/custom/zest/favicon.ico",
+    "website": "https://www.fitnesspark.fr/"
+  },
+  {
+    "slug": "primark",
+    "title": "Primark",
+    "hex": "25221D",
+    "src": "/merchant-assets/primark.ico",
+    "source": "https://www.primark.com/favicon.ico",
+    "website": "https://www.primark.com/fr-fr"
+  },
+  {
+    "slug": "cardif",
+    "title": "Cardif",
+    "hex": "25221D",
+    "src": "/merchant-assets/cardif.ico",
+    "source": "https://www.cardif.fr/o/bpc-pcf-cardiffr-theme/images/favicon.ico",
+    "website": "https://www.cardif.fr/"
+  },
+  {
+    "slug": "selecta",
+    "title": "Selecta",
+    "hex": "25221D",
+    "src": "/merchant-assets/selecta.ico",
+    "source": "https://www.selecta.com/.resources/rebrush/webresources/img/selecta-favicon.ico",
+    "website": "https://www.selecta.com/fr/fr"
+  },
+  {
+    "slug": "qare",
+    "title": "Qare",
+    "hex": "25221D",
+    "src": "/merchant-assets/qare.png",
+    "source": "https://www.qare.fr/home-assets/favicon.png",
+    "website": "https://www.qare.fr/"
+  },
+  {
+    "slug": "totalenergies",
+    "title": "TotalEnergies",
+    "hex": "25221D",
+    "src": "/merchant-assets/totalenergies.png",
+    "source": "https://totalenergies.com/themes/custom/totalenergies_com/dist/img/favicon.png",
+    "website": "https://totalenergies.com/"
+  },
+  {
+    "slug": "quick",
+    "title": "Quick",
+    "hex": "25221D",
+    "src": "/merchant-assets/quick.png",
+    "source": "https://www.quick.fr/_next/static/images/favicon-441b5b1756b2711390c36dc526ae6fb4.png",
+    "website": "https://www.quick.fr/"
+  },
+  {
+    "slug": "ivs",
+    "title": "IVS France",
+    "hex": "25221D",
+    "src": "/merchant-assets/ivs.png",
+    "source": "https://www.ivsfrance.com/wp-content/uploads/sites/13/2018/07/Favicon_IVS_Group_128x128.png",
+    "website": "https://www.ivsfrance.com/"
+  },
+  {
+    "slug": "laposte",
+    "title": "La Poste",
+    "hex": "25221D",
+    "src": "/merchant-assets/laposte.ico",
+    "source": "https://www.laposte.fr/ecom/favicon.ico",
+    "website": "https://www.laposte.fr/"
+  },
+  {
+    "slug": "effia",
+    "title": "Effia",
+    "hex": "25221D",
+    "src": "/merchant-assets/effia.png",
+    "source": "https://www.effia.com/themes/custom/effia_theme/faviconv2.png",
+    "website": "https://www.effia.com/"
+  },
+  {
+    "slug": "orpi",
+    "title": "ORPI",
+    "hex": "25221D",
+    "src": "/merchant-assets/orpi.png",
+    "source": "https://www.orpi.com/apple-touch-icon.png?a908cc8707",
+    "website": "https://www.orpi.com/"
+  },
+  {
+    "slug": "pathe",
+    "title": "Pathé",
+    "hex": "25221D",
+    "src": "/merchant-assets/pathe.png",
+    "source": "https://www.pathe.fr/assets/custom/icons/favicon-152.png",
+    "website": "https://www.pathe.fr/"
+  },
+  {
+    "slug": "transdev",
+    "title": "Transdev",
+    "hex": "25221D",
+    "src": "/merchant-assets/transdev.png",
+    "source": "https://www.transdev.com/favicon/apple-touch-icon.png",
+    "website": "https://www.transdev.com/"
+  },
+  {
+    "slug": "normal",
+    "title": "NORMAL",
+    "hex": "25221D",
+    "src": "/merchant-assets/normal.png",
+    "source": "https://www.normalstores.com/favicon-32x32.png",
+    "website": "https://www.normal.fr/"
+  },
+  {
+    "slug": "naumy",
+    "title": "Naumy",
+    "hex": "25221D",
+    "src": "/merchant-assets/naumy.png",
+    "source": "https://naumy.com/cdn/shop/files/Design_sans_titre_36.png?crop=center&height=180&v=1705661174&width=180",
+    "website": "https://www.naumy.com/"
+  },
+  {
+    "slug": "avia",
+    "title": "Avia",
+    "hex": "25221D",
+    "src": "/merchant-assets/avia.png",
+    "source": "https://www.avia-france.fr/wp-content/uploads/2024/12/cropped-AVIA_International_logo_couleur-180x180.png",
+    "website": "https://www.avia-france.fr/"
+  },
+  {
+    "slug": "deichmann",
+    "title": "Deichmann",
+    "hex": "25221D",
+    "src": "/merchant-assets/deichmann.png",
+    "source": "https://www.deichmann.com/fr-fr/assets/concepts/DSE/icons/apple-touch-icon-57x57.png",
+    "website": "https://www.deichmann.com/fr-fr/"
+  },
+  {
+    "slug": "jdsports",
+    "title": "JD Sports",
+    "hex": "25221D",
+    "src": "/merchant-assets/jdsports.png",
+    "source": "https://www.jdsports.fr/skins/jdsports-desktop/public/img/icons/app/apple-touch-icon-57x57.png",
+    "website": "https://www.jdsports.fr/"
+  },
+  {
+    "slug": "phantasialand",
+    "title": "Phantasialand",
+    "hex": "25221D",
+    "src": "/merchant-assets/phantasialand.png",
+    "source": "https://static.phlcdn.de/files/theme/images/favicons/apple-touch-icon.png",
+    "website": "https://www.phantasialand.de/fr/"
+  },
+  {
+    "slug": "centerparcs",
+    "title": "Center Parcs",
+    "hex": "25221D",
+    "src": "/merchant-assets/centerparcs.png",
+    "source": "https://www.centerparcs.fr/images/favicon/72-CP.png",
+    "website": "https://www.centerparcs.fr/"
+  },
+  {
+    "slug": "autobacs",
+    "title": "Autobacs",
+    "hex": "25221D",
+    "src": "/merchant-assets/autobacs.png",
+    "source": "https://www.autobacs.fr/Assets/272726/Theme/Project/Autobacs/img/favicon/apple-touch-icon.png",
+    "website": "https://www.autobacs.fr/"
+  },
+  {
+    "slug": "flunch",
+    "title": "Flunch",
+    "hex": "25221D",
+    "src": "/merchant-assets/flunch.png",
+    "source": "https://www.flunch.fr/wp-content/uploads/2023/05/a1d79-moxvj.png",
+    "website": "https://www.flunch.fr/"
+  },
+  {
+    "slug": "calzedonia",
+    "title": "Calzedonia",
+    "hex": "25221D",
+    "src": "/merchant-assets/calzedonia.ico",
+    "source": "https://www.calzedonia.com/mobify/bundle/2295/static/ico/favicon.ico",
+    "website": "https://www.calzedonia.com/fr/"
+  },
+  {
+    "slug": "rituals",
+    "title": "Rituals",
+    "hex": "25221D",
+    "src": "/merchant-assets/rituals.ico",
+    "source": "https://www.rituals.com/favicon.ico",
+    "website": "https://www.rituals.com/fr-fr/"
+  },
+  {
+    "slug": "lunettespourtous",
+    "title": "Lunettes Pour Tous",
+    "hex": "25221D",
+    "src": "/merchant-assets/lunettespourtous.png",
+    "source": "https://lunettespourtous.com/cdn/shop/files/cropped-Favicon-32x32-min_32x32.png?v=1649405455",
+    "website": "https://lunettespourtous.com/"
+  },
+  {
+    "slug": "gifi",
+    "title": "GiFi",
+    "hex": "25221D",
+    "src": "/merchant-assets/gifi.png",
+    "source": "https://www.gifi.fr/on/demandware.static/Sites-GIFI_FR-Site/-/default/dw1edcfe52/images/favicons/favicon-96x96.png",
+    "website": "https://www.gifi.fr/"
+  },
+  {
+    "slug": "maxicoffee",
+    "title": "MaxiCoffee",
+    "hex": "25221D",
+    "src": "/merchant-assets/maxicoffee.png",
+    "source": "https://www.maxicoffee.com/on/demandware.static/Sites-MaxiCoffee-FR-Site/-/default/dw93fdc533/images/apple-touch-icon-180.png",
+    "website": "https://www.maxicoffee.com/"
+  },
+  {
+    "slug": "5asec",
+    "title": "5àsec",
+    "hex": "25221D",
+    "src": "/merchant-assets/5asec.jpg",
+    "source": "https://www.5asec.fr/wp-content/uploads/2025/07/cropped-2ef357c8-3e4e-45aa-894c-853aff32b063-5asecfavicon16x16-180x180.jpg",
+    "website": "https://www.5asec.fr/"
+  },
+  {
+    "slug": "buffalogrill",
+    "title": "Buffalo Grill",
+    "hex": "25221D",
+    "src": "/merchant-assets/buffalogrill.ico",
+    "source": "https://www.buffalo-grill.fr/themes/custom/buffalo/favicon.ico",
+    "website": "https://www.buffalo-grill.fr/"
+  },
+  {
+    "slug": "miniso",
+    "title": "MINISO",
+    "hex": "25221D",
+    "src": "/merchant-assets/miniso.png",
+    "source": "https://www.miniso.com/vancheerfile/Images/2024/3/20240309150930294.png",
+    "website": "https://www.miniso.com/"
+  },
+  {
+    "slug": "tezenis",
+    "title": "Tezenis",
+    "hex": "25221D",
+    "src": "/merchant-assets/tezenis.ico",
+    "source": "https://www.tezenis.com/on/demandware.static/Sites-tezenis-fr-Site/-/default/dwb537abf0/images/favicon.ico",
+    "website": "https://www.tezenis.com/fr/"
+  },
+  {
+    "slug": "moviepark",
+    "title": "Movie Park Germany",
+    "hex": "25221D",
+    "src": "/merchant-assets/moviepark.png",
+    "source": "https://www.movieparkgermany.de/content/dam/mpg/logos/30_Logo_MPG.png",
+    "website": "https://www.movieparkgermany.de/"
+  },
+  {
+    "slug": "shein",
+    "title": "SHEIN",
+    "hex": "25221D",
+    "src": "/merchant-assets/shein.png",
+    "source": "https://sc.ltwebstatic.com/she_dist/images/touch-icon-ipad-72-452a7213ef.png",
+    "website": "https://fr.shein.com/"
+  },
+  {
+    "slug": "hylton",
+    "title": "Hylton",
+    "hex": "25221D",
+    "src": "/merchant-assets/hylton.ico",
+    "source": "https://www.hylton.fr/img/favicon.ico?1767717652",
+    "website": "https://www.hylton.fr/"
+  },
+  {
+    "slug": "kiabi",
+    "title": "Kiabi",
+    "hex": "100C3C",
+    "src": "/merchant-assets/kiabi.ico",
+    "source": "https://www.kiabi.com/favicon.ico",
+    "website": "https://www.kiabi.com/",
+    "verification": "Official root favicon HTTP200. Visually reviewed: new outlined white K on dark blue square. Corporate primary source confirms new K identity: https://fr.linkedin.com/posts/kiabi_transformation-kiabifamily-newlogokiabi-activity-7402282028995420160-CDoF . Preview conversion only in kiabi-preview.png."
+  },
+  {
+    "slug": "chaussea",
+    "title": "Chaussea",
+    "hex": "01ACBA",
+    "src": "/merchant-assets/chaussea.png",
+    "source": "https://blog.chaussea.com/wp-content/uploads/2023/09/cropped-favicon-192x192.png",
+    "website": "https://blog.chaussea.com/",
+    "verification": "Declared 192x192 favicon on official blog, itself linked from https://www.chaussea.com/en/content/17-about-us . Visually reviewed: white C and cyan dot on charcoal. Actual mark low-resolution within supplied192px asset."
+  },
+  {
+    "slug": "ratp",
+    "title": "RATP",
+    "hex": "08006B",
+    "src": "/merchant-assets/ratp.ico",
+    "source": "https://www.ratp.fr/favicon.ico",
+    "website": "https://www.ratp.fr/",
+    "verification": "Official root favicon HTTP200. Visually inspected100px: white RATP profile on dark blue."
+  },
+  {
+    "slug": "decathlon",
+    "title": "Decathlon",
+    "hex": "3643BA",
+    "src": "/merchant-assets/decathlon.ico",
+    "source": "https://www.decathlon.fr/favicon.ico",
+    "website": "https://www.decathlon.fr/",
+    "verification": "Official root favicon HTTP200. Visually inspected: new white orbit/D mark on blue,16px source."
+  },
+  {
+    "slug": "action",
+    "title": "Action",
+    "hex": "005AA8",
+    "src": "/merchant-assets/action.ico",
+    "source": "https://www.action.com/favicons/favicon.ico",
+    "website": "https://www.action.com/fr-fr/",
+    "verification": "Official root favicon redirects within same domain to favicons directory. Visually inspected32px: blue Action A with stripes."
+  },
+  {
+    "slug": "hyatt",
+    "title": "Hyatt",
+    "hex": "006ECC",
+    "src": "/merchant-assets/hyatt.ico",
+    "source": "https://www.hyatt.com/favicon.ico",
+    "website": "https://www.hyatt.com/",
+    "verification": "Official root favicon HTTP200. Visually inspected32px: white H on blue."
+  },
+  {
+    "slug": "yvesrocher",
+    "title": "Yves Rocher",
+    "hex": "006A42",
+    "src": "/merchant-assets/yvesrocher.ico",
+    "source": "https://www.yves-rocher.fr/favicon.ico",
+    "website": "https://www.yves-rocher.fr/",
+    "verification": "Official root favicon HTTP200. Visually inspected32px: circular Yves Rocher emblem white on green."
+  },
+  {
+    "slug": "veolia",
+    "title": "Veolia",
+    "hex": "EC0016",
+    "src": "/merchant-assets/veolia.ico",
+    "source": "https://www.veolia.com/themes/custom/veo_site/src/assets/icons/favicon.ico",
+    "website": "https://www.veolia.com/fr",
+    "verification": "Favicon declared by official corporate page, HTTP200. Visually inspected: red Veolia circular mark,64px preview."
+  },
+  {
+    "slug": "sogessur",
+    "title": "Sogessur — Société Générale Assurances",
+    "hex": "E60028",
+    "src": "/merchant-assets/sogessur.png",
+    "source": "https://www.assurances.societegenerale.com/typo3conf/ext/bi_template/themes/default/res/favicon/favicon-196.png",
+    "website": "https://www.assurances.societegenerale.com/fr/particulier/",
+    "verification": "Official196px favicon, visually inspected SG red/black square. Legal identity confirmed by https://www.assurances.societegenerale.com/fr/particulier/footer/mentions-legales/ explicitly naming Société Générale Assurances as commercial brand of Sogessur. NOT an assertion that every SG transaction is insurance."
+  },
+  {
+    "slug": "idfm",
+    "title": "Île-de-France Mobilités",
+    "hex": "6EB4E6",
+    "src": "/merchant-assets/idfm.png",
+    "source": "https://presse.iledefrance-mobilites.fr/wp-content/themes/idf-mobilite/assets/img/favicon.png",
+    "website": "https://presse.iledefrance-mobilites.fr/",
+    "verification": "Declared favicon of official press site, HTTP200. Visually inspected: white walking figure on sky blue,32px. Authority icon, not the Navigo wordmark."
+  },
+  {
+    "slug": "intersport",
+    "title": "Intersport",
+    "hex": "003B75",
+    "src": "/merchant-assets/intersport.png",
+    "source": "https://newsroom.intersport.de/hubfs/Intersport%20Newsroom%20Favicon.png",
+    "website": "https://newsroom.intersport.de/mediathek/logos",
+    "verification": "Declared favicon from official Intersport German newsroom logos page,HTTP200. Visually inspected48px: standard red circle and blue slope Intersport mark, no country suffix."
+  }
+]

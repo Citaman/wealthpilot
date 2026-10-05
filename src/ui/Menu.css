@@ -1,0 +1,39 @@
+.ui-menu-item {
+  font-weight: 500;
+}
+
+.ui-menu-icon {
+  display: inline-flex;
+  flex: none;
+  width: 16px;
+  color: var(--text-muted);
+}
+
+.ui-menu-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ui-menu-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.ui-menu-meta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-menu-item[data-destructive] {
+  color: var(--negative);
+}
+
+.ui-menu-item[data-destructive] .ui-menu-icon {
+  color: inherit;
+}
+
+.ui-menu-item[data-destructive][data-highlighted] {
+  background: var(--negative-bg);
+}

@@ -1,0 +1,89 @@
+.ui-editable {
+  display: inline-flex;
+  align-items: baseline;
+  max-width: 100%;
+  padding: 4px;
+  min-width: 28px;
+  min-height: 26px;
+  margin: -4px;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted transparent;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color var(--dur-press) var(--ease);
+  cursor: text;
+}
+
+.ui-editable:hover,
+.ui-editable:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+.ui-editable-pen {
+  flex: none;
+  align-self: center;
+  margin-left: 4px;
+  opacity: 0;
+  transition: opacity var(--dur-press) var(--ease);
+}
+
+.ui-editable:hover .ui-editable-pen,
+.ui-editable:focus-visible .ui-editable-pen {
+  opacity: 0.8;
+}
+
+@media (hover: none) {
+  .ui-editable-pen {
+    opacity: 0.5;
+  }
+}
+
+.ui-editable-field {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: baseline;
+  max-width: 100%;
+}
+
+.ui-editable-input {
+  field-sizing: content;
+  max-width: 100%;
+  padding: 0 2px;
+  margin: 0 -2px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--card-field);
+  color: var(--card-text);
+  font: inherit;
+  line-height: inherit;
+  outline: var(--focus-width) solid var(--card-focus);
+  outline-offset: 1px;
+}
+
+.ui-editable-input[aria-invalid="true"] {
+  outline-color: var(--card-negative);
+}
+
+.ui-editable-input[aria-busy="true"] {
+  opacity: 0.6;
+}
+
+.ui-editable-error {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: var(--z-raised);
+  padding: 2px 8px;
+  border-radius: var(--r-bubble);
+  background: var(--card-negative);
+  color: var(--card-on-negative);
+  font-family: var(--font-text);
+  font-size: var(--fs-mono);
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: var(--lh-mono);
+  white-space: nowrap;
+}
