@@ -235,6 +235,8 @@ export interface Preferences {
   categoryRules?: CategoryRule[];
   /** Display names for accounts; the account id itself is part of fingerprints. */
   accountAliases?: Record<string, string>;
+  /** « Notre plan » settings (bill split, recovery effort, allowances). */
+  plan?: import("./plan").PlanSettings;
   extraGoals?: Goal[];
 
   // Legacy fields: preserved verbatim, never interpreted by v2.

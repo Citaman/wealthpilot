@@ -196,3 +196,15 @@ html {
 body:has(.page:not([hidden]) .tx-selbar) .toast-host {
   bottom: calc(var(--dock-h, 88px) + 96px);
 }
+
+@media (max-width: 719px) {
+  .dock-link {
+    padding: 0 2px;
+    font-size: 10px;
+  }
+  .dock-link span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

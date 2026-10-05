@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 
-export const pages = ["dashboard", "week", "transactions", "import"] as const;
+export const pages = [
+  "dashboard",
+  "week",
+  "plan",
+  "transactions",
+  "import",
+] as const;
 export type Page = (typeof pages)[number];
 
 export interface Route {
@@ -11,6 +17,7 @@ export interface Route {
 const paths: Record<Page, string> = {
   dashboard: "",
   week: "semaine",
+  plan: "plan",
   transactions: "transactions",
   import: "import",
 };

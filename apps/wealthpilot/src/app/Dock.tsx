@@ -1,4 +1,4 @@
-import { CalendarRange, House, List, Upload } from "lucide-react";
+import { CalendarRange, House, List, Sprout, Upload } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { hrefFor, navigate, pages, type Page } from "./router";
 import "./shell.css";
@@ -6,6 +6,7 @@ import "./shell.css";
 const items: Record<Page, { label: string; icon: ReactNode }> = {
   dashboard: { label: "Dashboard", icon: <House size={20} aria-hidden /> },
   week: { label: "Ma semaine", icon: <CalendarRange size={20} aria-hidden /> },
+  plan: { label: "Notre plan", icon: <Sprout size={20} aria-hidden /> },
   transactions: { label: "Transactions", icon: <List size={20} aria-hidden /> },
   import: { label: "Import CSV", icon: <Upload size={20} aria-hidden /> },
 };

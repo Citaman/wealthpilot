@@ -11,6 +11,7 @@ import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { ImportPage } from "../features/import/ImportPage";
 import { TransactionsPage } from "../features/transactions/TransactionsPage";
 import { WeekPage } from "../features/week/WeekPage";
+import { PlanPage } from "../features/plan/PlanPage";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
 import { Skeleton } from "../ui/Skeleton";
 import { ToastView } from "../ui/ToastView";
@@ -31,6 +32,7 @@ export interface PageProps {
 const components: Record<Page, ComponentType<PageProps>> = {
   dashboard: DashboardPage,
   week: WeekPage,
+  plan: PlanPage,
   transactions: TransactionsPage,
   import: ImportPage,
 };
@@ -38,6 +40,7 @@ const components: Record<Page, ComponentType<PageProps>> = {
 const titles: Record<Page, string> = {
   dashboard: "Dashboard",
   week: "Ma semaine",
+  plan: "Notre plan",
   transactions: "Transactions",
   import: "Import CSV",
 };
