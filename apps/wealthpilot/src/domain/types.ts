@@ -4,6 +4,7 @@
 export type Cents = number;
 /** Calendar date `YYYY-MM-DD`, never a timestamp. */
 export type IsoDate = string;
+export type { DateRange } from "./dates";
 
 export interface Transaction {
   id: string;

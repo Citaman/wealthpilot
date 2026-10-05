@@ -79,3 +79,9 @@ export function median(values: readonly number[]): number {
       : (sorted[middle - 1] + sorted[middle]) / 2,
   );
 }
+
+/** Upper of the two middle values. Kept where income-period and recurrence
+ * detection used it, so existing budget-month boundaries do not move. */
+export function upperMedian(values: readonly number[]): number {
+  return [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+}
