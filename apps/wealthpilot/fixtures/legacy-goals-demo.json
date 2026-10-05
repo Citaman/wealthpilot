@@ -1,0 +1,1 @@
+{"meta":{"formatVersion":1},"tables":{"goals":[{"id":42,"name":"Apport maison","targetAmount":25000,"currentAmount":0,"linkedAccountId":7,"deadline":"2028-06-01","description":"Projet familial fictif","isActive":true},{"id":43,"name":"iPhone","targetAmount":1200,"currentAmount":450,"isActive":true}],"accounts":[{"id":7,"name":"Épargne maison","balance":6200}],"budgets":[]}}

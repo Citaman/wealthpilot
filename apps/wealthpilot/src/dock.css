@@ -1,0 +1,260 @@
+.wp-dock {
+  position: fixed;
+  z-index: 80;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  color: #f5f0e5;
+  font-family: inherit;
+}
+.wp-dock button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: none;
+}
+.wp-dock-bar {
+  display: flex;
+  align-items: center;
+  padding: 7px;
+  gap: 10px;
+  background: #28251f;
+  color: #f5f0e5;
+  border: 1px solid #544f44;
+  border-radius: 26px;
+}
+.dock-navigation,
+.dock-context,
+.dock-filters,
+.dock-page-actions,
+.dock-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.dock-navigation {
+  flex-shrink: 0;
+}
+.dock-filters {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dock-filters > .select-trigger,
+.dock-filters > .period-start {
+  flex-shrink: 0;
+}
+.dock-context {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding-right: 5px;
+}
+.dock-divider {
+  width: 1px;
+  height: 38px;
+  background: #716858;
+  flex: 0 0 1px;
+}
+.dock-page-actions:empty {
+  display: none;
+}
+.wp-dock-bar .wp-dock-slot > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 80px;
+  min-height: 59px;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  border-radius: 19px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.wp-dock-bar button:focus-visible,
+.wp-dock-bar summary:focus-visible,
+.wp-dock-bar input:focus-visible {
+  outline: 3px solid #f5c844;
+  outline-offset: 2px;
+}
+.wp-dock
+  .wp-dock-bar
+  button:hover:not(:disabled):not(.dock-confirm):not([aria-current="page"]):not(
+    [aria-pressed="true"]
+  ) {
+  background: #494336;
+}
+.wp-dock-bar .wp-dock-slot > button[aria-current="page"],
+.wp-dock-bar .dock-confirm {
+  background: #f5c844;
+  color: #28251f;
+}
+.wp-dock-bar .wp-dock-slot > button[aria-current="page"]:hover,
+.wp-dock .dock-confirm:hover:not(:disabled) {
+  background: #f5d775;
+}
+.wp-dock .dock-action,
+.wp-dock .select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  padding: 9px 11px;
+  background: transparent;
+  color: #f5f0e5;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.wp-dock .select-trigger {
+  max-width: 180px;
+}
+.wp-dock .select-trigger[data-state="open"] {
+  background: #494336;
+  border-color: #a39884;
+}
+.wp-dock .dock-confirm {
+  background: #f5c844;
+  color: #28251f;
+}
+.wp-dock .dock-action:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.wp-dock .period-start {
+  margin: 0;
+  gap: 1px;
+}
+.wp-dock .period-start > span {
+  font-size: 9px;
+  color: #cdc3b1;
+  padding-left: 11px;
+}
+.wp-dock .period-start .select-trigger {
+  min-height: 30px;
+  padding-block: 3px;
+}
+.wp-dock .week-navigation {
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.wp-dock .week-navigation .segmented {
+  background: #1e1c18;
+  border-color: #655d50;
+  padding: 3px;
+}
+.wp-dock .week-navigation .segmented button {
+  min-height: 34px;
+  min-width: 116px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: #f5f0e5;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.wp-dock .week-navigation .segmented button[aria-pressed="true"] {
+  background: #f5f0e5;
+  color: #28251f;
+}
+.wp-dock .week-date-picker {
+  position: relative;
+}
+.wp-dock .week-date-picker summary {
+  min-height: 42px;
+  padding: 9px;
+  border-radius: 13px;
+}
+.wp-dock .week-date-picker summary:hover {
+  background: #494336;
+}
+.wp-dock .week-date-picker .field {
+  position: absolute;
+  bottom: calc(100% + 20px);
+  right: 0;
+  min-width: 220px;
+  max-width: calc(100vw - 40px);
+  padding: 16px;
+  border: 1px solid #28251f;
+  border-radius: 16px;
+  background: #f7f1e6;
+  color: #28251f;
+}
+@media (max-width: 1050px) {
+  .wp-dock-bar {
+    gap: 6px;
+  }
+  .wp-dock-bar .wp-dock-slot > button {
+    min-width: 65px;
+    padding-inline: 7px;
+    font-size: 10px;
+  }
+  .wp-dock .select-trigger {
+    max-width: 150px;
+  }
+  .wp-dock .dock-action,
+  .wp-dock .select-trigger {
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 760px) {
+  .wp-dock {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 16px);
+  }
+  .wp-dock-bar {
+    flex-direction: column;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 22px;
+  }
+  .dock-navigation {
+    width: 100%;
+    justify-content: center;
+  }
+  .dock-divider {
+    width: calc(100% - 20px);
+    height: 1px;
+    flex-basis: 1px;
+  }
+  .dock-context {
+    padding: 0 3px 3px;
+    gap: 3px;
+  }
+  .dock-filters {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+  }
+  .wp-dock-bar .wp-dock-slot > button {
+    min-width: 68px;
+    width: 100%;
+    padding: 6px;
+    font-size: 10px;
+    min-height: 50px;
+    border-radius: 16px;
+  }
+  .wp-dock-bar .wp-dock-slot {
+    flex: 1;
+  }
+  .wp-dock .select-trigger {
+    max-width: 135px;
+    min-height: 36px;
+  }
+  .wp-dock .dock-action {
+    min-height: 36px;
+    padding-block: 6px;
+  }
+}

@@ -1,0 +1,83 @@
+.chart-event-list {
+  margin-top: 10px;
+  min-width: 0;
+}
+.chart-event-entry {
+  border-top: 1px solid var(--line, #bcb4a2);
+}
+.chart-event-toggle {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(65px, 0.75fr) minmax(0, 1.5fr) minmax(
+      70px,
+      1fr
+    ) 16px;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 4px;
+  background: transparent;
+  color: inherit;
+}
+.chart-event-toggle[aria-expanded="true"] {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.chart-event-toggle span {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.chart-event-toggle strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.chart-day-detail {
+  padding: 0 8px 12px;
+}
+.chart-day-detail h3 {
+  font-size: 17px;
+}
+.chart-day-detail p {
+  font-size: 12px;
+}
+.chart-day-detail ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.chart-day-detail li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line, #bcb4a2);
+  font-size: 13px;
+}
+.chart-day-detail li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.chart-day-detail li small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+}
+.chart-day-detail li > strong {
+  white-space: nowrap;
+}
+.chart-event-heading {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 12px;
+}
+.chart-wrap:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 8px;
+}

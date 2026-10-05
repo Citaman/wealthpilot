@@ -1,5 +1,7 @@
 # Kontrol Fin (WIP) — Designer Brief
 
+> **Archive — 2 octobre 2026.** Nom et direction historiques. Le produit s'appelle WealthPilot ; le [Brief WealthPilot](../BRIEF_WEALTHPILOT.md) définit la nouvelle expérience et la direction Rime.
+
 Working title: **Kontrol Fin (WIP)** (internal repo name: WealthPilot).  
 Scope: current product only (exclude any `/lab` experiments).
 

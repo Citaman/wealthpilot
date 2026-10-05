@@ -1,0 +1,46 @@
+{
+  "name": "wealthpilot-next",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/sync-brands.mjs && node scripts/sync-references.mjs",
+    "prebuild": "node scripts/sync-brands.mjs && node scripts/sync-references.mjs",
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "pretest": "node scripts/sync-brands.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write src scripts *.ts *.json",
+    "format:check": "prettier --check src scripts *.ts *.json"
+  },
+  "dependencies": {
+    "@fontsource/barlow-condensed": "5.2.8",
+    "@fontsource/dm-sans": "5.2.8",
+    "@radix-ui/react-dialog": "1.1.15",
+    "@radix-ui/react-select": "^2.3.7",
+    "dexie": "4.2.1",
+    "dexie-react-hooks": "4.2.0",
+    "lucide-react": "0.562.0",
+    "papaparse": "5.5.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-grid-layout": "2.2.2",
+    "simple-icons": "^16.33.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22",
+    "@types/papaparse": "5.5.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "fake-indexeddb": "6.2.5",
+    "jsdom": "27.4.0",
+    "prettier": "3.6.2",
+    "typescript": "^5.9.3",
+    "vite": "7.3.6",
+    "vitest": "4.1.11"
+  }
+}

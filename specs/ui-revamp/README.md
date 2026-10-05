@@ -1,5 +1,9 @@
 # WealthPilot UI Revamp (Bank‑Grade)
 
+> **Archive — 2 octobre 2026.** Le [Brief WealthPilot](../../BRIEF_WEALTHPILOT.md) remplace ce cadrage et le prototype mentionné ci-dessous. Le style bancaire historique n'est plus la direction par défaut.
+
+> **30 septembre 2026 : reference historique.** La reconstruction demandee repart d'une base neuve et privilegie le design system et les parcours UI/UX. Les contraintes de preservation de l'ancien moteur ne s'appliquent plus. Voir le [referentiel de reconstruction](../rebuild/README.md).
+
 **Last updated**: January 21, 2026
 
 This spec set defines a UI/UX revamp that makes WealthPilot feel like a modern Fortune‑500 bank product: calm, trustworthy, fast, and “operationally excellent”.

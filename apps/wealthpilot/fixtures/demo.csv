@@ -1,0 +1,14 @@
+date;account;amount;direction;merchant;libelle;category;is_internal;currency
+2026-09-01;Compte courant;2400;income;Salaire;Salaire septembre;Revenus;N;EUR
+2026-09-03;Compte courant;950;expense;Loyer;Loyer septembre;Logement;N;EUR
+2026-09-05;Compte courant;400;expense;Virement commun;Virement au compte commun;Virements;Y;EUR
+2026-09-05;Compte commun;400;income;Virement commun;Virement depuis compte courant;Virements;Y;EUR
+2026-09-08;Compte commun;180;expense;Épicerie;Courses semaine;Courses;N;EUR
+2026-09-12;Compte courant;48;expense;Le Comptoir;Restaurant samedi;Sorties;N;EUR
+2026-09-16;Compte courant;28;expense;SNCF;Billet train;Transport;N;EUR
+2026-09-19;Compte commun;200;expense;Marché;Courses du foyer;Courses;N;EUR
+2026-09-22;Compte courant;10.99;expense;Spotify;Abonnement musique;Abonnements;N;EUR
+2026-09-25;Compte courant;72;expense;Restaurant;Dîner;Sorties;N;EUR
+2026-09-28;Compte commun;100;expense;Épicerie;Courses;Courses;N;EUR
+2026-09-28;Compte courant;22;expense;SNCF;Billet;Transport;N;EUR
+

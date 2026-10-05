@@ -1,5 +1,38 @@
 # 💰 WealthPilot
 
+> **3 octobre 2026 — dashboard modulaire, transactions et import disponibles.** Le plan actif et l'état de livraison sont dans le [Brief WealthPilot](BRIEF_WEALTHPILOT.md). L'application historique est conservée, sans suppression de ses données.
+
+## Démarrer la nouvelle application
+
+Depuis la racine du dépôt, avec Node.js 22.12+ :
+
+```bash
+npm --prefix apps/wealthpilot ci
+npm run dev:pilot
+```
+
+Ouvrir **http://127.0.0.1:5173/**. Importer un CSV, vérifier les colonnes et les lignes, puis renseigner les soldes bancaires datés. Un relevé d'opérations ne suffit pas à connaître un solde réel. Toujours revenir à cette même adresse : les données sont locales au navigateur et à l'origine.
+
+Sans opérations, l'application ouvre directement l'import. Après le premier import, elle propose des enveloppes à partir des trois derniers mois observés, du minimum de trésorerie souhaité et des contributions aux projets. Vérifier ces propositions avant validation. Les récurrences hebdomadaires/mensuelles sont estimées et peuvent être ignorées ; aucune opération bancaire n'est créée par ces estimations.
+
+**Organiser mon dashboard** permet de déplacer les cartes directement (poignée ou clavier), puis de choisir leur taille et leur couleur sur la carte active. Terminer sauvegarde, Annuler retrouve la disposition précédente. Le catalogue signale les informations déjà présentes ; les deux anciens blocs utilitaires Configuration/Bibliothèque ne sont plus proposés comme cartes financières. Les filtres couvrent plusieurs mois ou une période personnalisée. **Transactions** propose recherche tolérante aux accents, abréviations et fautes, filtres combinables, classement rapide, détails intégrés, sélection groupée et annulation de la dernière correction. Les brouillons restent disponibles pendant la consultation, mais ne sont pas sauvegardés après rechargement.
+
+Les six objectifs historiques sont des modèles avec zéro montant réservé, pas des soldes personnels récupérés. Pour récupérer les objectifs et enveloppes personnels, le panneau de préparation recherche l'ancienne base uniquement si elle existe sur la même origine ; sinon, sélectionner une sauvegarde JSON historique non chiffrée et confirmer la fusion proposée. Les réglages existants ne sont pas écrasés automatiquement.
+
+`npm run test:pilot` exécute les tests ; `npm run build:pilot` crée la version de production. Les dépendances de cette base sont isolées dans `apps/wealthpilot/`.
+
+Le dock **Données** exporte les opérations CSV et une sauvegarde JSON complète, restaurable mais non chiffrée. Sauvegarder régulièrement : effacer les données du navigateur supprime la base locale. Le dock **Références** ouvre les 14 pages, les 30 planches de composants et le brief. Les originaux sont dans `design/` ; leurs copies web sont régénérées automatiquement, sans doublons versionnés.
+
+Le CSV personnel consolidé actuellement disponible est `../data/transactions_2026_consolidated.csv`, hors de ce dépôt. Le dossier réservé `private-data/` est exclu de Git et du site ; il ne contient actuellement pas la copie annoncée lors de la première tranche. Ne pas déplacer de CSV personnel dans `public/`. Les fichiers `apps/wealthpilot/fixtures/` contiennent uniquement des données fictives de test.
+
+Les logos proviennent du catalogue local Simple Icons, généré au démarrage/build. Aucun libellé de transaction n’est envoyé à un fournisseur de logos. Une entité inconnue reçoit une icône et une couleur de sous-catégorie/catégorie. La reconnaissance est prudente, non exhaustive ; les marques appartiennent à leurs titulaires.
+
+---
+
+## Documentation de l'application historique
+
+Les fonctionnalités et commandes ci-dessous décrivent l'ancienne application, pas la nouvelle tranche.
+
 > A modern, privacy-first personal finance dashboard built with Next.js
 
 ![Version](https://img.shields.io/badge/version-0.14.6-blue)

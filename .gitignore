@@ -40,3 +40,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Nouvelle application et données privées (jamais publiées)
+**/node_modules/
+/apps/wealthpilot/dist/
+/apps/wealthpilot/coverage/
+/private-data/
+/apps/wealthpilot/test-results/
+/apps/wealthpilot/public/references/
+/apps/wealthpilot/public/brands/
+/apps/wealthpilot/src/brands.generated.json

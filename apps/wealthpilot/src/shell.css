@@ -1,0 +1,49 @@
+.app-shell {
+  --dock-space: 160px;
+  padding-bottom: calc(var(--dock-space) + env(safe-area-inset-bottom));
+}
+html:has(.app-shell) {
+  scroll-padding-bottom: var(--wp-dock-space, 160px);
+}
+.app-shell :where(button, input, textarea, select, summary, [tabindex]) {
+  scroll-margin-bottom: var(--dock-space);
+}
+.app-shell .app-brand {
+  max-width: 3200px;
+  margin: 0 auto;
+  padding: 14px 40px 10px;
+}
+.app-shell .brand-button {
+  width: fit-content;
+}
+.app-shell .brand-button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+.app-shell .page {
+  padding-top: 10px;
+  padding-bottom: 24px;
+}
+.app-shell .import-page,
+.app-shell .week-page {
+  gap: 20px;
+}
+.app-shell .toast {
+  top: 12px;
+}
+@media (min-width: 1800px) {
+  .app-shell .app-brand {
+    padding-inline: 60px;
+  }
+}
+@media (max-width: 1100px) {
+  .app-shell .app-brand {
+    padding-inline: 25px;
+  }
+}
+@media (max-width: 760px) {
+  .app-shell .app-brand {
+    padding: 12px 16px 8px;
+  }
+}

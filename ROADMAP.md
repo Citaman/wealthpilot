@@ -1,5 +1,7 @@
 # WealthPilot - Product Roadmap
 
+> **Archive — 2 octobre 2026.** Cette roadmap décrit l'ancienne application. Le [Brief WealthPilot](BRIEF_WEALTHPILOT.md) définit seul les nouvelles étapes V0 → V1.
+
 **Last Audit Date**: January 21, 2026
 **Last Update**: v0.14.6 Security & Intelligence Integration ✅ (shipped)
 

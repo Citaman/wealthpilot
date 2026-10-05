@@ -1,0 +1,13 @@
+date;account;amount;merchant;libelle;category;subcategory;is_internal;currency
+2026-10-02;Compte commun;-24.90;McDonald's;CB MCDONALDS PARIS;Restauration;Fast food;N;EUR
+2026-10-01;Compte commun;-12.80;Macdonalds;CB MACDONALDS;Restauration;Fast food;N;EUR
+2026-09-29;Compte commun;-72.38;Carrefour;CB CARREFOUR;Courses;Supermarché;N;EUR
+2026-09-28;Compte commun;-8.40;Boulangerie des Lilas;CB BOULANGERIE;Courses;Boulangerie;N;EUR
+2026-09-27;Compte courant;-10.99;Spotify;SPOTIFY PREMIUM;Abonnements;Musique;N;EUR
+2026-09-26;Compte courant;-13.49;Netflix;NETFLIX;Abonnements;Vidéo;N;EUR
+2026-09-25;Compte courant;-28.00;Laboratoire Central;CB LABORATOIRE CENTRAL;Santé;Laboratoire;N;EUR
+2026-09-24;Compte courant;-46.00;SNCF;BILLET SNCF;Transport;Train;N;EUR
+2026-09-23;Compte commun;-35.90;Pharmacie du Parc;CB PHARMACIE;Santé;Pharmacie;N;EUR
+2026-09-22;Compte courant;-45.00;Salle des Sports;CB CLUB SPORT;Loisirs;Sport;N;EUR
+2026-09-21;Compte courant;-62.50;Station du Centre;CB STATION;Transport;Carburant;N;EUR
+2026-09-20;Compte commun;-18.00;Librairie du Coin;CB LIBRAIRIE;Éducation;Livres;N;EUR
