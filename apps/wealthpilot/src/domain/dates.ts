@@ -49,11 +49,9 @@ export function clampDay(month: string, day: number): IsoDate {
 }
 
 export function isIsoDate(value: unknown): value is IsoDate {
-  return (
-    typeof value === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-    iso(noon(value)) === value
-  );
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = noon(value);
+  return !Number.isNaN(d.getTime()) && iso(d) === value;
 }
 
 /** Accepts `YYYY-MM-DD[T…]`, `DD/MM/YYYY`, `DD.MM.YYYY`, `DD-MM-YYYY`. */

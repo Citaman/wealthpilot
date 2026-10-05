@@ -1,0 +1,1298 @@
+{
+  "format": "wealthpilot-next",
+  "version": 1,
+  "data": {
+    "transactions": [
+      {
+        "date": "2026-09-25",
+        "amount": 240000,
+        "label": "VIR RECU SALAIRE ACME",
+        "account": "Courant",
+        "merchant": "VIR RECU SALAIRE ACME",
+        "reviewed": false,
+        "category": "À catégoriser",
+        "internal": false,
+        "raw": {
+          "Date de l'opération": "25/09/2026",
+          "Libellé": "VIR RECU",
+          "Détail de l'écriture": "VIR RECU SALAIRE ACME",
+          "Montant de l'opération": "2400,00",
+          "Devise": "EUR"
+        },
+        "fingerprint": "[\"courant\",\"2026-09-25\",240000,\"vir recu salaire acme\"]",
+        "importedState": "[\"2026-09-25\",\"Courant\",240000,\"VIR RECU SALAIRE ACME\",\"VIR RECU SALAIRE ACME\",\"À catégoriser\",false,null,null,null,false]",
+        "id": "360d98f2-f7a7-4c3e-95ea-36c7aef42eed",
+        "batchId": "b9bfb007-2fbb-4074-9a61-21f6bd2af9e8"
+      },
+      {
+        "date": "2026-09-30",
+        "amount": -80000,
+        "label": "Loyer septembre",
+        "account": "Commun",
+        "merchant": "Loyer",
+        "reviewed": false,
+        "category": "Logement",
+        "internal": false,
+        "raw": {
+          "date": "2026-09-30",
+          "account": "Commun",
+          "amount": "-800,00",
+          "merchant": "Loyer",
+          "libelle": "Loyer septembre",
+          "category": "Logement",
+          "is_internal": "N",
+          "currency": "EUR",
+          "daily_balance": "1200,00"
+        },
+        "fingerprint": "[\"commun\",\"2026-09-30\",-80000,\"loyer septembre\"]",
+        "importedState": "[\"2026-09-30\",\"Commun\",-80000,\"Loyer septembre\",\"Loyer\",\"Logement\",false,null,null,null,false]",
+        "id": "61daee9b-a7f4-4a6d-ad0e-2030f7aa4c32",
+        "batchId": "5143e083-6adc-4e70-b45c-ffcca26e0a6c"
+      },
+      {
+        "date": "2026-10-01",
+        "amount": -1000,
+        "label": "CARTE X1234 LIDL",
+        "account": "Courant",
+        "merchant": "CARTE X1234 LIDL",
+        "note": "corrigé",
+        "reviewed": true,
+        "category": "Courses",
+        "internal": false,
+        "raw": {
+          "Date de l'opération": "01/10/2026",
+          "Libellé": "CARTE",
+          "Détail de l'écriture": "CARTE X1234 LIDL",
+          "Montant de l'opération": "-10,00",
+          "Devise": "EUR"
+        },
+        "fingerprint": "[\"courant\",\"2026-10-01\",-1000,\"carte x1234 lidl\"]",
+        "importedState": "[\"2026-10-01\",\"Courant\",-1000,\"CARTE X1234 LIDL\",\"CARTE X1234 LIDL\",\"À catégoriser\",false,null,null,null,false]",
+        "id": "6da96145-8ea9-47e3-9e10-6467f9b9b6f7",
+        "batchId": "b9bfb007-2fbb-4074-9a61-21f6bd2af9e8",
+        "categoryId": "food",
+        "subcategoryId": "groceries"
+      },
+      {
+        "date": "2026-09-28",
+        "amount": -4520,
+        "label": "Achats alimentaires",
+        "account": "Commun",
+        "merchant": "Épicerie",
+        "reviewed": false,
+        "category": "Courses",
+        "internal": false,
+        "raw": {
+          "date": "2026-09-28",
+          "account": "Commun",
+          "amount": "-45,20",
+          "merchant": "Épicerie",
+          "libelle": "Achats alimentaires",
+          "category": "Courses",
+          "is_internal": "N",
+          "currency": "EUR",
+          "daily_balance": ""
+        },
+        "fingerprint": "[\"commun\",\"2026-09-28\",-4520,\"achats alimentaires\"]",
+        "importedState": "[\"2026-09-28\",\"Commun\",-4520,\"Achats alimentaires\",\"Épicerie\",\"Courses\",false,null,null,null,false]",
+        "id": "858be6c3-0f0a-4ea7-a8ba-d86e601cfb1c",
+        "batchId": "5143e083-6adc-4e70-b45c-ffcca26e0a6c"
+      },
+      {
+        "date": "2026-10-02",
+        "amount": -1000,
+        "label": "CARTE X1234 LIDL",
+        "account": "Courant",
+        "merchant": "CARTE X1234 LIDL",
+        "reviewed": false,
+        "category": "À catégoriser",
+        "internal": false,
+        "raw": {
+          "Date de l'opération": "02/10/2026",
+          "Libellé": "CARTE",
+          "Détail de l'écriture": "CARTE X1234 LIDL",
+          "Montant de l'opération": "-10,00",
+          "Devise": "EUR"
+        },
+        "fingerprint": "[\"courant\",\"2026-10-02\",-1000,\"carte x1234 lidl\"]",
+        "importedState": "[\"2026-10-02\",\"Courant\",-1000,\"CARTE X1234 LIDL\",\"CARTE X1234 LIDL\",\"À catégoriser\",false,null,null,null,false]",
+        "id": "a6b1b0c7-ea3c-4c48-b518-b2df80125e71",
+        "batchId": "b9bfb007-2fbb-4074-9a61-21f6bd2af9e8"
+      }
+    ],
+    "accounts": [
+      {
+        "id": "Commun",
+        "checkpoints": [
+          {
+            "date": "2026-09-30",
+            "amount": 120000,
+            "status": "derived",
+            "sourceHash": "hash-commun",
+            "batchId": "5143e083-6adc-4e70-b45c-ffcca26e0a6c",
+            "accepted": true
+          }
+        ],
+        "checkpoint": {
+          "date": "2026-09-30",
+          "amount": 120000,
+          "status": "derived",
+          "sourceHash": "hash-commun",
+          "batchId": "5143e083-6adc-4e70-b45c-ffcca26e0a6c",
+          "accepted": true
+        }
+      },
+      {
+        "id": "Courant",
+        "bankAccountId": "00012345678",
+        "checkpoints": [
+          {
+            "date": "2026-10-02",
+            "amount": 100000,
+            "status": "observed",
+            "sourceHash": "hash-sg",
+            "batchId": "b9bfb007-2fbb-4074-9a61-21f6bd2af9e8",
+            "accepted": true
+          },
+          {
+            "date": "2026-10-02",
+            "amount": 100000,
+            "status": "observed",
+            "sourceHash": "hash-sg-bis",
+            "batchId": "00b8884d-a524-44c2-8429-2e3c6bfc7356",
+            "accepted": false
+          },
+          {
+            "date": "2026-09-15",
+            "amount": 50000
+          }
+        ],
+        "checkpoint": {
+          "date": "2026-10-02",
+          "amount": 100000,
+          "status": "observed",
+          "sourceHash": "hash-sg",
+          "batchId": "b9bfb007-2fbb-4074-9a61-21f6bd2af9e8",
+          "accepted": true
+        },
+        "coverage": [
+          {
+            "from": "2026-09-01",
+            "through": "2026-10-02",
+            "sourceHash": "hash-sg",
+            "batchId": "b9bfb007-2fbb-4074-9a61-21f6bd2af9e8",
+            "complete": true
+          },
+          {
+            "from": "2026-09-01",
+            "through": "2026-10-02",
+            "sourceHash": "hash-sg-bis",
+            "batchId": "00b8884d-a524-44c2-8429-2e3c6bfc7356",
+            "complete": true
+          }
+        ]
+      }
+    ],
+    "batches": [
+      {
+        "id": "00b8884d-a524-44c2-8429-2e3c6bfc7356",
+        "name": "releve-sg-bis.csv",
+        "hash": "hash-sg-bis",
+        "createdAt": "2026-10-05T12:11:32.510Z",
+        "count": 0,
+        "minDate": "2026-09-25",
+        "maxDate": "2026-10-02",
+        "metadata": {
+          "profile": "sg",
+          "accounts": [
+            {
+              "bankAccountId": "00012345678",
+              "currency": "EUR",
+              "coverageFrom": "2026-09-01",
+              "coverageThrough": "2026-10-04",
+              "checkpoints": [
+                {
+                  "date": "2026-10-02",
+                  "amount": 100000,
+                  "status": "observed"
+                }
+              ]
+            }
+          ],
+          "warnings": [
+            "Le solde est observé à sa date bancaire, pas à la date d’export. Les opérations en attente ne sont pas inventées."
+          ],
+          "reportedCount": 3
+        },
+        "transactionIds": [
+          "a6b1b0c7-ea3c-4c48-b518-b2df80125e71",
+          "6da96145-8ea9-47e3-9e10-6467f9b9b6f7",
+          "360d98f2-f7a7-4c3e-95ea-36c7aef42eed"
+        ]
+      },
+      {
+        "id": "5143e083-6adc-4e70-b45c-ffcca26e0a6c",
+        "name": "commun.csv",
+        "hash": "hash-commun",
+        "createdAt": "2026-10-05T12:11:32.509Z",
+        "count": 2,
+        "minDate": "2026-09-28",
+        "maxDate": "2026-09-30",
+        "metadata": {
+          "profile": "generic",
+          "accounts": [
+            {
+              "account": "Commun",
+              "currency": "EUR",
+              "checkpoints": [
+                {
+                  "date": "2026-09-30",
+                  "amount": 120000,
+                  "status": "derived"
+                }
+              ]
+            }
+          ],
+          "warnings": [
+            "Les daily_balance sont des reconstructions : ils ne deviennent pas automatiquement des soldes bancaires observés."
+          ]
+        },
+        "transactionIds": [
+          "858be6c3-0f0a-4ea7-a8ba-d86e601cfb1c",
+          "61daee9b-a7f4-4a6d-ad0e-2030f7aa4c32"
+        ]
+      },
+      {
+        "id": "b9bfb007-2fbb-4074-9a61-21f6bd2af9e8",
+        "name": "releve-sg.csv",
+        "hash": "hash-sg",
+        "createdAt": "2026-10-05T12:11:32.507Z",
+        "count": 3,
+        "minDate": "2026-09-25",
+        "maxDate": "2026-10-02",
+        "metadata": {
+          "profile": "sg",
+          "accounts": [
+            {
+              "bankAccountId": "00012345678",
+              "currency": "EUR",
+              "coverageFrom": "2026-09-01",
+              "coverageThrough": "2026-10-04",
+              "checkpoints": [
+                {
+                  "date": "2026-10-02",
+                  "amount": 100000,
+                  "status": "observed"
+                }
+              ]
+            }
+          ],
+          "warnings": [
+            "Le solde est observé à sa date bancaire, pas à la date d’export. Les opérations en attente ne sont pas inventées."
+          ],
+          "reportedCount": 3
+        },
+        "transactionIds": [
+          "a6b1b0c7-ea3c-4c48-b518-b2df80125e71",
+          "6da96145-8ea9-47e3-9e10-6467f9b9b6f7",
+          "360d98f2-f7a7-4c3e-95ea-36c7aef42eed"
+        ]
+      }
+    ],
+    "budgets": [
+      {
+        "id": "bud-1",
+        "month": "2026-10",
+        "category": "Courses",
+        "categoryId": "food",
+        "amount": 30000
+      },
+      {
+        "id": "bud-2",
+        "month": "2026-10",
+        "category": "Courses",
+        "amount": 10000,
+        "account": "Commun"
+      }
+    ],
+    "dues": [
+      {
+        "id": "due-1",
+        "label": "Assurance",
+        "amount": -4500,
+        "date": "2026-10-12",
+        "account": "Courant",
+        "category": "Assurance"
+      },
+      {
+        "id": "due-2",
+        "label": "Loyer ajusté",
+        "amount": -82000,
+        "date": "2026-10-30",
+        "account": "Commun",
+        "originOccurrenceId": "estimate:[\"Commun\",\"loyer\",-1]:2026-10-30",
+        "recurrenceKey": "[\"Commun\",\"loyer\",-1]"
+      },
+      {
+        "id": "due-3",
+        "label": "Lidl",
+        "amount": -1000,
+        "date": "2026-10-02",
+        "account": "Courant",
+        "transactionId": "6da96145-8ea9-47e3-9e10-6467f9b9b6f7",
+        "recurrenceConfirmed": true
+      }
+    ],
+    "preferences": {
+      "id": "main",
+      "safety": 60000,
+      "essentials": 15000,
+      "weekly": 20000,
+      "goal": {
+        "name": "Vacances",
+        "target": 300000,
+        "saved": 45000,
+        "monthly": 15000,
+        "icon": "travel",
+        "color": "#FFD400",
+        "deadline": "2027-07-01",
+        "priority": 1,
+        "account": "Courant"
+      },
+      "widgets": [
+        "chart",
+        "available",
+        "budgets",
+        "goal",
+        "dues",
+        "weekly",
+        "scenario",
+        "goals"
+      ],
+      "budgetView": "rings",
+      "sizes": {
+        "chart": "large",
+        "available": "small",
+        "goals": "xlarge"
+      },
+      "tones": {
+        "chart": "ink",
+        "available": "yellow",
+        "dues": "cyan"
+      },
+      "widgetViews": {
+        "budgets": "rings",
+        "dues": "tiles"
+      },
+      "extraGoals": [
+        {
+          "name": "Voiture",
+          "target": 1200000,
+          "saved": 120000,
+          "icon": "car",
+          "legacyId": "g-2"
+        }
+      ],
+      "cycleStartDay": 25,
+      "dockPages": ["dashboard", "budgets", "previsions", "goals", "accounts"],
+      "householdPlan": {
+        "members": [
+          {
+            "name": "Sam",
+            "account": "Courant",
+            "share": 60
+          },
+          {
+            "name": "Alex",
+            "account": "Commun",
+            "share": 40
+          }
+        ]
+      },
+      "scenarios": [
+        {
+          "id": "sc-1",
+          "name": "Retard salaire",
+          "account": "",
+          "incomeDelay": 5,
+          "expenseIncrease": 10
+        }
+      ],
+      "budgetLimit": 4,
+      "setupDone": true,
+      "budgetOrder": ["Courses", "Logement"],
+      "dismissedRecurrences": ["[\"Courant\",\"netflix\",-1]"],
+      "ignoredOccurrences": [
+        "estimate:[\"Commun\",\"loyer\",-1]:2026-10-30",
+        "estimate:[\"Courant\",\"edf\",-1]:2026-10-15"
+      ],
+      "recurrenceRules": [
+        {
+          "id": "rr-1",
+          "name": "Salaire",
+          "account": "Courant",
+          "amount": 240000,
+          "category": "Revenus",
+          "frequency": "monthly",
+          "next": "2026-10-25",
+          "sourceKey": "[\"Courant\",\"salaire acme\",1]"
+        }
+      ],
+      "weeklyPlans": [
+        {
+          "start": "2026-10-05",
+          "account": "",
+          "limits": {
+            "Courses": 15000
+          },
+          "reduction": 10,
+          "reserve": 20000
+        }
+      ],
+      "categoryDefinitions": [
+        {
+          "id": "food",
+          "name": "Alimentation",
+          "icon": "food",
+          "color": "#abcd12"
+        },
+        {
+          "id": "groceries",
+          "name": "Courses",
+          "parentId": "food"
+        },
+        {
+          "id": "home",
+          "name": "Logement",
+          "archived": false
+        }
+      ],
+      "categoryRules": [
+        {
+          "id": "cr-1",
+          "name": "Lidl",
+          "pattern": "lidl",
+          "direction": "expense",
+          "category": "Courses",
+          "enabled": true,
+          "priority": 0
+        }
+      ],
+      "board": {
+        "version": 1,
+        "geometryVersion": 2,
+        "revision": 0,
+        "activeView": "main",
+        "views": [
+          {
+            "id": "main",
+            "name": "Mon dashboard",
+            "instances": [
+              {
+                "id": "legacy-chart",
+                "type": "chart",
+                "size": "large",
+                "tone": "ink",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "legacy-available",
+                "type": "available",
+                "size": "small",
+                "tone": "yellow",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "legacy-budgets",
+                "type": "budgets",
+                "size": "medium",
+                "tone": "paper",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "legacy-goal",
+                "type": "goal",
+                "size": "medium",
+                "tone": "pink",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "legacy-dues",
+                "type": "dues",
+                "size": "medium",
+                "tone": "cyan",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "legacy-weekly",
+                "type": "weekly",
+                "size": "medium",
+                "tone": "paper",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "legacy-scenario",
+                "type": "scenario",
+                "size": "medium",
+                "tone": "paper",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "legacy-goals",
+                "type": "goals",
+                "size": "xlarge",
+                "tone": "paper",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              }
+            ],
+            "mobileOrder": [
+              "legacy-chart",
+              "legacy-available",
+              "legacy-budgets",
+              "legacy-goal",
+              "legacy-dues",
+              "legacy-weekly",
+              "legacy-scenario",
+              "legacy-goals"
+            ],
+            "layouts": {
+              "laptop": [
+                {
+                  "i": "legacy-chart",
+                  "x": 0,
+                  "y": 0,
+                  "w": 16,
+                  "h": 36,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-available",
+                  "x": 16,
+                  "y": 0,
+                  "w": 8,
+                  "h": 22,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-budgets",
+                  "x": 0,
+                  "y": 38,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-goal",
+                  "x": 12,
+                  "y": 38,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-dues",
+                  "x": 0,
+                  "y": 68,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-weekly",
+                  "x": 12,
+                  "y": 68,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-scenario",
+                  "x": 0,
+                  "y": 98,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-goals",
+                  "x": 0,
+                  "y": 128,
+                  "w": 24,
+                  "h": 44,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                }
+              ],
+              "desktop": [
+                {
+                  "i": "legacy-chart",
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 36,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-available",
+                  "x": 12,
+                  "y": 0,
+                  "w": 6,
+                  "h": 22,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-budgets",
+                  "x": 0,
+                  "y": 38,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-goal",
+                  "x": 9,
+                  "y": 38,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-dues",
+                  "x": 0,
+                  "y": 68,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-weekly",
+                  "x": 9,
+                  "y": 68,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-scenario",
+                  "x": 0,
+                  "y": 98,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-goals",
+                  "x": 0,
+                  "y": 128,
+                  "w": 18,
+                  "h": 44,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                }
+              ],
+              "wide": [
+                {
+                  "i": "legacy-chart",
+                  "x": 0,
+                  "y": 0,
+                  "w": 11,
+                  "h": 36,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-available",
+                  "x": 11,
+                  "y": 0,
+                  "w": 5,
+                  "h": 22,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-budgets",
+                  "x": 16,
+                  "y": 0,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-goal",
+                  "x": 0,
+                  "y": 38,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-dues",
+                  "x": 8,
+                  "y": 38,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-weekly",
+                  "x": 16,
+                  "y": 30,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-scenario",
+                  "x": 0,
+                  "y": 68,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "legacy-goals",
+                  "x": 8,
+                  "y": 68,
+                  "w": 16,
+                  "h": 44,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                }
+              ]
+            }
+          },
+          {
+            "id": "587c76a0-30a7-4c98-a838-e78d8d77e6b0",
+            "name": "Commun",
+            "instances": [
+              {
+                "id": "d225fd66-8c5d-456c-aa3e-c685a4874824",
+                "type": "chart",
+                "size": "large",
+                "tone": "ink",
+                "source": {
+                  "kind": "account",
+                  "account": "Commun"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "2fff7854-7a21-424e-a880-9ffc357311c5",
+                "type": "available",
+                "size": "small",
+                "tone": "yellow",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "9f53ca4f-555c-45a5-9135-ba9b66a190cf",
+                "type": "budgets",
+                "size": "medium",
+                "tone": "paper",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "197b11fb-a3b8-4a27-90c1-4c5f4b02d652",
+                "type": "goal",
+                "size": "medium",
+                "tone": "pink",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "8d1a1cd2-f6f1-4753-a52d-6dfbc31f2a67",
+                "type": "dues",
+                "size": "medium",
+                "tone": "cyan",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "7d66f3b7-9c50-41fb-a854-0175c32d0739",
+                "type": "weekly",
+                "size": "medium",
+                "tone": "paper",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "35f57364-c92e-4a3b-b41c-8bef8cd09950",
+                "type": "scenario",
+                "size": "medium",
+                "tone": "paper",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              },
+              {
+                "id": "2374578c-0d86-478d-b6cd-b1cf385fa33c",
+                "type": "goals",
+                "size": "xlarge",
+                "tone": "paper",
+                "source": {
+                  "kind": "global"
+                },
+                "period": {
+                  "kind": "global"
+                },
+                "representation": "default"
+              }
+            ],
+            "mobileOrder": [
+              "d225fd66-8c5d-456c-aa3e-c685a4874824",
+              "2fff7854-7a21-424e-a880-9ffc357311c5",
+              "9f53ca4f-555c-45a5-9135-ba9b66a190cf",
+              "197b11fb-a3b8-4a27-90c1-4c5f4b02d652",
+              "8d1a1cd2-f6f1-4753-a52d-6dfbc31f2a67",
+              "7d66f3b7-9c50-41fb-a854-0175c32d0739",
+              "35f57364-c92e-4a3b-b41c-8bef8cd09950",
+              "2374578c-0d86-478d-b6cd-b1cf385fa33c"
+            ],
+            "layouts": {
+              "laptop": [
+                {
+                  "i": "d225fd66-8c5d-456c-aa3e-c685a4874824",
+                  "x": 0,
+                  "y": 0,
+                  "w": 16,
+                  "h": 36,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "2fff7854-7a21-424e-a880-9ffc357311c5",
+                  "x": 16,
+                  "y": 0,
+                  "w": 8,
+                  "h": 22,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "9f53ca4f-555c-45a5-9135-ba9b66a190cf",
+                  "x": 0,
+                  "y": 38,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "197b11fb-a3b8-4a27-90c1-4c5f4b02d652",
+                  "x": 12,
+                  "y": 38,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "8d1a1cd2-f6f1-4753-a52d-6dfbc31f2a67",
+                  "x": 0,
+                  "y": 68,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "7d66f3b7-9c50-41fb-a854-0175c32d0739",
+                  "x": 12,
+                  "y": 68,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "35f57364-c92e-4a3b-b41c-8bef8cd09950",
+                  "x": 0,
+                  "y": 98,
+                  "w": 12,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "2374578c-0d86-478d-b6cd-b1cf385fa33c",
+                  "x": 0,
+                  "y": 128,
+                  "w": 24,
+                  "h": 44,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                }
+              ],
+              "desktop": [
+                {
+                  "i": "d225fd66-8c5d-456c-aa3e-c685a4874824",
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 36,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "2fff7854-7a21-424e-a880-9ffc357311c5",
+                  "x": 12,
+                  "y": 0,
+                  "w": 6,
+                  "h": 22,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "9f53ca4f-555c-45a5-9135-ba9b66a190cf",
+                  "x": 0,
+                  "y": 38,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "197b11fb-a3b8-4a27-90c1-4c5f4b02d652",
+                  "x": 9,
+                  "y": 38,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "8d1a1cd2-f6f1-4753-a52d-6dfbc31f2a67",
+                  "x": 0,
+                  "y": 68,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "7d66f3b7-9c50-41fb-a854-0175c32d0739",
+                  "x": 9,
+                  "y": 68,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "35f57364-c92e-4a3b-b41c-8bef8cd09950",
+                  "x": 0,
+                  "y": 98,
+                  "w": 9,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "2374578c-0d86-478d-b6cd-b1cf385fa33c",
+                  "x": 0,
+                  "y": 128,
+                  "w": 18,
+                  "h": 44,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                }
+              ],
+              "wide": [
+                {
+                  "i": "d225fd66-8c5d-456c-aa3e-c685a4874824",
+                  "x": 0,
+                  "y": 0,
+                  "w": 11,
+                  "h": 36,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "2fff7854-7a21-424e-a880-9ffc357311c5",
+                  "x": 11,
+                  "y": 0,
+                  "w": 5,
+                  "h": 22,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "9f53ca4f-555c-45a5-9135-ba9b66a190cf",
+                  "x": 16,
+                  "y": 0,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "197b11fb-a3b8-4a27-90c1-4c5f4b02d652",
+                  "x": 0,
+                  "y": 38,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "8d1a1cd2-f6f1-4753-a52d-6dfbc31f2a67",
+                  "x": 8,
+                  "y": 38,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "7d66f3b7-9c50-41fb-a854-0175c32d0739",
+                  "x": 16,
+                  "y": 30,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "35f57364-c92e-4a3b-b41c-8bef8cd09950",
+                  "x": 0,
+                  "y": 68,
+                  "w": 8,
+                  "h": 28,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                },
+                {
+                  "i": "2374578c-0d86-478d-b6cd-b1cf385fa33c",
+                  "x": 8,
+                  "y": 68,
+                  "w": 16,
+                  "h": 44,
+                  "minW": 4,
+                  "minH": 12,
+                  "maxW": 24,
+                  "maxH": 240
+                }
+              ]
+            }
+          }
+        ],
+        "legacy": {
+          "widgets": [
+            "chart",
+            "available",
+            "budgets",
+            "goal",
+            "dues",
+            "weekly",
+            "scenario",
+            "goals"
+          ],
+          "sizes": {
+            "chart": "large",
+            "available": "small",
+            "goals": "xlarge"
+          },
+          "tones": {
+            "chart": "ink",
+            "available": "yellow",
+            "dues": "cyan"
+          }
+        }
+      }
+    }
+  }
+}
