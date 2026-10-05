@@ -86,7 +86,7 @@ describe("WeekPage", () => {
   it("resets a saved limit to the proposal", async () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /^Proposé/ }));
-    await waitFor(async () => expect(await savedLimits()).toEqual({}));
+    await waitFor(async () => expect(await savedLimits()).toBeUndefined());
   });
 
   it("opens a day's operations from the strip and closes them with Escape", () => {

@@ -19,7 +19,7 @@ import type { CardProps } from "./types";
 import "./RecentCard.css";
 
 /** Rows per measured width: 8 at ⅓, 12 at ½, 15 at ⅔ and full. */
-const countFor = (width: number) => (width < 520 ? 8 : width < 800 ? 12 : 15);
+const countFor = (width: number) => (width < 520 ? 6 : width < 800 ? 8 : 10);
 
 export function RecentCard({ card, ledger, account, range }: CardProps) {
   // Future-dated imports belong to « À venir », not to what happened.

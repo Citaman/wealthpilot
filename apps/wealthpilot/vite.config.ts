@@ -9,10 +9,6 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
           if (/\/(react-dom|react|scheduler)\//.test(id)) return "react";
-          if (
-            /\/(react-grid-layout|react-draggable|react-resizable)\//.test(id)
-          )
-            return "layout";
           if (/\/(dexie|dexie-react-hooks|papaparse)\//.test(id))
             return "storage";
           if (id.includes("/@radix-ui/")) return "controls";

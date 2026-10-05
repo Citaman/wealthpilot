@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node scripts/sync-brands.mjs && node scripts/sync-references.mjs",
-    "prebuild": "node scripts/sync-brands.mjs && node scripts/sync-references.mjs",
+    "predev": "node scripts/sync-brands.mjs",
+    "prebuild": "node scripts/sync-brands.mjs",
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
@@ -29,7 +29,6 @@
     "papaparse": "5.5.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-grid-layout": "2.2.2",
     "simple-icons": "^16.33.0"
   },
   "devDependencies": {

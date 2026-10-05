@@ -152,7 +152,7 @@ describe("Préférences", () => {
       reduction: 0,
       reserve: 0,
     });
-    expect(p.weeklyPlans?.[1].limits).toEqual({});
+    expect(p.weeklyPlans).toHaveLength(1);
     expect(p.accountAliases).toEqual({});
     await expect(saveWeekLimit("", "2026-10-06", "Courses", 1)).rejects.toThrow(
       /lundi/,

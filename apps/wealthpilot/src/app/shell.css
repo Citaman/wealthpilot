@@ -191,3 +191,8 @@ html {
 .dock .dock-step:hover {
   background: var(--hairline-dark);
 }
+
+/* Keep toasts clear of a page's sticky bottom bar (Transactions selection). */
+body:has(.page:not([hidden]) .tx-selbar) .toast-host {
+  bottom: calc(var(--dock-h, 88px) + 96px);
+}

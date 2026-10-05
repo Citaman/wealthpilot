@@ -16,6 +16,23 @@ export const CATEGORY_COLORS = [
   "#B9A3E3",
   "#4D473F",
 ] as const;
+// The household's everyday categories get distinct colours; a hash of only
+// eight colours would make Courses and Shopping share yellow.
+const USUAL_COLORS: Record<string, number> = {
+  courses: 0,
+  alimentation: 0,
+  transport: 1,
+  carburant: 1,
+  restaurants: 2,
+  restauration: 2,
+  logement: 3,
+  energie: 4,
+  loisirs: 5,
+  sante: 5,
+  shopping: 6,
+  abonnements: 7,
+};
+
 /** The aggregated « Autres » slice of a chart, always last. */
 export const OTHERS_COLOR = "#CBC3B3";
 
@@ -27,6 +44,8 @@ export function categoryColor(
     (d) => !d.parentId && d.name === name,
   )?.color;
   if (defined) return defined;
+  const usual = USUAL_COLORS[normalizedText(name)];
+  if (usual !== undefined) return CATEGORY_COLORS[usual];
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) | 0;
   return CATEGORY_COLORS[Math.abs(hash) % CATEGORY_COLORS.length];

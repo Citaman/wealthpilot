@@ -329,8 +329,12 @@ export async function saveWeekLimit(
     const { [category]: old, ...limits } = plan.limits;
     previous = old ?? null;
     if (amount !== null) limits[category] = amount;
+    // A plan without limits and adjustments would read as a confirmed plan.
+    const empty =
+      !Object.keys(limits).length && !plan.reduction && !plan.reserve;
+    const others = plans.filter((w) => !same(w));
     return {
-      weeklyPlans: [...plans.filter((w) => !same(w)), { ...plan, limits }],
+      weeklyPlans: empty ? others : [...others, { ...plan, limits }],
     };
   });
   return async () => {
