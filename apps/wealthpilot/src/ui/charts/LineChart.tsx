@@ -157,6 +157,23 @@ export function LineChart({
       }
     : null;
 
+  // Each drawn segment is an obstacle, so a label never sits on the line.
+  const lineBoxes: Box[] = series.flatMap((s) =>
+    s.points.slice(1).flatMap((p, i) => {
+      const prev = s.points[i];
+      if (p.value === null || prev.value === null) return [];
+      const [y1, y2] = [y(prev.value), y(p.value)].sort((a, b) => a - b);
+      return [
+        {
+          x: x(prev.date),
+          y: y1 - 2,
+          width: Math.max(1, x(p.date) - x(prev.date)),
+          height: y2 - y1 + 4,
+        },
+      ];
+    }),
+  );
+
   const placed = placeAnnotations(
     annotations.slice(0, 4).map((a, i) => ({
       id: String(i),
@@ -166,7 +183,7 @@ export function LineChart({
     })),
     {
       bounds: { x: left, y: top, width: right - left, height: bottom - top },
-      obstacles: thresholdBox ? [thresholdBox] : [],
+      obstacles: thresholdBox ? [thresholdBox, ...lineBoxes] : lineBoxes,
       maxWidth: Math.max(80, Math.min(180, (right - left) / 2.2)),
       height: LABEL_H,
     },
