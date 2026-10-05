@@ -1,0 +1,27 @@
+.ui-skeleton {
+  display: block;
+  border-radius: 4px;
+  background: var(--card-track);
+}
+
+.ui-skeleton[data-shape="tile"] {
+  border-radius: var(--r-tile);
+}
+.ui-skeleton[data-shape="card"] {
+  border-radius: var(--r-card);
+}
+.ui-skeleton[data-shape="pill"] {
+  border-radius: var(--r-pill);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ui-skeleton {
+    animation: ui-skeleton-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes ui-skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}

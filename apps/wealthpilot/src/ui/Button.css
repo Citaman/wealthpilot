@@ -1,0 +1,106 @@
+.ui-button {
+  --button-bg: transparent;
+  --button-fg: var(--card-text);
+  --button-border: transparent;
+  --button-hover: var(--card-sunk);
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--h-pill);
+  padding: 0 var(--space-4);
+  border: var(--border-pill) solid var(--button-border);
+  border-radius: var(--r-pill);
+  background: var(--button-bg);
+  color: var(--button-fg);
+  font-size: var(--fs-text-s);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-press) var(--ease),
+    color var(--dur-press) var(--ease);
+}
+
+.ui-button[data-size="m"] {
+  min-height: var(--h-cta);
+  padding: 0 var(--space-5);
+  font-size: var(--fs-text);
+}
+
+.ui-button svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.ui-button[data-variant="primary"] {
+  --button-bg: var(--card-text);
+  --button-fg: var(--card-bg);
+  --button-hover: color-mix(in srgb, var(--card-text) 86%, var(--card-bg));
+}
+
+.ui-button[data-variant="accent"] {
+  --button-bg: var(--card-accent);
+  --button-fg: var(--card-on-accent);
+  --button-hover: color-mix(
+    in srgb,
+    var(--card-accent) 86%,
+    var(--card-on-accent)
+  );
+}
+
+.ui-button[data-variant="outline"] {
+  --button-border: var(--card-text);
+}
+
+.ui-button[data-variant="danger"] {
+  --button-bg: var(--card-negative);
+  --button-fg: var(--card-on-negative);
+  --button-hover: color-mix(
+    in srgb,
+    var(--card-negative) 86%,
+    var(--card-text)
+  );
+}
+
+.ui-button:hover:not([aria-disabled="true"]) {
+  background: var(--button-hover);
+}
+
+.ui-button:active:not([aria-disabled="true"]) {
+  background: color-mix(in srgb, var(--button-hover) 80%, var(--card-text));
+}
+
+.ui-button[aria-disabled="true"],
+.ui-button:disabled {
+  opacity: 0.55;
+}
+
+.ui-button[aria-busy="true"] {
+  opacity: 1;
+  cursor: progress;
+}
+
+.ui-button-spin {
+  animation: ui-spin 0.9s linear infinite;
+}
+
+@keyframes ui-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.ui-icon-button {
+  width: var(--h-icon);
+  min-height: var(--h-icon);
+  height: var(--h-icon);
+  padding: 0;
+}
+
+.ui-icon-button svg {
+  width: 18px;
+  height: 18px;
+}

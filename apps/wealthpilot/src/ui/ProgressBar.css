@@ -1,0 +1,65 @@
+.ui-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.ui-progress-bar {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.ui-progress-track {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--card-track);
+}
+
+.ui-progress-paid,
+.ui-progress-committed {
+  flex: none;
+  height: 100%;
+  box-shadow: inset 0 0 0 1px var(--card-mark-stroke);
+}
+
+.ui-progress-paid {
+  background: var(--bar);
+}
+
+.ui-progress-committed {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--card-text) 30%, transparent) 0 2px,
+      transparent 2px 5px
+    ),
+    color-mix(in srgb, var(--bar) 55%, var(--card-track));
+}
+
+.ui-progress-limit {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--card-text);
+}
+
+.ui-progress-percent {
+  flex: none;
+  min-width: 4ch;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-progress[data-over] .ui-progress-percent {
+  color: var(--card-negative);
+}

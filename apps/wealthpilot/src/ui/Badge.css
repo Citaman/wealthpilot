@@ -1,0 +1,53 @@
+.ui-badge {
+  --badge-bg: var(--neutral-bg);
+  --badge-fg: var(--ink);
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  height: 22px;
+  padding: 0 10px;
+  border: 1px solid var(--badge-border, transparent);
+  border-radius: var(--r-pill);
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  font-size: var(--fs-mono);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.ui-badge[data-tone="estimated"] {
+  --badge-bg: transparent;
+  --badge-fg: var(--card-text);
+  --badge-border: currentColor;
+  border-style: dashed;
+}
+.ui-badge[data-tone="positive"] {
+  --badge-bg: var(--positive-bg);
+  --badge-fg: var(--positive-on-bg);
+}
+.ui-badge[data-tone="negative"],
+.ui-badge[data-tone="error"] {
+  --badge-bg: var(--negative-bg);
+  --badge-fg: var(--negative-on-bg);
+}
+.ui-badge[data-tone="new"] {
+  --badge-bg: var(--cyan-soft);
+}
+.ui-badge[data-tone="duplicate"] {
+  --badge-bg: var(--pink-soft);
+}
+.ui-badge[data-tone="warning"] {
+  --badge-bg: var(--yellow-soft);
+}
+.ui-badge[data-tone="error"] {
+  --badge-bg: var(--negative);
+  --badge-fg: var(--cream);
+}

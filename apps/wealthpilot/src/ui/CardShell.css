@@ -1,0 +1,109 @@
+.ui-card {
+  container: card / inline-size;
+  position: relative;
+  min-width: 0;
+  overflow: clip;
+  background: var(--card-bg);
+  color: var(--card-text);
+  border: var(--border-card) solid var(--card-border);
+  border-radius: var(--r-card);
+}
+
+.ui-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+  padding: var(--pad-card);
+}
+
+@container card (max-width: 359px) {
+  .ui-card-body {
+    padding: var(--pad-card-narrow);
+    gap: var(--space-4);
+  }
+}
+
+@container card (min-width: 641px) {
+  .ui-card-body {
+    padding: var(--pad-card-wide);
+    gap: var(--space-6);
+  }
+}
+
+@media (max-width: 719px) {
+  .ui-card-body {
+    padding: var(--pad-card-mobile);
+  }
+}
+
+.ui-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--h-pill);
+}
+
+.ui-card-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
+  letter-spacing: var(--tracking-display);
+  padding-block: 0.06em;
+}
+
+@media (min-width: 720px) {
+  @container card (max-width: 359px) {
+    .ui-card-title {
+      font-size: var(--fs-s);
+    }
+  }
+}
+
+@container card (min-width: 641px) {
+  .ui-card-title {
+    font-size: var(--fs-l);
+  }
+}
+
+.ui-card-eyebrow {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-card-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ui-card-footer {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--card-hairline);
+}
+
+.ui-card-motif {
+  position: absolute;
+  top: 72px;
+  right: -48px;
+  width: clamp(140px, 38%, 220px);
+  aspect-ratio: 1.6;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 34% 50%, var(--pink) 0 30.5%, transparent 31%),
+    radial-gradient(circle at 66% 50%, var(--cyan) 0 30.5%, transparent 31%);
+}
+
+.ui-card-motif ~ .ui-card-body {
+  position: relative;
+}

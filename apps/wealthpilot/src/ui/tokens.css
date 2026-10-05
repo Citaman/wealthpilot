@@ -1,0 +1,441 @@
+/* WealthPilot v2 « Rime » tokens — the only place where raw colours live. */
+
+:root {
+  color-scheme: light;
+
+  /* Paper theme */
+  --bg: #eee8da;
+  --surface: #f3eee3;
+  --surface-sunk: #e4ddcd;
+  --track: #ddd5c4;
+  --ink: #25221d;
+  --ink-2: #3a362f;
+  --track-dark: #4a453d;
+  --text-muted: #665f53;
+  --on-dark: #eee8da;
+  --on-dark-muted: #a9a091;
+  --hairline: rgba(37, 34, 29, 0.14);
+  --hairline-dark: rgba(238, 232, 218, 0.16);
+  --dock-bg: #25221d;
+
+  --yellow: #f3c447;
+  --pink: #e68bdc;
+  --cyan: #21a9c0;
+  --yellow-soft: #f8e3a6;
+  --pink-soft: #f6d3f0;
+  --cyan-soft: #cfe9ee;
+  --positive: #1e7a3f;
+  --positive-bg: #cfefd8;
+  --negative: #c2352b;
+  --negative-bg: #f7d2cc;
+  --positive-on-bg: #17602f;
+  --negative-on-bg: #9b2a22;
+  --cream: #f3eee3;
+  --warning-bg: #f8e3a6;
+  --neutral-bg: #e4ddcd;
+
+  /* Category series: identity colours, stable across views. */
+  --series-1: #f3c447;
+  --series-2: #21a9c0;
+  --series-3: #e68bdc;
+  --series-4: #9ccbef;
+  --series-5: #f08a5d;
+  --series-6: #8fbf7a;
+  --series-7: #b9a3e3;
+  --series-8: #4d473f;
+  --series-other: #cbc3b3;
+
+  /* Typography */
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-text: "DM Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --fs-hero: clamp(56px, 20cqi, 112px);
+  --fs-xl: 56px;
+  --fs-l: 40px;
+  --fs-m: 30px;
+  --fs-s: 22px;
+  --fs-text-l: 17px;
+  --fs-text: 15px;
+  --fs-text-s: 13px;
+  --fs-mono: 12px;
+  --fs-micro: 11px;
+  --lh-hero: 0.85;
+  --lh-xl: 0.9;
+  --lh-l: 0.9;
+  --lh-m: 0.95;
+  --lh-s: 1;
+  --lh-text-l: 1.35;
+  --lh-text: 1.4;
+  --lh-text-s: 1.35;
+  --lh-mono: 1.3;
+  --tracking-display: -0.02em;
+  --tracking-eyebrow: 0.16em;
+
+  /* Space (base 4) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --pad-card-wide: 28px;
+  --pad-card: 24px;
+  --pad-card-narrow: 20px;
+  --pad-card-mobile: 16px;
+  --gutter: 32px;
+  --grid-gap: 20px;
+  --content-max: 1600px;
+
+  /* Shape */
+  --r-card: 24px;
+  --r-tile: 16px;
+  --r-field: 12px;
+  --r-pill: 999px;
+  --r-dock: 24px;
+  --r-dock-item: 16px;
+  --r-bubble: 6px;
+  --r-bar: 6px;
+  --border-card: 2px;
+  --border-pill: 1.5px;
+  --border-dash: 1.5px;
+
+  /* Control heights */
+  --h-pill: 36px;
+  --h-compact: 32px;
+  --h-icon: 32px;
+  --h-cta: 44px;
+  --h-field: 40px;
+  --h-row: 52px;
+
+  /* Elevation (floating layers only — cards and dock stay flat) */
+  --scrim: rgba(37, 34, 29, 0.42);
+  --scrim-light: rgba(37, 34, 29, 0.24);
+  --shadow-pop: 0 8px 24px rgba(37, 34, 29, 0.16);
+  --shadow-lift: 0 18px 40px rgba(37, 34, 29, 0.22);
+
+  /* Motion */
+  --dur-press: 100ms;
+  --dur-panel: 180ms;
+  --dur-flip: 180ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Layers */
+  --z-raised: 1;
+  --z-sticky: 10;
+  --z-dock: 40;
+  --z-lifted: 50;
+  --z-overlay: 60;
+  --z-popover: 70;
+  --z-toast: 80;
+
+  /* Dock height is measured by the shell; 0 until then. */
+  --dock-h: 0px;
+
+  /* Focus */
+  --focus-width: 2px;
+  --focus-offset: 2px;
+
+  /* Context roles: every component reads these, palettes redefine them. */
+  --card-bg: var(--surface);
+  --card-text: var(--ink);
+  --card-muted: var(--text-muted);
+  --card-sunk: var(--surface-sunk);
+  --card-field: var(--surface);
+  --card-border: var(--ink);
+  --card-track: var(--track);
+  --card-hairline: var(--hairline);
+  --card-accent: var(--yellow);
+  --card-on-accent: var(--ink);
+  --card-highlight: var(--ink);
+  --card-positive: var(--positive);
+  --card-negative: var(--negative);
+  --card-on-negative: #f3eee3;
+  --card-forecast: #1d96b0;
+  --card-threshold: #a54999;
+  --card-possible: var(--yellow);
+  --card-focus: var(--ink);
+  --card-tooltip-bg: var(--ink);
+  --card-tooltip-text: var(--on-dark);
+  --card-selected: var(--yellow-soft);
+  --card-mark-stroke: transparent;
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --border-card: 1.5px;
+    --grid-gap: 16px;
+  }
+}
+
+@media (max-width: 719px) {
+  :root {
+    --fs-hero: clamp(42px, 18cqi, 84px);
+    --fs-xl: 42px;
+    --fs-l: 30px;
+    --fs-m: 23px;
+    --fs-s: 17px;
+    --gutter: 16px;
+    --grid-gap: 12px;
+  }
+}
+
+@media (pointer: coarse) {
+  :root {
+    --h-pill: 44px;
+    --h-compact: 44px;
+    --h-icon: 44px;
+    --h-field: 44px;
+  }
+}
+
+/* Ink theme, opt-in on any subtree. */
+[data-theme="ink"] {
+  color-scheme: dark;
+  --bg: #1a1814;
+  --surface: #24211c;
+  --surface-sunk: #2f2b25;
+  --track: #3e392f;
+  --text-muted: #a79e8e;
+  --hairline: rgba(238, 232, 218, 0.16);
+  --dock-bg: #0f0e0c;
+  --pink: #eb9be2;
+  --cyan: #3db8cd;
+  --positive: #6fd796;
+  --negative: #f08a80;
+  --series-2: #3db8cd;
+  --series-3: #eb9be2;
+  --series-8: #a9a091;
+
+  --card-bg: #24211c;
+  --card-text: #eee8da;
+  --card-muted: #a79e8e;
+  --card-sunk: #2f2b25;
+  --card-field: #2f2b25;
+  --card-border: #3e392f;
+  --card-track: #3e392f;
+  --card-hairline: rgba(238, 232, 218, 0.16);
+  --card-highlight: #f3c447;
+  --card-positive: #6fd796;
+  --card-negative: #f08a80;
+  --card-on-negative: #25221d;
+  --card-forecast: #3db8cd;
+  --card-threshold: #eb9be2;
+  --card-focus: #eee8da;
+  --card-tooltip-bg: #eee8da;
+  --card-tooltip-text: #25221d;
+  --card-selected: #3a362f;
+  background: var(--bg);
+  color: var(--card-text);
+}
+
+/* Card palettes ------------------------------------------------------------
+   Contrast verified (text/muted ≥ 4.5:1 on bg and sunk, marks ≥ 3:1).
+   A series that coincides with the card background turns ink. */
+
+.palette-paper {
+  --card-bg: #f3eee3;
+  --card-text: #25221d;
+  --card-muted: #665f53;
+  --card-sunk: #e4ddcd;
+  --card-field: #f3eee3;
+  --card-border: #25221d;
+  --card-track: #ddd5c4;
+  --card-hairline: rgba(37, 34, 29, 0.14);
+  --card-accent: #f3c447;
+  --card-on-accent: #25221d;
+  --card-highlight: #25221d;
+  --card-positive: #1e7a3f;
+  --card-negative: #c2352b;
+  --card-on-negative: #f3eee3;
+  --card-forecast: #1d96b0;
+  --card-threshold: #a54999;
+  --card-possible: #f3c447;
+  --card-focus: #25221d;
+  --card-tooltip-bg: #25221d;
+  --card-tooltip-text: #eee8da;
+  --card-selected: #f8e3a6;
+  --card-mark-stroke: transparent;
+}
+
+.palette-ink,
+.palette-plum,
+.palette-midnight,
+.palette-forest {
+  --card-text: #eee8da;
+  --card-accent: #f3c447;
+  --card-on-accent: #25221d;
+  --card-highlight: #f3c447;
+  --card-positive: #6fd796;
+  --card-negative: #f08a80;
+  --card-on-negative: #25221d;
+  --card-forecast: #3db8cd;
+  --card-threshold: #eb9be2;
+  --card-possible: #f3c447;
+  --card-focus: #eee8da;
+  --card-tooltip-bg: #eee8da;
+  --card-tooltip-text: #25221d;
+  --card-hairline: rgba(238, 232, 218, 0.16);
+  --series-2: #3db8cd;
+  --series-3: #eb9be2;
+  --series-8: #a9a091;
+  --card-mark-stroke: transparent;
+}
+
+.palette-ink {
+  --card-bg: #25221d;
+  --card-muted: #aaa193;
+  --card-sunk: #3a362f;
+  --card-field: #3a362f;
+  --card-border: #25221d;
+  --card-track: #4a453d;
+  --card-selected: #3a362f;
+}
+
+.palette-plum {
+  --card-bg: #3b2340;
+  --card-muted: #c4adc0;
+  --card-sunk: #4d3152;
+  --card-field: #4d3152;
+  --card-border: #3b2340;
+  --card-track: #5e4263;
+  --card-selected: #4d3152;
+}
+
+.palette-midnight {
+  --card-bg: #1b2433;
+  --card-muted: #a7afbb;
+  --card-sunk: #283345;
+  --card-field: #283345;
+  --card-border: #1b2433;
+  --card-track: #3a4659;
+  --card-selected: #283345;
+}
+
+.palette-forest {
+  --card-bg: #1f3a2b;
+  --card-muted: #b2c2b2;
+  --card-sunk: #2a4837;
+  --card-field: #2a4837;
+  --card-border: #1f3a2b;
+  --card-track: #3c5a48;
+  --card-selected: #2a4837;
+}
+
+.palette-yellow,
+.palette-pink,
+.palette-cyan,
+.palette-coral,
+.palette-lavender,
+.palette-sage,
+.palette-sand {
+  --card-text: #25221d;
+  --card-border: #25221d;
+  --card-accent: #25221d;
+  --card-on-accent: #f3eee3;
+  --card-highlight: #25221d;
+  --card-focus: #25221d;
+  --card-tooltip-bg: #25221d;
+  --card-tooltip-text: #eee8da;
+  --card-hairline: rgba(37, 34, 29, 0.18);
+  --card-on-negative: #f3eee3;
+  --card-possible: #f3eee3;
+  --card-selected: rgba(243, 238, 227, 0.55);
+  /* Identity series are pale on coloured cards: outline them in ink. */
+  --card-mark-stroke: #25221d;
+}
+
+.palette-yellow {
+  --card-bg: #f3c447;
+  --card-muted: #574922;
+  --card-sunk: #e8b636;
+  --card-field: #f8dc8c;
+  --card-track: #dba62a;
+  --card-positive: #1a5c31;
+  --card-negative: #8e2119;
+  --card-forecast: #146c8a;
+  --card-threshold: #80266f;
+  --series-1: #25221d;
+}
+
+.palette-pink {
+  --card-bg: #e68bdc;
+  --card-muted: #42273e;
+  --card-sunk: #dc79d1;
+  --card-field: #f0b2e9;
+  --card-track: #cc66c1;
+  --card-positive: #0f3d1f;
+  --card-negative: #6e1610;
+  --card-forecast: #0f4f6e;
+  --card-threshold: #25221d;
+  --card-possible: #f6d3f0;
+  --series-3: #25221d;
+}
+
+.palette-cyan {
+  --card-bg: #21a9c0;
+  --card-muted: #182425;
+  --card-sunk: #1d98ad;
+  --card-field: #62c2d3;
+  --card-track: #188a9e;
+  --card-positive: #0f3b1f;
+  --card-negative: #5c120d;
+  --card-forecast: #25221d;
+  --card-threshold: #4a1442;
+  --card-possible: #cfe9ee;
+  --series-2: #25221d;
+}
+
+.palette-coral {
+  --card-bg: #f08a5d;
+  --card-muted: #3b251c;
+  --card-sunk: #e57a4c;
+  --card-field: #f6ac8b;
+  --card-track: #d76c3e;
+  --card-positive: #0f3d1f;
+  --card-negative: #6a140e;
+  --card-forecast: #0f526f;
+  --card-threshold: #5c0e51;
+  --series-5: #25221d;
+}
+
+.palette-lavender {
+  --card-bg: #b9a3e3;
+  --card-muted: #362d3c;
+  --card-sunk: #ab93d9;
+  --card-field: #cfc0ee;
+  --card-track: #9a80cc;
+  --card-positive: #134a26;
+  --card-negative: #721710;
+  --card-forecast: #0f5675;
+  --card-threshold: #631656;
+  --series-7: #25221d;
+}
+
+.palette-sage {
+  --card-bg: #a8c79a;
+  --card-muted: #3f4637;
+  --card-sunk: #99bb8a;
+  --card-field: #c2d9b7;
+  --card-track: #87ab77;
+  --card-positive: #134a26;
+  --card-negative: #7d1a12;
+  --card-forecast: #125f7e;
+  --card-threshold: #702168;
+  --series-6: #25221d;
+}
+
+.palette-sand {
+  --card-bg: #e4d3b0;
+  --card-muted: #5a5243;
+  --card-sunk: #d8c49c;
+  --card-field: #ece0c6;
+  --card-track: #cdb68a;
+  --card-positive: #1a5c31;
+  --card-negative: #9f2a22;
+  --card-forecast: #177994;
+  --card-threshold: #87307c;
+}

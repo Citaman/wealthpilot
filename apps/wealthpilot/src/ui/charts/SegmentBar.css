@@ -1,0 +1,70 @@
+.ui-segbar {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.ui-segbar-track {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--card-track);
+}
+
+.ui-segbar-part {
+  flex-basis: 0;
+  min-width: 4px;
+}
+
+.ui-segbar-part[data-kind="paid"],
+.ui-segbar-swatch[data-kind="paid"] {
+  background: var(--card-text);
+}
+
+.ui-segbar-part[data-kind="committed"],
+.ui-segbar-swatch[data-kind="committed"] {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--card-text) 0 2px,
+    transparent 2px 5px
+  );
+  box-shadow: inset 0 0 0 1.5px var(--card-text);
+}
+
+.ui-segbar-part[data-kind="possible"],
+.ui-segbar-swatch[data-kind="possible"] {
+  background: var(--card-possible);
+  box-shadow: inset 0 0 0 1px var(--card-mark-stroke);
+}
+
+.ui-segbar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-text-s);
+}
+
+.ui-segbar-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ui-segbar-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.ui-segbar-name {
+  color: var(--card-muted);
+}
+
+.ui-segbar-legend .ui-money {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  font-weight: 500;
+}

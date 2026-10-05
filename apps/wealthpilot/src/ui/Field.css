@@ -1,0 +1,50 @@
+.ui-field {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.ui-field-label {
+  font-size: var(--fs-text-s);
+  font-weight: 500;
+  color: var(--card-text);
+}
+
+.ui-input {
+  width: 100%;
+  height: var(--h-field);
+  padding: 0 var(--space-3);
+  border: var(--border-pill) solid var(--card-text);
+  border-radius: var(--r-field);
+  background: var(--card-field);
+  color: var(--card-text);
+  font-size: var(--fs-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-input::placeholder {
+  color: var(--card-muted);
+}
+
+.ui-input:focus-visible {
+  outline-offset: 1px;
+}
+
+.ui-input[aria-invalid="true"] {
+  border-color: var(--card-negative);
+}
+
+.ui-field-hint,
+.ui-field-error {
+  font-size: var(--fs-mono);
+  font-family: var(--font-mono);
+  line-height: var(--lh-mono);
+  color: var(--card-muted);
+}
+
+.ui-field-error {
+  color: var(--card-negative);
+  font-family: var(--font-text);
+  font-weight: 500;
+}

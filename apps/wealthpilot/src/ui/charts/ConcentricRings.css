@@ -1,0 +1,52 @@
+.ui-rings {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-inline: auto;
+}
+
+.ui-rings svg {
+  grid-area: 1 / 1;
+}
+
+.ui-ring {
+  transition: opacity var(--dur-press) var(--ease);
+}
+
+.ui-ring[data-dim] {
+  opacity: 0.45;
+}
+
+.ui-ring-track {
+  fill: none;
+  stroke: var(--card-track);
+}
+
+.ui-ring-outline {
+  fill: none;
+  stroke: var(--card-mark-stroke);
+  stroke-linecap: round;
+}
+
+.ui-ring-arc {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+}
+
+.ui-ring-marker {
+  fill: var(--card-negative);
+  stroke: var(--card-bg);
+  stroke-width: 2;
+}
+
+.ui-rings-center {
+  grid-area: 1 / 1;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  text-align: center;
+  pointer-events: none;
+}

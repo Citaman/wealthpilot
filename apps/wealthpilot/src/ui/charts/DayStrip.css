@@ -1,0 +1,183 @@
+.ui-daystrip {
+  container: daystrip / inline-size;
+  min-width: 0;
+}
+
+.ui-daystrip-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.ui-day {
+  display: grid;
+  grid-template-rows: auto 72px 1fr auto;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-2);
+  border: var(--border-pill) solid transparent;
+  border-radius: var(--r-tile);
+  background: var(--card-sunk);
+  color: var(--card-text);
+  text-align: left;
+  transition: background-color var(--dur-press) var(--ease);
+}
+
+.ui-day:hover {
+  background: color-mix(in srgb, var(--card-sunk) 80%, var(--card-text));
+}
+
+.ui-day[aria-pressed="true"] {
+  border-color: var(--card-text);
+}
+
+.ui-day-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  margin: calc(-1 * var(--space-1));
+  border-radius: var(--r-field);
+}
+
+.ui-day[data-today] .ui-day-head {
+  background: var(--card-text);
+  color: var(--card-bg);
+}
+
+.ui-day-name {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ui-day-number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-s);
+  line-height: 1;
+}
+
+.ui-day-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding-top: 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--card-text) 40%, transparent);
+}
+
+.ui-day-spent {
+  position: relative;
+  width: 60%;
+  height: var(--h);
+  min-height: 3px;
+  border-radius: var(--r-bar) var(--r-bar) 0 0;
+  background: var(--card-text);
+}
+
+.ui-day-spent-value {
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  white-space: nowrap;
+}
+
+.ui-day-items {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.ui-day-chip {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--r-bubble);
+  background: var(--pink-soft);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-day-chip[data-kind="income"] {
+  background: var(--cyan-soft);
+}
+
+.ui-day-chip[data-estimated] {
+  border-style: dashed;
+  border-color: var(--ink);
+}
+
+.ui-day-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-text);
+  font-weight: 500;
+}
+
+.ui-day-balance {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--card-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@container daystrip (max-width: 559px) {
+  .ui-daystrip-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .ui-day {
+    grid-template-columns: 64px 56px minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    align-items: center;
+    min-height: var(--h-row);
+  }
+
+  .ui-day-head {
+    margin: 0;
+  }
+
+  .ui-day-bar {
+    height: 10px;
+    padding-top: 0;
+    align-items: stretch;
+    border-bottom: 0;
+    border-radius: var(--r-pill);
+    background: var(--card-track);
+  }
+
+  .ui-day-spent {
+    width: var(--h);
+    height: auto;
+    border-radius: var(--r-pill);
+  }
+
+  .ui-day-spent-value {
+    display: none;
+  }
+
+  .ui-day-items {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .ui-day-chip {
+    display: inline-flex;
+    gap: var(--space-1);
+  }
+}
