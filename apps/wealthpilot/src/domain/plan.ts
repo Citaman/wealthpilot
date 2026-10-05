@@ -51,6 +51,8 @@ export interface PlanSettings {
   /** Weekly-limit lines removed or added by hand, per account. */
   hidden?: Record<string, string[]>;
   added?: Record<string, string[]>;
+  /** Rows per subcategory (« Food › Fast Food ») instead of per category. */
+  detail?: boolean;
 }
 
 export interface ExtraCharge {
@@ -480,4 +482,121 @@ export function allowances(
     })
     .filter((a) => a.usual > 0 || a.spent > 0 || added.has(a.category))
     .sort((a, b) => b.usual - a.usual);
+}
+
+/** « Food · Fast Food » → « Food ». */
+export const categoryOfGroup = (group: string) => group.split(" · ")[0];
+
+/** Items bucketed by the category of their group, in first-seen order. */
+function byCategoryOf<T>(items: T[], key: (item: T) => string) {
+  const map = new Map<string, T[]>();
+  for (const item of items) {
+    const c = categoryOfGroup(key(item));
+    map.set(c, [...(map.get(c) ?? []), item]);
+  }
+  return map;
+}
+
+export interface CategorySplit {
+  category: string;
+  /** The subcategory groups it covers (« Food · Groceries », …). */
+  keys: string[];
+  /** Common mode of its groups, or null when they differ. */
+  mode: ShareMode | null;
+  /** Every group is « chacun le sien ». */
+  personal: boolean;
+  paidMe: Cents;
+  paidPartner: Cents;
+  total: Cents;
+  balance: Cents;
+}
+
+/** Display-only roll-up of the bill split per category; money stays computed per group. */
+export function splitByCategory(groups: GroupSplit[]): CategorySplit[] {
+  return [...byCategoryOf(groups, (g) => g.group)]
+    .map(([category, list]): CategorySplit => {
+      const modes = new Set(list.map((g) => g.mode));
+      return {
+        category,
+        keys: list.map((g) => g.group),
+        mode: modes.size === 1 ? list[0].mode : null,
+        personal: list.every((g) => g.share === null),
+        paidMe: sumBy(list, (g) => g.paidMe),
+        paidPartner: sumBy(list, (g) => g.paidPartner),
+        total: sumBy(list, (g) => g.total),
+        balance: sumBy(list, (g) => g.balance),
+      };
+    })
+    .sort((a, b) => b.total - a.total);
+}
+
+export interface CategoryAllowance extends Allowance {
+  /** The subcategory lines it covers. */
+  lines: Allowance[];
+}
+
+/** Weekly limits rolled up per category (sums of their subcategory lines). */
+export function allowancesByCategory(rows: Allowance[]): CategoryAllowance[] {
+  return [...byCategoryOf(rows, (r) => r.category)]
+    .map(([category, lines]) => ({
+      category,
+      lines,
+      usual: sumBy(lines, (l) => l.usual),
+      suggested: sumBy(lines, (l) => l.suggested),
+      limit: sumBy(lines, (l) => l.limit),
+      spent: sumBy(lines, (l) => l.spent),
+      ticket: 0,
+    }))
+    .sort((a, b) => b.usual - a.usual);
+}
+
+/**
+ * Splits `total` over `weights` proportionally (equally when they are all 0)
+ * in whole euros; leftover cents go to the largest share. Sums to `total`.
+ */
+export function distribute(total: Cents, weights: Cents[]): Cents[] {
+  if (!weights.length) return [];
+  const sum = weights.reduce((a, b) => a + Math.max(0, b), 0);
+  const ratio = (w: number) =>
+    sum ? Math.max(0, w) / sum : 1 / weights.length;
+  const euros = Math.floor(total / 100);
+  const exact = weights.map((w) => euros * ratio(w));
+  const out = exact.map((x) => Math.floor(x));
+  let left = euros - out.reduce((a, b) => a + b, 0);
+  const order = exact
+    .map((x, i) => ({ i, rest: x - Math.floor(x) }))
+    .sort((a, b) => b.rest - a.rest || weights[b.i] - weights[a.i]);
+  for (const { i } of order) {
+    if (left <= 0) break;
+    out[i] += 1;
+    left -= 1;
+  }
+  const cents = out.map((e) => e * 100);
+  cents[cents.indexOf(Math.max(...cents))] += total - euros * 100;
+  return cents;
+}
+
+/**
+ * Per-group limits once the `removed` lines are dropped: their money goes to
+ * the remaining lines, in proportion to their limits.
+ */
+export function withoutLines(
+  limits: Record<string, Cents>,
+  rows: Allowance[],
+  removed: string[],
+): Record<string, Cents> {
+  const gone = new Set(removed);
+  const others = rows.filter((r) => !gone.has(r.category));
+  const freed = sumBy(
+    rows.filter((r) => gone.has(r.category)),
+    (r) => r.limit,
+  );
+  const shares = distribute(
+    freed,
+    others.map((o) => o.limit),
+  );
+  const next = { ...limits };
+  others.forEach((o, i) => (next[o.category] = o.limit + shares[i]));
+  for (const key of gone) delete next[key];
+  return next;
 }

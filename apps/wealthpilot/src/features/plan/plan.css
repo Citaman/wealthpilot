@@ -549,3 +549,19 @@
 .plan-money tfoot th {
   background: none;
 }
+
+/* « Catégories | Sous-catégories »: one setting, shown on the split card and above the weeks. */
+.plan-week {
+  display: grid;
+  gap: var(--space-3);
+}
+.plan-week-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+.plan-week-head .eyebrow {
+  color: var(--text-muted);
+}

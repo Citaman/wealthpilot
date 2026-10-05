@@ -1503,8 +1503,17 @@ async function plan() {
     await input.fill("25");
     await input.press("Enter");
     await page.waitForTimeout(400);
+    // Category rows (default): the amount is spread over its subcategories.
+    const category = label.replace(/^Limite (.*) pour Alex$/, "$1");
     const a = (await planPrefs(page)).allowances?.Alex ?? {};
-    assert(Object.values(a).includes(2500), JSON.stringify(a));
+    const parts = Object.entries(a)
+      .filter(([k]) => k.split(" · ")[0] === category)
+      .map(([, v]) => v);
+    assert(
+      parts.reduce((n, v) => n + v, 0) === 2500 &&
+        parts.every((v) => v % 100 === 0),
+      `${category}: ${JSON.stringify(a)}`,
+    );
   });
 
   await step("weekly limit: negative amount refused", async () => {
@@ -1544,7 +1553,7 @@ async function plan() {
       Math.abs(sum - total) <= 1,
       `total ${total} → ${sum} (${before} → ${after})`,
     );
-    assert(((await planPrefs(page)).hidden?.Alex ?? []).length === 1, "hidden");
+    assert(((await planPrefs(page)).hidden?.Alex ?? []).length >= 1, "hidden");
   });
 
   await step("add a line from the menu", async () => {
@@ -1558,8 +1567,43 @@ async function plan() {
       (await alex.locator(".plan-list li").count()) === count + 1,
       "not added",
     );
-    assert(((await planPrefs(page)).added?.Alex ?? []).length === 1, "added");
+    assert(((await planPrefs(page)).added?.Alex ?? []).length >= 1, "added");
   });
+
+  await step(
+    "détail par sous-catégorie: toggle, same settle-up, persisted",
+    async () => {
+      const settle = async () =>
+        (await split.locator(".plan-settle").innerText()).replace(/\s+/g, " ");
+      const before = await settle();
+      const names = async () =>
+        split
+          .locator("tbody .cat-label, .plan-split-list .cat-label")
+          .allInnerTexts();
+      assert(!(await names()).some((n) => n.includes("›")), "category rows");
+      await split.getByRole("radio", { name: "Sous-catégories" }).click();
+      await page.waitForTimeout(400);
+      assert((await planPrefs(page)).detail === true, "not saved");
+      assert(
+        (await names()).some((n) => n.includes("›")),
+        "no subcategory rows",
+      );
+      assert(
+        (await alex.locator(".plan-list .cat-label").allInnerTexts()).some(
+          (n) => n.includes("›"),
+        ),
+        "weekly rows not detailed",
+      );
+      assert((await settle()) === before, `${before} ≠ ${await settle()}`);
+      await page
+        .locator(".plan-week-head")
+        .getByRole("radio", { name: "Catégories", exact: true })
+        .click();
+      await page.waitForTimeout(400);
+      assert((await planPrefs(page)).detail === false, "not back");
+      assert(!(await names()).some((n) => n.includes("›")), "still detailed");
+    },
+  );
 
   await step("Copier writes the week message to the clipboard", async () => {
     await alex.getByRole("button", { name: "Copier" }).click();

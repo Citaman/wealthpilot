@@ -19,7 +19,12 @@ import { accountName, type Ledger } from "../../domain/ledger";
 import { formatEuro, parseMoney } from "../../domain/money";
 import {
   allowances,
+  allowancesByCategory,
+  categoryOfGroup,
   detectedSalary,
+  distribute,
+  splitByCategory,
+  withoutLines,
   spendingGroups,
   type Allowance,
   people,
@@ -817,7 +822,11 @@ function Split({
         ? "custom"
         : "half";
   return (
-    <CardShell title="Partage des charges" className="plan-split">
+    <CardShell
+      title="Partage des charges"
+      className="plan-split"
+      actions={<DetailToggle settings={settings} save={save} />}
+    >
       <div className="plan-key">
         <div className="plan-key-head">
           <span className="eyebrow">Clé de partage</span>
@@ -899,6 +908,7 @@ function Split({
       <SplitLines
         ledger={ledger}
         groups={usual}
+        known={[...s.usual, ...s.groups].map((g) => g.group)}
         me={me}
         partner={partner}
         settings={settings}
@@ -908,10 +918,48 @@ function Split({
   );
 }
 
+/** « Catégories | Sous-catégories »: how detailed the spending rows are. */
+function DetailToggle({
+  settings,
+  save,
+}: {
+  settings: PlanSettings;
+  save: Save;
+}) {
+  return (
+    <Segmented
+      label="Détail par sous-catégorie"
+      size="compact"
+      className="plan-detail"
+      value={settings.detail ? "sub" : "cat"}
+      onChange={(v) => void save({ detail: v === "sub" })}
+      options={[
+        { value: "cat", label: "Catégories" },
+        { value: "sub", label: "Sous-catégories" },
+      ]}
+    />
+  );
+}
+
+interface SplitRow {
+  key: string;
+  category: string;
+  subcategory?: string;
+  /** Groups whose mode the row's picker sets. */
+  keys: string[];
+  /** Null when its subcategories are split differently. */
+  mode: ShareMode | null;
+  personal: boolean;
+  total: number;
+  paidMe: number;
+  paidPartner: number;
+}
+
 /** Charges paid per person and their split mode; stacked on narrow cards. */
 function SplitLines({
   ledger,
   groups,
+  known,
   me,
   partner,
   settings,
@@ -919,48 +967,97 @@ function SplitLines({
 }: {
   ledger: Ledger;
   groups: ReturnType<typeof settlement>["usual"];
+  /** Every group seen (usual months and this month), for category-wide modes. */
+  known: string[];
   me: string;
   partner: string;
   settings: PlanSettings;
   save: Save;
 }) {
   const { width } = useCardWidth();
-  const name = (group: string) => (
+  const rows: SplitRow[] = settings.detail
+    ? groups.map((g) => ({
+        ...g,
+        ...splitGroup(g.group),
+        key: g.group,
+        keys: [g.group],
+        personal: g.share === null,
+      }))
+    : splitByCategory(groups).map((c) => ({
+        ...c,
+        key: c.category,
+        keys: [
+          ...new Set([
+            ...c.keys,
+            ...known.filter((k) => categoryOfGroup(k) === c.category),
+          ]),
+        ],
+      }));
+  const text = (r: SplitRow) => (r.subcategory ? groupText(r.key) : r.category);
+  const name = (r: SplitRow) => (
     <span className="plan-cell-name">
-      <Logo ledger={ledger} name={group} {...splitGroup(group)} size={28} />
-      <CategoryLabel ledger={ledger} {...splitGroup(group)} icon={false} />
+      <Logo
+        ledger={ledger}
+        name={r.key}
+        category={r.category}
+        subcategory={r.subcategory}
+        size={28}
+      />
+      <CategoryLabel
+        ledger={ledger}
+        category={r.category}
+        subcategory={r.subcategory}
+        icon={false}
+      />
     </span>
   );
-  const picker = (g: (typeof groups)[number]) => (
-    <Picker
-      label={`Répartition de ${groupText(g.group)}`}
+  const picker = (r: SplitRow) => (
+    <Picker<ShareMode | "mixed">
+      label={`Répartition de ${text(r)}`}
       size="compact"
       variant="ghost"
-      value={g.mode === "custom" ? "income" : g.mode}
-      onValueChange={(v) =>
-        void save({ modes: { ...settings.modes, [g.group]: v } })
+      value={
+        r.mode === null ? "mixed" : r.mode === "custom" ? "income" : r.mode
       }
-      options={modeOptions(me, partner)}
+      onValueChange={(v) => {
+        if (v === "mixed") return;
+        const modes = { ...settings.modes };
+        for (const k of r.keys) modes[k] = v;
+        void save({ modes });
+      }}
+      options={[
+        ...(r.mode === null
+          ? [
+              {
+                value: "mixed" as const,
+                label: "Mixte",
+                description: "Les sous-catégories sont réparties différemment",
+                disabled: true,
+              },
+            ]
+          : []),
+        ...modeOptions(me, partner),
+      ]}
     />
   );
   if (width > 0 && width < STACKED)
     return (
       <ul className="plan-stack-rows plan-split-list">
-        {groups.map((g) => (
+        {rows.map((r) => (
           <li
-            key={g.group}
+            key={r.key}
             className="plan-stack-row"
-            data-personal={g.share === null || undefined}
+            data-personal={r.personal || undefined}
           >
-            {name(g.group)}
+            {name(r)}
             <span className="plan-stack-amount">
-              <Money value={g.total} tone="none" />
+              <Money value={r.total} tone="none" />
             </span>
             <span className="plan-stack-meta">
-              {me} {formatEuro(g.paidMe)} · {partner}{" "}
-              {formatEuro(g.paidPartner)}
+              {me} {formatEuro(r.paidMe)} · {partner}{" "}
+              {formatEuro(r.paidPartner)}
             </span>
-            <span className="plan-stack-control">{picker(g)}</span>
+            <span className="plan-stack-control">{picker(r)}</span>
           </li>
         ))}
       </ul>
@@ -977,19 +1074,19 @@ function SplitLines({
         </tr>
       </thead>
       <tbody>
-        {groups.map((g) => (
-          <tr key={g.group} data-personal={g.share === null || undefined}>
-            <td>{name(g.group)}</td>
+        {rows.map((r) => (
+          <tr key={r.key} data-personal={r.personal || undefined}>
+            <td>{name(r)}</td>
             <td>
-              <Money value={g.total} tone="none" />
+              <Money value={r.total} tone="none" />
             </td>
             <td>
-              <Money value={g.paidMe} tone="none" />
+              <Money value={r.paidMe} tone="none" />
             </td>
             <td>
-              <Money value={g.paidPartner} tone="none" />
+              <Money value={r.paidPartner} tone="none" />
             </td>
-            <td>{picker(g)}</td>
+            <td>{picker(r)}</td>
           </tr>
         ))}
       </tbody>
@@ -1088,208 +1185,251 @@ function Allowances({
 }) {
   const toast = useToast();
   const s = settlement(ledger, settings, who);
+  const detail = settings.detail ?? false;
   const colorOf = (key: string) =>
-    categoryColor(key.split(" · ")[0], ledger.prefs.categoryDefinitions);
+    categoryColor(categoryOfGroup(key), ledger.prefs.categoryDefinitions);
+  /** A row's text: « Food › Fast Food » in detail, « Food » per category. */
+  const label = (key: string) => (detail ? groupText(key) : key);
   /** Its money goes to the remaining lines, in proportion to their limits. */
-  const remove = (account: string, rows: Allowance[], line: Allowance) => {
-    const others = rows.filter((x) => x !== line);
-    const sum = others.reduce((n, x) => n + x.limit, 0);
-    const limits = { ...settings.allowances?.[account] };
-    for (const o of others)
-      limits[o.category] =
-        o.limit +
-        Math.round(
-          (line.limit * (sum ? o.limit / sum : 1 / others.length)) / 100,
-        ) *
-          100;
-    delete limits[line.category];
+  const remove = (account: string, lines: Allowance[], row: Row) => {
+    const keys = row.lines.map((l) => l.category);
     return save(
       {
         hidden: {
           ...settings.hidden,
-          [account]: [...(settings.hidden?.[account] ?? []), line.category],
+          [account]: [
+            ...new Set([...(settings.hidden?.[account] ?? []), ...keys]),
+          ],
         },
         added: {
           ...settings.added,
           [account]: (settings.added?.[account] ?? []).filter(
-            (k) => k !== line.category,
+            (k) => !keys.includes(k),
           ),
         },
-        allowances: { ...settings.allowances, [account]: limits },
+        allowances: {
+          ...settings.allowances,
+          [account]: withoutLines(
+            settings.allowances?.[account] ?? {},
+            lines,
+            keys,
+          ),
+        },
       },
-      line.limit
-        ? `${groupText(line.category)} retirée · ${formatEuro(line.limit)} réparti sur les autres`
-        : `${groupText(line.category)} retirée`,
+      row.limit
+        ? `${label(row.category)} retirée · ${formatEuro(row.limit)} réparti sur les autres`
+        : `${label(row.category)} retirée`,
     );
   };
-  const add = (account: string, key: string) =>
+  const add = (account: string, keys: string[], text: string) =>
     save(
       {
         added: {
           ...settings.added,
-          [account]: [...(settings.added?.[account] ?? []), key],
+          [account]: [
+            ...new Set([...(settings.added?.[account] ?? []), ...keys]),
+          ],
         },
         hidden: {
           ...settings.hidden,
           [account]: (settings.hidden?.[account] ?? []).filter(
-            (k) => k !== key,
+            (k) => !keys.includes(k),
           ),
         },
       },
-      `${groupText(key)} ajoutée`,
+      `${text} ajoutée`,
     );
+  /** A category limit is spread over its subcategories, by their current limits. */
+  const setLimit = (account: string, row: Row, v: number | null) => {
+    const limits = { ...settings.allowances?.[account] };
+    const shares =
+      v === null
+        ? null
+        : distribute(
+            v,
+            row.lines.map((l) => l.limit),
+          );
+    row.lines.forEach((l, i) => {
+      if (shares) limits[l.category] = shares[i];
+      else delete limits[l.category];
+    });
+    const shown = v ?? row.suggested;
+    return save(
+      { allowances: { ...settings.allowances, [account]: limits } },
+      `Limite ${label(row.category)} : ${formatEuro(shown)}`,
+    );
+  };
   return (
-    <div className="plan-people">
-      {[who.me, who.partner].map((account) => {
-        const name = accountName(ledger, account);
-        const rows = allowances(ledger, settings, account, path.weeklyVariable);
-        const total = rows.reduce((n, r) => n + r.limit, 0);
-        const message = [
-          `Cette semaine pour ${name} :`,
-          ...rows
-            .filter((r) => r.limit > 0)
-            .map(
-              (r) =>
-                `• ${groupText(r.category)} : ${formatEuro(r.limit)}${times(r)}`,
-            ),
-          `Total : ${formatEuro(total)}.`,
-          ...(account === who.partner && s.asked
-            ? [
-                `Virement vers ${accountName(ledger, who.me)} ce mois : ${formatEuro(s.asked)}.`,
-              ]
-            : []),
-        ].join("\n");
-        return (
-          <CardShell
-            key={account}
-            title={`Semaine de ${name}`}
-            actions={
-              <>
-                <Menu
-                  label={`Ajouter une ligne à la semaine de ${name}`}
-                  trigger={
-                    <Button size="s" icon={<Plus size={16} aria-hidden />}>
-                      Ligne
-                    </Button>
-                  }
-                  items={spendingGroups(ledger, account)
-                    .filter((k) => !rows.some((r) => r.category === k))
-                    .map((k) => ({
-                      label: groupText(k),
-                      onSelect: () => void add(account, k),
-                    }))}
-                />
-                <Button
-                  size="s"
-                  icon={<Copy size={16} aria-hidden />}
-                  onClick={() =>
-                    void navigator.clipboard.writeText(message).then(
-                      () => toast.show({ message: "Message copié" }),
-                      () => toast.error(new Error("Copie impossible")),
-                    )
-                  }
-                >
-                  Copier
-                </Button>
-              </>
-            }
-            footer={
-              <p className="plan-muted">
-                {formatEuro(total)} / semaine · dépenses personnelles hors
-                charges partagées
-              </p>
-            }
-          >
-            {total > 0 && (
-              <div className="plan-mix" aria-hidden>
-                {rows
-                  .filter((r) => r.limit > 0)
-                  .map((r) => (
-                    <span
-                      key={r.category}
-                      title={`${groupText(r.category)} ${formatEuro(r.limit)}`}
-                      style={{
-                        flexGrow: r.limit,
-                        background: colorOf(r.category),
-                      }}
-                    />
-                  ))}
-              </div>
-            )}
-            {rows.length ? (
-              <ul className="plan-list">
-                {rows.map((r) => (
-                  <li
-                    key={r.category}
-                    style={
-                      {
-                        "--cat": colorOf(r.category),
-                      } as React.CSSProperties
+    <section className="plan-week" aria-label="Semaines">
+      <header className="plan-week-head">
+        <span className="eyebrow">Limites de la semaine</span>
+        <DetailToggle settings={settings} save={save} />
+      </header>
+      <div className="plan-people">
+        {[who.me, who.partner].map((account) => {
+          const name = accountName(ledger, account);
+          const lines = allowances(
+            ledger,
+            settings,
+            account,
+            path.weeklyVariable,
+          );
+          const rows: Row[] = detail
+            ? lines.map((l) => ({ ...l, lines: [l] }))
+            : allowancesByCategory(lines);
+          const total = rows.reduce((n, r) => n + r.limit, 0);
+          const count = (r: Row) => (detail ? times(r) : "");
+          const known = spendingGroups(ledger, account);
+          const menu = detail
+            ? known
+                .filter((k) => !lines.some((l) => l.category === k))
+                .map((k) => ({
+                  label: groupText(k),
+                  onSelect: () => void add(account, [k], groupText(k)),
+                }))
+            : [...new Set(known.map(categoryOfGroup))]
+                .filter((c) => !rows.some((r) => r.category === c))
+                .map((c) => ({
+                  label: c,
+                  onSelect: () =>
+                    void add(
+                      account,
+                      known.filter((k) => categoryOfGroup(k) === c),
+                      c,
+                    ),
+                }));
+          const message = [
+            `Cette semaine pour ${name} :`,
+            ...rows
+              .filter((r) => r.limit > 0)
+              .map(
+                (r) =>
+                  `• ${label(r.category)} : ${formatEuro(r.limit)}${count(r)}`,
+              ),
+            `Total : ${formatEuro(total)}.`,
+            ...(account === who.partner && s.asked
+              ? [
+                  `Virement vers ${accountName(ledger, who.me)} ce mois : ${formatEuro(s.asked)}.`,
+                ]
+              : []),
+          ].join("\n");
+          return (
+            <CardShell
+              key={account}
+              title={`Semaine de ${name}`}
+              actions={
+                <>
+                  <Menu
+                    label={`Ajouter une ligne à la semaine de ${name}`}
+                    trigger={
+                      <Button size="s" icon={<Plus size={16} aria-hidden />}>
+                        Ligne
+                      </Button>
+                    }
+                    items={menu}
+                  />
+                  <Button
+                    size="s"
+                    icon={<Copy size={16} aria-hidden />}
+                    onClick={() =>
+                      void navigator.clipboard.writeText(message).then(
+                        () => toast.show({ message: "Message copié" }),
+                        () => toast.error(new Error("Copie impossible")),
+                      )
                     }
                   >
-                    <Logo
-                      ledger={ledger}
-                      name={r.category}
-                      {...splitGroup(r.category)}
-                    />
-                    <span className="plan-item">
-                      <CategoryLabel
-                        ledger={ledger}
-                        {...splitGroup(r.category)}
-                        icon={false}
-                      />
-                      <small>
-                        {formatEuro(r.spent)} dépensés · d’habitude{" "}
-                        {formatEuro(r.usual)}
-                        {times(r)}
-                      </small>
-                    </span>
-                    <span
-                      className="plan-meter"
-                      data-over={r.spent > r.limit || undefined}
-                    >
+                    Copier
+                  </Button>
+                </>
+              }
+              footer={
+                <p className="plan-muted">
+                  {formatEuro(total)} / semaine · dépenses personnelles hors
+                  charges partagées
+                </p>
+              }
+            >
+              {total > 0 && (
+                <div className="plan-mix" aria-hidden>
+                  {rows
+                    .filter((r) => r.limit > 0)
+                    .map((r) => (
                       <span
+                        key={r.category}
+                        title={`${label(r.category)} ${formatEuro(r.limit)}`}
                         style={{
-                          width: `${Math.min(100, r.limit ? (r.spent / r.limit) * 100 : r.spent ? 100 : 0)}%`,
+                          flexGrow: r.limit,
+                          background: colorOf(r.category),
                         }}
                       />
-                    </span>
-                    <EditableMoney
-                      label={`Limite ${groupText(r.category)} pour ${name}`}
-                      value={r.limit}
-                      validate={(v) => (v < 0 ? "Montant positif" : null)}
-                      onCommit={(v) =>
-                        save(
-                          {
-                            allowances: {
-                              ...settings.allowances,
-                              [account]: {
-                                ...settings.allowances?.[account],
-                                [r.category]: v ?? r.suggested,
-                              },
-                            },
-                          },
-                          `Limite ${groupText(r.category)} : ${formatEuro(v ?? r.suggested)}`,
-                        )
+                    ))}
+                </div>
+              )}
+              {rows.length ? (
+                <ul className="plan-list">
+                  {rows.map((r) => (
+                    <li
+                      key={r.category}
+                      style={
+                        {
+                          "--cat": colorOf(r.category),
+                        } as React.CSSProperties
                       }
-                    />
-                    <IconButton
-                      label={`Retirer ${groupText(r.category)} de la semaine de ${name}`}
-                      icon={<X size={14} aria-hidden />}
-                      onClick={() => void remove(account, rows, r)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Empty>Aucune dépense personnelle récente</Empty>
-            )}
-          </CardShell>
-        );
-      })}
-    </div>
+                    >
+                      <Logo
+                        ledger={ledger}
+                        name={r.category}
+                        {...splitGroup(r.category)}
+                      />
+                      <span className="plan-item">
+                        <CategoryLabel
+                          ledger={ledger}
+                          {...splitGroup(r.category)}
+                          icon={false}
+                        />
+                        <small>
+                          {formatEuro(r.spent)} dépensés · d’habitude{" "}
+                          {formatEuro(r.usual)}
+                          {count(r)}
+                        </small>
+                      </span>
+                      <span
+                        className="plan-meter"
+                        data-over={r.spent > r.limit || undefined}
+                      >
+                        <span
+                          style={{
+                            width: `${Math.min(100, r.limit ? (r.spent / r.limit) * 100 : r.spent ? 100 : 0)}%`,
+                          }}
+                        />
+                      </span>
+                      <EditableMoney
+                        label={`Limite ${label(r.category)} pour ${name}`}
+                        value={r.limit}
+                        validate={(v) => (v < 0 ? "Montant positif" : null)}
+                        onCommit={(v) => setLimit(account, r, v)}
+                      />
+                      <IconButton
+                        label={`Retirer ${label(r.category)} de la semaine de ${name}`}
+                        icon={<X size={14} aria-hidden />}
+                        onClick={() => void remove(account, lines, r)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <Empty>Aucune dépense personnelle récente</Empty>
+              )}
+            </CardShell>
+          );
+        })}
+      </div>
+    </section>
   );
 }
+
+/** A weekly-limit row: one subcategory line, or a category and its lines. */
+type Row = Allowance & { lines: Allowance[] };
 
 /** « ≈ 2 × 13 € » — how many usual purchases the limit allows. */
 function times(r: { limit: number; ticket: number }) {
