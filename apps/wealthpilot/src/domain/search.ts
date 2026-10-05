@@ -123,6 +123,10 @@ export const sortTransactions = (rows: Transaction[], sort: TransactionSort) =>
   rows.toSorted(comparators[sort]);
 
 /** Search relevance first when a query is typed, then the chosen sort. */
+/** Filter value of a subcategory: « Food › Fast Food ». */
+export const subcategoryKey = (category: string, subcategory = "") =>
+  subcategory ? `${category} › ${subcategory}` : category;
+
 export const filterTransactions = memo(
   (ledger: Ledger, f: TransactionFilters): Transaction[] => {
     const categories = new Set(f.categories);
@@ -132,7 +136,9 @@ export const filterTransactions = memo(
         t.date > f.range.to ||
         (f.batchId && t.batchId !== f.batchId) ||
         !kindMatches(t, f.kind) ||
-        (categories.size && !categories.has(t.category)) ||
+        (categories.size &&
+          !categories.has(t.category) &&
+          !categories.has(subcategoryKey(t.category, t.subcategory))) ||
         (f.min !== null && Math.abs(t.amount) < f.min) ||
         (f.max !== null && Math.abs(t.amount) > f.max) ||
         (f.uncategorized && !isUncategorized(t.category)) ||

@@ -48,6 +48,9 @@ export interface PlanSettings {
   /** Budget month the recovery aims at (≥ 0 from then on). */
   target?: string;
   view?: "calendar" | "line" | "bars" | "table";
+  /** Weekly-limit lines removed or added by hand, per account. */
+  hidden?: Record<string, string[]>;
+  added?: Record<string, string[]>;
 }
 
 export interface ExtraCharge {
@@ -418,7 +421,15 @@ export interface Allowance {
   spent: Cents;
 }
 
-/** Weekly personal limits per category, suggested from the last 8 full weeks. */
+/** Spending groups (« Food · Fast Food ») an account used, for the « add a line » menu. */
+export function spendingGroups(ledger: Ledger, account: string): string[] {
+  const groups = new Set<string>();
+  for (const t of ledger.byAccount.get(account) ?? [])
+    if (spent(t) && !isUncategorized(t.category)) groups.add(groupOf(t));
+  return [...groups].sort((a, b) => a.localeCompare(b, "fr"));
+}
+
+/** Weekly personal limits per spending group, suggested from the last 8 full weeks. */
 export function allowances(
   ledger: Ledger,
   s: PlanSettings,
@@ -436,8 +447,14 @@ export function allowances(
     if (isUncategorized(t.category)) continue;
     if ((s.modes?.[groupOf(t)] ?? defaultMode(groupOf(t))) !== "personal")
       continue;
-    byCategory.set(t.category, [...(byCategory.get(t.category) ?? []), t]);
+    const key = groupOf(t);
+    if (s.hidden?.[account]?.includes(key)) continue;
+    byCategory.set(key, [...(byCategory.get(key) ?? []), t]);
   }
+  for (const key of s.added?.[account] ?? [])
+    if (!byCategory.has(key) && !s.hidden?.[account]?.includes(key))
+      byCategory.set(key, []);
+  const added = new Set(s.added?.[account]);
   return [...byCategory]
     .map(([category, rows]) => {
       const weeks = Array.from({ length: 8 }, (_, i) => {
@@ -454,13 +471,13 @@ export function allowances(
         usual,
         suggested,
         limit: s.allowances?.[account]?.[category] ?? suggested,
-        ticket: median(rows.map((t) => -t.amount)),
+        ticket: rows.length ? median(rows.map((t) => -t.amount)) : 0,
         spent: -sumBy(
           rows.filter((t) => t.date >= thisWeek),
           (t) => t.amount,
         ),
       };
     })
-    .filter((a) => a.usual > 0 || a.spent > 0)
+    .filter((a) => a.usual > 0 || a.spent > 0 || added.has(a.category))
     .sort((a, b) => b.usual - a.usual);
 }

@@ -195,6 +195,8 @@ function Item({
         />
       );
     }
+    case "transfers":
+      return <Transfers item={item} />;
     case "future":
       return (
         <Section
@@ -209,6 +211,42 @@ function Item({
         />
       );
   }
+}
+
+function Transfers({
+  item,
+}: {
+  item: Extract<InboxItem, { kind: "transfers" }>;
+}) {
+  const toast = useToast();
+  return (
+    <Section
+      count={item.pairs}
+      title={
+        item.pairs > 1
+          ? `${item.pairs} virements entre vos comptes`
+          : "1 virement entre vos comptes"
+      }
+      meta="même montant sortant d’un compte et entrant sur un autre"
+      action={
+        <Button
+          variant="primary"
+          onClick={async () => {
+            try {
+              toast.undoable(
+                `${item.pairs} virement${item.pairs > 1 ? "s" : ""} marqué${item.pairs > 1 ? "s" : ""}`,
+                await updateTransactions(item.ids, { internal: true }),
+              );
+            } catch (e) {
+              toast.error(e);
+            }
+          }}
+        >
+          Marquer comme virements
+        </Button>
+      }
+    />
+  );
 }
 
 function Section({

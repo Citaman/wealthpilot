@@ -1,4 +1,5 @@
 import {
+  ArrowRight,
   Ban,
   CalendarDays,
   ChartColumn,
@@ -19,6 +20,8 @@ import { formatEuro, parseMoney } from "../../domain/money";
 import {
   allowances,
   detectedSalary,
+  spendingGroups,
+  type Allowance,
   people,
   scenarios,
   settlement,
@@ -35,6 +38,7 @@ import { Badge } from "../../ui/Badge";
 import { DivergingBars } from "../../ui/charts/DivergingBars";
 import { LineChart } from "../../ui/charts/LineChart";
 import { IconButton } from "../../ui/IconButton";
+import { Menu } from "../../ui/Menu";
 import { Logo } from "../dashboard/cards/cardParts";
 import { Button } from "../../ui/Button";
 import { CardShell } from "../../ui/CardShell";
@@ -656,52 +660,9 @@ function Split({
         : "custom";
   return (
     <CardShell title="Partage des charges" className="plan-split">
-      <div className="plan-split-head">
-        <div>
+      <div className="plan-key">
+        <div className="plan-key-head">
           <span className="eyebrow">Clé de partage</span>
-          <p className="plan-split-key">
-            {me} {pct(who.share)} · {partner} {pct(1 - who.share)}
-          </p>
-          <dl className="plan-rows plan-salaries">
-            {[
-              [who.me, who.meIncome],
-              [who.partner, who.partnerIncome],
-            ].map(([account, income]) => {
-              const id = String(account);
-              const detected = detectedSalary(ledger, id);
-              const manual = settings.incomes?.[id] !== undefined;
-              return (
-                <Fragment key={id}>
-                  <dt>
-                    Salaire de {accountName(ledger, id)}
-                    <small className="plan-muted">
-                      {manual
-                        ? `saisi · détecté ${formatEuro(detected)}`
-                        : "détecté sur le dernier relevé"}
-                    </small>
-                  </dt>
-                  <dd>
-                    <EditableMoney
-                      label={`Salaire de référence de ${accountName(ledger, id)}`}
-                      value={Number(income)}
-                      allowEmpty
-                      onCommit={(v) => {
-                        const incomes = { ...settings.incomes };
-                        if (v === null) delete incomes[id];
-                        else incomes[id] = Math.abs(v);
-                        return save(
-                          { incomes },
-                          "Salaire de référence enregistré",
-                        );
-                      }}
-                    />
-                  </dd>
-                </Fragment>
-              );
-            })}
-          </dl>
-        </div>
-        <div className="plan-split-controls">
           <Segmented
             label="Clé de partage"
             size="compact"
@@ -718,65 +679,59 @@ function Split({
               { value: "custom", label: "Réglage" },
             ]}
           />
-          {mode === "custom" && (
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={Math.round(who.share * 100)}
-              onChange={(e) =>
-                void save({ share: Number(e.target.value) / 100 })
-              }
-              aria-label={`Part de ${me}`}
-              aria-valuetext={`${me} ${pct(who.share)}`}
-            />
-          )}
+        </div>
+        <div className="plan-key-bar" aria-hidden>
+          <span style={{ flexGrow: who.share }}>
+            {me} {pct(who.share)}
+          </span>
+          <span style={{ flexGrow: 1 - who.share }}>
+            {partner} {pct(1 - who.share)}
+          </span>
+        </div>
+        {mode === "custom" && (
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(who.share * 100)}
+            onChange={(e) => void save({ share: Number(e.target.value) / 100 })}
+            aria-label={`Part de ${me}`}
+            aria-valuetext={`${me} ${pct(who.share)}`}
+          />
+        )}
+        <div className="plan-key-salaries">
+          {[who.me, who.partner].map((id) => {
+            const income = id === who.me ? who.meIncome : who.partnerIncome;
+            const manual = settings.incomes?.[id] !== undefined;
+            return (
+              <span
+                key={id}
+                title={
+                  manual
+                    ? `Saisi · détecté ${formatEuro(detectedSalary(ledger, id))}`
+                    : "Dernier salaire détecté"
+                }
+              >
+                {accountName(ledger, id)}
+                <EditableMoney
+                  label={`Salaire de référence de ${accountName(ledger, id)}`}
+                  value={income}
+                  allowEmpty
+                  onCommit={(v) => {
+                    const incomes = { ...settings.incomes };
+                    if (v === null) delete incomes[id];
+                    else incomes[id] = Math.abs(v);
+                    return save({ incomes }, "Salaire de référence enregistré");
+                  }}
+                />
+                {manual && <Badge tone="neutral">saisi</Badge>}
+              </span>
+            );
+          })}
         </div>
       </div>
 
-      <div className="plan-transfer">
-        <div>
-          <span className="eyebrow">Chaque mois</span>
-          <p className="plan-transfer-amount">
-            {s.usualOwed >= 0 ? `${partner} → ${me}` : `${me} → ${partner}`}{" "}
-            <Money value={Math.abs(s.usualOwed)} size="l" tone="none" />
-          </p>
-          <span className="plan-muted">
-            Moyenne des 3 derniers mois sur les charges partagées
-          </span>
-        </div>
-        <div className="plan-transfer-month">
-          <span className="eyebrow">{month(s.month)}</span>
-          <dl className="plan-rows">
-            <dt>Part juste à ce jour</dt>
-            <dd>
-              <Money value={s.owed} tone="none" />
-            </dd>
-            <dt>Déjà versé par {partner}</dt>
-            <dd>
-              <Money value={s.received} tone="none" />
-            </dd>
-            <dt>Demandé ce mois</dt>
-            <dd>
-              <EditableMoney
-                label={`Montant demandé à ${partner} en ${month(s.month)}`}
-                value={s.asked}
-                allowEmpty
-                onCommit={(v) => {
-                  const caps = { ...settings.caps };
-                  if (v === null) delete caps[s.month];
-                  else caps[s.month] = v;
-                  return save({ caps }, "Montant demandé enregistré");
-                }}
-              />
-            </dd>
-            <dt>Avancé par {me}</dt>
-            <dd>
-              <Money value={s.advanced} tone="none" />
-            </dd>
-          </dl>
-        </div>
-      </div>
+      <Settle ledger={ledger} who={who} settings={settings} save={save} />
 
       <table className="plan-table">
         <thead>
@@ -831,6 +786,82 @@ function Split({
   );
 }
 
+/** Splitwise-style settle-up: who pays whom this month, and how far along. */
+function Settle({
+  ledger,
+  who,
+  settings,
+  save,
+}: {
+  ledger: Ledger;
+  who: People;
+  settings: PlanSettings;
+  save: Save;
+}) {
+  const me = accountName(ledger, who.me);
+  const partner = accountName(ledger, who.partner);
+  const s = settlement(ledger, settings, who);
+  const fair = Math.max(0, s.owed);
+  const paid = Math.min(s.received, fair);
+  const askedLeft = Math.max(0, Math.min(fair, s.asked ?? 0) - paid);
+  const advanced = Math.max(0, fair - paid - askedLeft);
+  const total = Math.max(1, fair);
+  const from = s.owed >= 0 ? partner : me;
+  const to = s.owed >= 0 ? me : partner;
+  return (
+    <div className="plan-settle">
+      <span className="eyebrow">{month(s.month)} · à régler</span>
+      <p className="plan-settle-amount">
+        {from} <ArrowRight size={20} aria-hidden /> {to}
+        <Money value={Math.abs(s.owed)} size="l" tone="none" />
+      </p>
+      <div
+        className="plan-settle-bar"
+        role="img"
+        aria-label={`Versé ${formatEuro(s.received)}, demandé ${formatEuro(s.asked ?? 0)}, avancé ${formatEuro(advanced)}`}
+      >
+        <span data-part="paid" style={{ flexGrow: paid / total }} />
+        <span data-part="asked" style={{ flexGrow: askedLeft / total }} />
+        <span data-part="advanced" style={{ flexGrow: advanced / total }} />
+      </div>
+      <dl className="plan-settle-legend">
+        <div data-part="paid">
+          <dt>Versé</dt>
+          <dd>
+            <Money value={s.received} tone="none" />
+          </dd>
+        </div>
+        <div data-part="asked">
+          <dt>Demandé</dt>
+          <dd>
+            <EditableMoney
+              label={`Montant demandé à ${partner} en ${month(s.month)}`}
+              value={s.asked}
+              allowEmpty
+              onCommit={(v) => {
+                const caps = { ...settings.caps };
+                if (v === null) delete caps[s.month];
+                else caps[s.month] = v;
+                return save({ caps }, "Montant demandé enregistré");
+              }}
+            />
+          </dd>
+        </div>
+        <div data-part="advanced">
+          <dt>Avancé par {me}</dt>
+          <dd>
+            <Money value={advanced} tone="none" />
+          </dd>
+        </div>
+      </dl>
+      <p className="plan-muted">
+        ≈ {formatEuro(Math.abs(s.usualOwed), { cents: "never" })} par mois en
+        moyenne (3 derniers mois)
+      </p>
+    </div>
+  );
+}
+
 function Allowances({
   ledger,
   who,
@@ -846,6 +877,56 @@ function Allowances({
 }) {
   const toast = useToast();
   const s = settlement(ledger, settings, who);
+  const colorOf = (key: string) =>
+    categoryColor(key.split(" · ")[0], ledger.prefs.categoryDefinitions);
+  /** Its money goes to the remaining lines, in proportion to their limits. */
+  const remove = (account: string, rows: Allowance[], line: Allowance) => {
+    const others = rows.filter((x) => x !== line);
+    const sum = others.reduce((n, x) => n + x.limit, 0);
+    const limits = { ...settings.allowances?.[account] };
+    for (const o of others)
+      limits[o.category] =
+        o.limit +
+        Math.round(
+          (line.limit * (sum ? o.limit / sum : 1 / others.length)) / 100,
+        ) *
+          100;
+    delete limits[line.category];
+    return save(
+      {
+        hidden: {
+          ...settings.hidden,
+          [account]: [...(settings.hidden?.[account] ?? []), line.category],
+        },
+        added: {
+          ...settings.added,
+          [account]: (settings.added?.[account] ?? []).filter(
+            (k) => k !== line.category,
+          ),
+        },
+        allowances: { ...settings.allowances, [account]: limits },
+      },
+      line.limit
+        ? `${line.category} retirée · ${formatEuro(line.limit)} réparti sur les autres`
+        : `${line.category} retirée`,
+    );
+  };
+  const add = (account: string, key: string) =>
+    save(
+      {
+        added: {
+          ...settings.added,
+          [account]: [...(settings.added?.[account] ?? []), key],
+        },
+        hidden: {
+          ...settings.hidden,
+          [account]: (settings.hidden?.[account] ?? []).filter(
+            (k) => k !== key,
+          ),
+        },
+      },
+      `${key} ajoutée`,
+    );
   return (
     <div className="plan-people">
       {[who.me, who.partner].map((account) => {
@@ -869,18 +950,34 @@ function Allowances({
             key={account}
             title={`Semaine de ${name}`}
             actions={
-              <Button
-                size="s"
-                icon={<Copy size={16} aria-hidden />}
-                onClick={() =>
-                  void navigator.clipboard.writeText(message).then(
-                    () => toast.show({ message: "Message copié" }),
-                    () => toast.error(new Error("Copie impossible")),
-                  )
-                }
-              >
-                Copier
-              </Button>
+              <>
+                <Menu
+                  label={`Ajouter une ligne à la semaine de ${name}`}
+                  trigger={
+                    <Button size="s" icon={<Plus size={16} aria-hidden />}>
+                      Ligne
+                    </Button>
+                  }
+                  items={spendingGroups(ledger, account)
+                    .filter((k) => !rows.some((r) => r.category === k))
+                    .map((k) => ({
+                      label: k,
+                      onSelect: () => void add(account, k),
+                    }))}
+                />
+                <Button
+                  size="s"
+                  icon={<Copy size={16} aria-hidden />}
+                  onClick={() =>
+                    void navigator.clipboard.writeText(message).then(
+                      () => toast.show({ message: "Message copié" }),
+                      () => toast.error(new Error("Copie impossible")),
+                    )
+                  }
+                >
+                  Copier
+                </Button>
+              </>
             }
             footer={
               <p className="plan-muted">
@@ -899,10 +996,7 @@ function Allowances({
                       title={`${r.category} ${formatEuro(r.limit)}`}
                       style={{
                         flexGrow: r.limit,
-                        background: categoryColor(
-                          r.category,
-                          ledger.prefs.categoryDefinitions,
-                        ),
+                        background: colorOf(r.category),
                       }}
                     />
                   ))}
@@ -915,17 +1009,15 @@ function Allowances({
                     key={r.category}
                     style={
                       {
-                        "--cat": categoryColor(
-                          r.category,
-                          ledger.prefs.categoryDefinitions,
-                        ),
+                        "--cat": colorOf(r.category),
                       } as React.CSSProperties
                     }
                   >
                     <Logo
                       ledger={ledger}
                       name={r.category}
-                      category={r.category}
+                      category={r.category.split(" · ")[0]}
+                      subcategory={r.category.split(" · ")[1]}
                     />
                     <span className="plan-item">
                       {r.category}
@@ -962,6 +1054,11 @@ function Allowances({
                           `Limite ${r.category} : ${formatEuro(v ?? r.suggested)}`,
                         )
                       }
+                    />
+                    <IconButton
+                      label={`Retirer ${r.category} de la semaine de ${name}`}
+                      icon={<X size={14} aria-hidden />}
+                      onClick={() => void remove(account, rows, r)}
                     />
                   </li>
                 ))}

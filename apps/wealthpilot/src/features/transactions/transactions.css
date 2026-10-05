@@ -1148,3 +1148,8 @@
 .tx-cat-sub {
   font-size: var(--fs-text-s);
 }
+
+.tx-filters-cats li[data-sub] {
+  padding-left: var(--space-6);
+  font-size: var(--fs-text-s);
+}

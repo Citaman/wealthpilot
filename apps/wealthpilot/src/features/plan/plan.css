@@ -75,7 +75,7 @@
   font-weight: 600;
 }
 .plan-people .plan-list li {
-  grid-template-columns: auto 1fr 96px auto;
+  grid-template-columns: auto 1fr 96px auto auto;
 }
 .plan-meter {
   height: 8px;
@@ -110,42 +110,6 @@
   text-align: right;
 }
 
-.plan-split-head,
-.plan-transfer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--space-6);
-  margin-bottom: var(--space-6);
-}
-.plan-split-key {
-  margin: var(--space-1) 0;
-  font: 700 var(--fs-m) / var(--lh-m) var(--font-display);
-}
-.plan-split-controls {
-  display: grid;
-  align-content: start;
-  justify-items: start;
-  gap: var(--space-2);
-  min-width: 260px;
-}
-.plan-transfer > div:first-child {
-  padding: var(--space-5);
-  border-radius: var(--r-tile);
-  background: var(--yellow-soft);
-}
-.plan-transfer-amount {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-3);
-  margin: var(--space-2) 0;
-  font: 700 var(--fs-s) / 1 var(--font-display);
-}
-.plan-transfer-month {
-  flex: 1;
-  min-width: 260px;
-}
 .plan-table {
   width: 100%;
   border-collapse: collapse;
@@ -289,13 +253,6 @@
   color: var(--card-text);
   font: inherit;
 }
-.plan-salaries {
-  margin-top: var(--space-3);
-}
-.plan-salaries dt {
-  display: grid;
-  gap: 0;
-}
 
 .plan-mix {
   display: flex;
@@ -319,38 +276,123 @@
   margin-left: var(--space-1);
 }
 
-/* Bill split: key and settings on the left, the transfer on the right. */
+/* Bill split: the key on the left, the settle-up on the right. */
 .plan-split .ui-card-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-  column-gap: var(--space-8);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4) var(--space-8);
   align-items: start;
 }
-.plan-split .ui-card-body > :is(header, table, .plan-table, footer) {
+.plan-split .ui-card-body > :is(header, .plan-table) {
   grid-column: 1 / -1;
 }
-.plan-split .plan-split-head {
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-.plan-split .plan-split-controls {
-  min-width: 0;
-}
-.plan-split .plan-split-controls input[type="range"] {
-  width: 100%;
-}
-.plan-split .plan-transfer {
+.plan-key {
   display: grid;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
+  gap: var(--space-3);
 }
-.plan-split .plan-transfer-month {
+.plan-key-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+.plan-key-bar {
+  display: flex;
+  gap: 3px;
+  height: 36px;
+}
+.plan-key-bar > span {
+  display: flex;
+  align-items: center;
   min-width: 0;
+  padding: 0 var(--space-3);
+  overflow: hidden;
+  border-radius: var(--r-field);
+  white-space: nowrap;
+  font: 700 var(--fs-text) / 1 var(--font-text);
+  background: var(--cyan-soft);
 }
-.plan-split .plan-table td {
-  padding-block: 2px;
+.plan-key-bar > span:first-child {
+  background: var(--yellow);
+  color: var(--ink);
+}
+.plan-key-salaries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  font-size: var(--fs-text-s);
+  color: var(--card-muted);
+}
+.plan-key-salaries > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.plan-key-salaries .ui-editable {
+  color: var(--card-text);
+  font-weight: 700;
+}
+.plan-settle {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border-radius: var(--r-tile);
+  background: var(--card-sunk);
+}
+.plan-settle-amount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font: 700 var(--fs-s) / 1 var(--font-display);
+}
+.plan-settle-amount .ui-money {
+  margin-left: auto;
+}
+.plan-settle-bar {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: var(--card-track);
+}
+[data-part="paid"] {
+  --part: var(--ink);
+}
+[data-part="asked"] {
+  --part: var(--yellow);
+}
+[data-part="advanced"] {
+  --part: var(--pink);
+}
+.plan-settle-bar > span {
+  background: var(--part);
+}
+.plan-settle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+}
+.plan-settle-legend > div {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.plan-settle-legend dt::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: var(--space-2);
+  border-radius: 3px;
+  background: var(--part);
+}
+.plan-settle-legend dd {
+  margin: 0;
+  font-weight: 700;
 }
 @media (max-width: 899px) {
   .plan-split .ui-card-body {

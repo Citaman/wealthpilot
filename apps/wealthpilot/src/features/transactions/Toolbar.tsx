@@ -9,11 +9,19 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useState, type Ref } from "react";
-import { categoryColor, categoryNames } from "../../domain/categories";
+import {
+  categoryColor,
+  categoryNames,
+  subcategoryNames,
+} from "../../domain/categories";
 import { formatDay } from "../../domain/dates";
 import type { Ledger } from "../../domain/ledger";
 import { formatEuro, parseMoney } from "../../domain/money";
-import { normalize, type TransactionSort } from "../../domain/search";
+import {
+  normalize,
+  subcategoryKey,
+  type TransactionSort,
+} from "../../domain/search";
 import { Button } from "../../ui/Button";
 import { CategoryDot } from "../../ui/CategoryDot";
 import { Field } from "../../ui/Field";
@@ -176,8 +184,12 @@ function FiltersPanel({
   const names = categoryNames(ledger);
   const shown = useMemo(() => {
     const q = normalize(search);
-    return q ? names.filter((n) => normalize(n).includes(q)) : names;
-  }, [names, search]);
+    const all = names.flatMap((n) => [
+      n,
+      ...subcategoryNames(ledger, n).map((sub) => subcategoryKey(n, sub)),
+    ]);
+    return q ? all.filter((n) => normalize(n).includes(q)) : all;
+  }, [ledger, names, search]);
   const selected = new Set(filters.categories);
   const toggle = (name: string) =>
     onChange({
@@ -199,7 +211,7 @@ function FiltersPanel({
         />
         <ul className="tx-filters-cats">
           {shown.map((name) => (
-            <li key={name}>
+            <li key={name} data-sub={name.includes(" › ") || undefined}>
               <label className="tx-check">
                 <input
                   type="checkbox"
@@ -207,9 +219,12 @@ function FiltersPanel({
                   onChange={() => toggle(name)}
                 />
                 <CategoryDot
-                  color={categoryColor(name, ledger.prefs.categoryDefinitions)}
+                  color={categoryColor(
+                    name.split(" › ")[0],
+                    ledger.prefs.categoryDefinitions,
+                  )}
                 />
-                <span>{name}</span>
+                <span>{name.split(" › ").at(-1)}</span>
               </label>
             </li>
           ))}
