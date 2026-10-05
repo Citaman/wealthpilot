@@ -1,9 +1,0 @@
-{
-  "meta": { "name": "WealthPilot CSV Workspace", "version": "1.2.0-local", "date": "2026-09-30", "status": "implemented" },
-  "color": { "canvas": "#F6F7FB", "surface": "#FFFFFF", "text": "#202332", "muted": "#626779", "border": "#E5E7EF", "blue": "#325CF4", "blueSoft": "#EDF1FF", "coral": "#D94352", "coralSoft": "#FFF0ED", "yellow": "#FFCE62", "violet": "#8159C8", "chart": ["#325CF4", "#EF6870", "#F0B83E", "#8B65CC", "#39A0B5", "#EC8B43", "#6D81AE", "#C466A3"] },
-  "typography": { "family": "DM Sans", "tracking": 0, "body": 14, "pageTitle": 28, "pageTitleMobile": 24, "panelTitle": 16, "metric": 34, "metricMobile": 30, "donutCenter": 22 },
-  "radius": { "panel": 8, "control": 6, "small": 4 },
-  "layout": { "columns": { "desktop": 12, "mobile": 4 }, "gap": { "desktop": 20, "compact": 16, "mobile": 12, "wide": 24 }, "pagePadding": { "desktop": 32, "mobile": 16 }, "panelPadding": { "desktop": 24, "compact": 20, "mobile": 16 }, "dockMinHeight": { "desktop": 72, "mobile": 116 }, "chartHeight": 280, "ringHeight": 238 },
-  "motion": { "colorFeedback": 100, "menu": 140, "budgetBar": 180, "chartInitial": 0, "chartUpdate": 220, "reducedMotion": 0, "numbers": 0, "navigation": 0 },
-  "interactions": { "editor": "compact inline, progressive secondary fields, route-scoped draft protection", "chartDetail": "local reversible component selection", "chartData": "inline table toggle", "period": "shared range with independent selected week", "granularity": "per chart, single aggregate scales disabled", "donut": "total center replaced by hovered category and amount", "dashboard": "persistent module visibility, order, width and presentation", "envelopes": ["bars", "rings", "table"], "recurrence": "observed CSV inference with reversible inline review", "accountCreation": "atomic source-account CSV import" }
-}
