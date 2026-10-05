@@ -16,7 +16,11 @@ import { dismissRecurrence, patchPreferences } from "../../data/commands";
 import { usePreferences } from "../../data/hooks";
 import { formatMonth } from "../../domain/dates";
 import { accountName, type Ledger } from "../../domain/ledger";
-import { formatEuro, parseMoney } from "../../domain/money";
+import { formatEuro, parseMoney, type FormatOptions } from "../../domain/money";
+
+/** Plan amounts are whole euros, rounded up. */
+const euro = (value: number, options?: FormatOptions) =>
+  formatEuro(value, { cents: "ceil", ...options });
 import {
   allowances,
   allowancesByCategory,
@@ -166,14 +170,14 @@ function Recovery({
                 {m.key.slice(0, 4) !== path.months[0].key.slice(0, 4) &&
                   ` ${m.key.slice(0, 4)}`}
               </span>
-              <Money value={m.withEffort} size="s" tone="auto" cents="never" />
+              <Money value={m.withEffort} size="s" tone="auto" cents="ceil" />
               {effort > 0 && (
                 <span className="plan-muted">
-                  sans effort {formatEuro(m.end, { cents: "never" })}
+                  sans effort {euro(m.end, { cents: "ceil" })}
                 </span>
               )}
               <span className="plan-month-need">
-                {s.weekly ? `${formatEuro(s.weekly)} / sem.` : "sans effort"}
+                {s.weekly ? `${euro(s.weekly)} / sem.` : "sans effort"}
               </span>
               <span className="plan-month-badges">
                 <Badge tone={tone}>{label}</Badge>
@@ -255,15 +259,13 @@ function Recovery({
                 {month(m.key)} {m.key.slice(0, 4)}
               </td>
               <td className="plan-num">
-                <Money value={m.end} tone="auto" cents="never" />
+                <Money value={m.end} tone="auto" cents="ceil" />
               </td>
               <td className="plan-num">
-                <Money value={m.withEffort} tone="auto" cents="never" />
+                <Money value={m.withEffort} tone="auto" cents="ceil" />
               </td>
               <td className="plan-num">
-                {options[i].weekly
-                  ? `${formatEuro(options[i].weekly)} / sem.`
-                  : "—"}
+                {options[i].weekly ? `${euro(options[i].weekly)} / sem.` : "—"}
               </td>
               <td>
                 <Badge tone={pressureLabel[options[i].pressure][1]}>
@@ -281,7 +283,7 @@ function Recovery({
   const choose = (s: Scenario) =>
     save(
       { effort: s.weekly, target: s.key },
-      `Objectif fin ${month(s.key)} : ${formatEuro(s.weekly)} / semaine`,
+      `Objectif fin ${month(s.key)} : ${euro(s.weekly)} / semaine`,
     );
   return (
     <>
@@ -296,7 +298,12 @@ function Recovery({
             <p className="plan-hero-line">
               Fin du mois de {now ? month(now.key) : "—"}
             </p>
-            <Money value={now?.withEffort ?? null} size="hero" tone="auto" />
+            <Money
+              cents="ceil"
+              value={now?.withEffort ?? null}
+              size="hero"
+              tone="auto"
+            />
             <p className="plan-hero-line">
               {firstPositive
                 ? firstPositive === now
@@ -307,7 +314,7 @@ function Recovery({
           </div>
           <label className="plan-effort">
             <span className="eyebrow">Effort d’épargne</span>
-            <strong>{formatEuro(slider)} / semaine</strong>
+            <strong>{euro(slider)} / semaine</strong>
             <input
               type="range"
               min={0}
@@ -319,11 +326,11 @@ function Recovery({
                 setSlider(next);
                 void save({ effort: next, target: undefined });
               }}
-              aria-valuetext={`${formatEuro(slider)} par semaine`}
+              aria-valuetext={`${euro(slider)} par semaine`}
             />
             <span className="plan-muted">
               {path.weeklyVariable
-                ? `${pct(slider / path.weeklyVariable)} des dépenses variables (${formatEuro(path.weeklyVariable)} / sem.)`
+                ? `${pct(slider / path.weeklyVariable)} des dépenses variables (${euro(path.weeklyVariable)} / sem.)`
                 : "Pas assez d’historique pour les dépenses variables"}
             </span>
           </label>
@@ -379,7 +386,7 @@ function Recovery({
               options={options.map((o) => ({
                 value: o.key,
                 label: `Fin ${month(o.key)}`,
-                meta: `${formatEuro(o.weekly)} / sem.`,
+                meta: `${euro(o.weekly)} / sem.`,
                 description:
                   pressureLabel[o.pressure][0] +
                   (o.recommended ? " · recommandé" : ""),
@@ -529,7 +536,12 @@ function MoneyLines({
     );
   const amount = ({ line, sign }: MoneyLine) => (
     <>
-      <Money value={sign * line.monthly} tone="auto" signed={sign > 0} />
+      <Money
+        cents="ceil"
+        value={sign * line.monthly}
+        tone="auto"
+        signed={sign > 0}
+      />
       {line.manual ? (
         <IconButton
           label={`Retirer ${line.name}`}
@@ -604,13 +616,19 @@ function MoneyLines({
           <li className="plan-stack-row">
             <span>{variable}</span>
             <span className="plan-stack-amount">
-              <Money value={-path.variable} tone="auto" />
+              <Money cents="ceil" value={-path.variable} tone="auto" />
             </span>
           </li>
         </StackSection>
         <p className="plan-stack-rest">
           <span>Reste chaque mois</span>
-          <Money value={rest} tone="auto" size="m" signed={rest > 0} />
+          <Money
+            cents="ceil"
+            value={rest}
+            tone="auto"
+            size="m"
+            signed={rest > 0}
+          />
         </p>
       </div>
     );
@@ -628,7 +646,7 @@ function MoneyLines({
     <tr className="plan-subtotal">
       <td colSpan={4}>{label}</td>
       <td className="plan-num">
-        <Money value={value} tone="auto" signed={value > 0} />
+        <Money cents="ceil" value={value} tone="auto" signed={value > 0} />
       </td>
     </tr>
   );
@@ -666,7 +684,7 @@ function MoneyLines({
           <tr>
             <td colSpan={4}>{variable}</td>
             <td className="plan-num">
-              <Money value={-path.variable} tone="auto" />
+              <Money cents="ceil" value={-path.variable} tone="auto" />
             </td>
           </tr>
         </tbody>
@@ -674,7 +692,13 @@ function MoneyLines({
           <tr>
             <th colSpan={4}>Reste chaque mois</th>
             <td className="plan-num">
-              <Money value={rest} tone="auto" size="m" signed={rest > 0} />
+              <Money
+                cents="ceil"
+                value={rest}
+                tone="auto"
+                size="m"
+                signed={rest > 0}
+              />
             </td>
           </tr>
         </tfoot>
@@ -702,7 +726,12 @@ function StackSection({
       {total && (
         <p className="plan-stack-total">
           <span>{total[0]}</span>
-          <Money value={total[1]} tone="auto" signed={total[1] > 0} />
+          <Money
+            cents="ceil"
+            value={total[1]}
+            tone="auto"
+            signed={total[1] > 0}
+          />
         </p>
       )}
     </section>
@@ -880,7 +909,7 @@ function Split({
                 key={id}
                 title={
                   manual
-                    ? `Saisi · détecté ${formatEuro(detectedSalary(ledger, id))}`
+                    ? `Saisi · détecté ${euro(detectedSalary(ledger, id))}`
                     : "Dernier salaire détecté"
                 }
               >
@@ -1051,11 +1080,10 @@ function SplitLines({
           >
             {name(r)}
             <span className="plan-stack-amount">
-              <Money value={r.total} tone="none" />
+              <Money cents="ceil" value={r.total} tone="none" />
             </span>
             <span className="plan-stack-meta">
-              {me} {formatEuro(r.paidMe)} · {partner}{" "}
-              {formatEuro(r.paidPartner)}
+              {me} {euro(r.paidMe)} · {partner} {euro(r.paidPartner)}
             </span>
             <span className="plan-stack-control">{picker(r)}</span>
           </li>
@@ -1078,13 +1106,13 @@ function SplitLines({
           <tr key={r.key} data-personal={r.personal || undefined}>
             <td>{name(r)}</td>
             <td>
-              <Money value={r.total} tone="none" />
+              <Money cents="ceil" value={r.total} tone="none" />
             </td>
             <td>
-              <Money value={r.paidMe} tone="none" />
+              <Money cents="ceil" value={r.paidMe} tone="none" />
             </td>
             <td>
-              <Money value={r.paidPartner} tone="none" />
+              <Money cents="ceil" value={r.paidPartner} tone="none" />
             </td>
             <td>{picker(r)}</td>
           </tr>
@@ -1121,12 +1149,12 @@ function Settle({
       <span className="eyebrow">{month(s.month)} · à régler</span>
       <p className="plan-settle-amount">
         {from} <ArrowRight size={20} aria-hidden /> {to}
-        <Money value={Math.abs(s.owed)} size="l" tone="none" />
+        <Money cents="ceil" value={Math.abs(s.owed)} size="l" tone="none" />
       </p>
       <div
         className="plan-settle-bar"
         role="img"
-        aria-label={`Versé ${formatEuro(s.received)}, demandé ${formatEuro(s.asked ?? 0)}, avancé ${formatEuro(advanced)}`}
+        aria-label={`Versé ${euro(s.received)}, demandé ${euro(s.asked ?? 0)}, avancé ${euro(advanced)}`}
       >
         <span data-part="paid" style={{ flexGrow: paid / total }} />
         <span data-part="asked" style={{ flexGrow: askedLeft / total }} />
@@ -1136,7 +1164,7 @@ function Settle({
         <div data-part="paid">
           <dt>Versé</dt>
           <dd>
-            <Money value={s.received} tone="none" />
+            <Money cents="ceil" value={s.received} tone="none" />
           </dd>
         </div>
         <div data-part="asked">
@@ -1158,13 +1186,13 @@ function Settle({
         <div data-part="advanced">
           <dt>Avancé par {me}</dt>
           <dd>
-            <Money value={advanced} tone="none" />
+            <Money cents="ceil" value={advanced} tone="none" />
           </dd>
         </div>
       </dl>
       <p className="plan-muted">
-        ≈ {formatEuro(Math.abs(s.usualOwed), { cents: "never" })} par mois en
-        moyenne (3 derniers mois)
+        ≈ {euro(Math.abs(s.usualOwed), { cents: "ceil" })} par mois en moyenne
+        (3 derniers mois)
       </p>
     </div>
   );
@@ -1217,7 +1245,7 @@ function Allowances({
         },
       },
       row.limit
-        ? `${label(row.category)} retirée · ${formatEuro(row.limit)} réparti sur les autres`
+        ? `${label(row.category)} retirée · ${euro(row.limit)} réparti sur les autres`
         : `${label(row.category)} retirée`,
     );
   };
@@ -1256,7 +1284,7 @@ function Allowances({
     const shown = v ?? row.suggested;
     return save(
       { allowances: { ...settings.allowances, [account]: limits } },
-      `Limite ${label(row.category)} : ${formatEuro(shown)}`,
+      `Limite ${label(row.category)} : ${euro(shown)}`,
     );
   };
   return (
@@ -1303,13 +1331,12 @@ function Allowances({
             ...rows
               .filter((r) => r.limit > 0)
               .map(
-                (r) =>
-                  `• ${label(r.category)} : ${formatEuro(r.limit)}${count(r)}`,
+                (r) => `• ${label(r.category)} : ${euro(r.limit)}${count(r)}`,
               ),
-            `Total : ${formatEuro(total)}.`,
+            `Total : ${euro(total)}.`,
             ...(account === who.partner && s.asked
               ? [
-                  `Virement vers ${accountName(ledger, who.me)} ce mois : ${formatEuro(s.asked)}.`,
+                  `Virement vers ${accountName(ledger, who.me)} ce mois : ${euro(s.asked)}.`,
                 ]
               : []),
           ].join("\n");
@@ -1344,8 +1371,8 @@ function Allowances({
               }
               footer={
                 <p className="plan-muted">
-                  {formatEuro(total)} / semaine · dépenses personnelles hors
-                  charges partagées
+                  {euro(total)} / semaine · dépenses personnelles hors charges
+                  partagées
                 </p>
               }
             >
@@ -1356,7 +1383,7 @@ function Allowances({
                     .map((r) => (
                       <span
                         key={r.category}
-                        title={`${label(r.category)} ${formatEuro(r.limit)}`}
+                        title={`${label(r.category)} ${euro(r.limit)}`}
                         style={{
                           flexGrow: r.limit,
                           background: colorOf(r.category),
@@ -1388,8 +1415,7 @@ function Allowances({
                           icon={false}
                         />
                         <small>
-                          {formatEuro(r.spent)} dépensés · d’habitude{" "}
-                          {formatEuro(r.usual)}
+                          {euro(r.spent)} dépensés · d’habitude {euro(r.usual)}
                           {count(r)}
                         </small>
                       </span>
@@ -1436,6 +1462,6 @@ function times(r: { limit: number; ticket: number }) {
   if (!r.ticket) return "";
   const count = Math.floor(r.limit / r.ticket);
   return count
-    ? ` (≈ ${count} × ${formatEuro(r.ticket)})`
-    : ` (moins qu’un achat habituel de ${formatEuro(r.ticket)})`;
+    ? ` (≈ ${count} × ${euro(r.ticket)})`
+    : ` (moins qu’un achat habituel de ${euro(r.ticket)})`;
 }

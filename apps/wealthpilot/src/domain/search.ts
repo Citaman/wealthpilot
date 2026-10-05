@@ -12,8 +12,8 @@ export const normalize = (text: string) =>
     .replace(/[’']/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
-export const merchantLabel = (t: Transaction) =>
-  t.merchantName || t.merchant || t.label;
+import { merchantLabel } from "./labels";
+export { merchantLabel };
 function distance(a: string, b: string): number {
   let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {

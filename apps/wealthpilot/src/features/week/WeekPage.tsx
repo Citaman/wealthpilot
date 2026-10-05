@@ -95,9 +95,11 @@ export function WeekPage({ ledger, params }: PageProps) {
       {dock}
       <div className="week" data-tense={tense}>
         <WeekHero ledger={ledger} plan={plan} tense={tense} />
+        <div className="week-days-row">
+          <WeekDays key={`${week}|${account}`} ledger={ledger} plan={plan} />
+        </div>
         <div className="week-col">
           <WeekEnvelopes ledger={ledger} plan={plan} tense={tense} />
-          <WeekDays key={`${week}|${account}`} ledger={ledger} plan={plan} />
         </div>
         <div className="week-col">
           <WeekTester

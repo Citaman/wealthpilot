@@ -1,5 +1,6 @@
 import { addDays, clampDay, daysBetween, shiftMonth } from "./dates";
 import type { Occurrence } from "./events";
+import { merchantLabel } from "./labels";
 import { memo, type Ledger } from "./ledger";
 import { upperMedian } from "./money";
 import { normalizedText, recurrenceIdentity } from "./text";
@@ -109,7 +110,7 @@ function detect(
           ),
         ),
       ],
-      name: last.merchant || last.label,
+      name: merchantLabel(last),
       account: last.account,
       category: last.category,
       // A new salary or allowance (CAF 700 → 1 000) applies from its first payment.

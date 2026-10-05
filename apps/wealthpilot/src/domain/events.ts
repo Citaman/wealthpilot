@@ -1,4 +1,5 @@
 import { addDays } from "./dates";
+import { merchantLabel } from "./labels";
 import { memo, rowsIn, type Ledger } from "./ledger";
 import { estimates } from "./recurring";
 import type { IsoDate } from "./types";
@@ -61,7 +62,7 @@ export const upcoming = memo(
         kind: "known",
         date: t.date,
         amount: t.amount,
-        label: t.merchantName || t.merchant || t.label,
+        label: merchantLabel(t),
         account: t.account,
         category: t.category,
         internal: t.internal,

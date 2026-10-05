@@ -18,8 +18,8 @@ function formatter(decimals: number) {
 }
 
 export interface FormatOptions {
-  /** "auto" drops cents on whole amounts; "always" keeps them; "never" rounds. */
-  cents?: "auto" | "always" | "never";
+  /** "auto" drops cents on whole amounts; "always" keeps them; "never" rounds; "ceil" rounds up (366,01 → 367). */
+  cents?: "auto" | "always" | "never" | "ceil";
   /** Prefix positive values with "+". */
   signed?: boolean;
 }
@@ -29,9 +29,16 @@ export function formatEuro(value: Cents, options: FormatOptions = {}): string {
   const { cents = "auto", signed = false } = options;
   const abs = Math.abs(value);
   const decimals =
-    cents === "always" ? 2 : cents === "never" ? 0 : abs % 100 === 0 ? 0 : 2;
+    cents === "always"
+      ? 2
+      : cents === "never" || cents === "ceil"
+        ? 0
+        : abs % 100 === 0
+          ? 0
+          : 2;
+  const whole = cents === "ceil" ? Math.ceil(abs / 100) : Math.round(abs / 100);
   const number = formatter(decimals)
-    .format((decimals ? abs : Math.round(abs / 100) * 100) / 100)
+    .format(decimals ? abs / 100 : whole)
     .replace(/[\s ]/g, NARROW_NBSP);
   const sign = value < 0 ? MINUS : signed && value > 0 ? "+" : "";
   return `${sign}${number}${NARROW_NBSP}€`;
