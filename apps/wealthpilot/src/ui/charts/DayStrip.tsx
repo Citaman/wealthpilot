@@ -109,45 +109,35 @@ export function DayStrip({
                 <span className="ui-day-name">{weekday}</span>
                 <span className="ui-day-number">{dayNumber}</span>
               </span>
-              <span className="ui-day-bar" aria-hidden>
-                {day.spent ? (
+              {day.spent != null && (
+                <span className="ui-day-spent" aria-hidden>
                   <span
-                    className="ui-day-spent"
-                    style={
-                      {
-                        "--h": `${(day.spent / maxSpent) * 100}%`,
-                      } as CSSProperties
-                    }
+                    className="ui-day-spent-value"
+                    data-zero={!day.spent || undefined}
                   >
-                    <span className="ui-day-spent-value">
-                      {euro(day.spent)}
-                    </span>
+                    {euro(day.spent)}
                   </span>
-                ) : null}
-              </span>
+                  <span className="ui-day-meter">
+                    <span
+                      style={
+                        {
+                          "--h": `${(day.spent / maxSpent) * 100}%`,
+                        } as CSSProperties
+                      }
+                    />
+                  </span>
+                </span>
+              )}
               <span className="ui-day-items" aria-hidden>
                 {(day.charges ?? []).map((c, i) => (
-                  <span
-                    key={`c${i}`}
-                    className="ui-day-chip"
-                    data-kind="charge"
-                    data-estimated={c.estimated || undefined}
-                  >
-                    <span className="ui-day-chip-label">{c.label}</span>
-                    <span>−{euro(c.amount)}</span>
-                  </span>
+                  <Chip key={`c${i}`} item={c} kind="charge" />
                 ))}
                 {(day.incomes ?? []).map((c, i) => (
-                  <span
-                    key={`i${i}`}
-                    className="ui-day-chip"
-                    data-kind="income"
-                    data-estimated={c.estimated || undefined}
-                  >
-                    <span className="ui-day-chip-label">{c.label}</span>
-                    <span>+{euro(c.amount)}</span>
-                  </span>
+                  <Chip key={`i${i}`} item={c} kind="income" />
                 ))}
+                {!day.charges?.length && !day.incomes?.length && !day.spent && (
+                  <span className="ui-day-empty">Rien de prévu</span>
+                )}
               </span>
               <span className="ui-day-balance" aria-hidden>
                 {day.endBalance != null ? euro(day.endBalance) : "—"}
@@ -157,5 +147,21 @@ export function DayStrip({
         })}
       </div>
     </div>
+  );
+}
+
+function Chip({ item, kind }: { item: DayItem; kind: "charge" | "income" }) {
+  return (
+    <span
+      className="ui-day-chip"
+      data-kind={kind}
+      data-estimated={item.estimated || undefined}
+    >
+      <span className="ui-day-chip-label">{item.label}</span>
+      <span className="ui-day-chip-amount">
+        {kind === "charge" ? "−" : "+"}
+        {euro(item.amount)}
+      </span>
+    </span>
   );
 }

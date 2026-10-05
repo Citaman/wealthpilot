@@ -39,7 +39,8 @@
   grid-template-areas:
     "handle head remaining"
     ". amounts amounts"
-    ". bar bar";
+    ". bar bar"
+    ". subs subs";
   column-gap: var(--space-2);
   row-gap: 2px;
   align-items: center;
@@ -118,15 +119,14 @@
 }
 
 /* A roomy list puts each envelope on one line. */
-@container envlist (min-width: 5var(--space-5)) {
+@container envlist (min-width: 520px) {
   .env-row {
     grid-template-columns:
-      var(--space-5) minmax(96px, 0.9fr) minmax(1var (--space-5), 1.4fr) minmax(
-        112px,
-        auto
-      )
-      minmax(96px, auto);
-    grid-template-areas: "handle head bar amounts remaining";
+      var(--space-5) minmax(96px, 0.9fr) minmax(120px, 1.4fr)
+      minmax(112px, auto) minmax(96px, auto);
+    grid-template-areas:
+      "handle head bar amounts remaining"
+      ". subs subs subs subs";
     column-gap: var(--space-4);
   }
 
@@ -137,6 +137,22 @@
   .env-amounts {
     text-align: right;
   }
+}
+
+.env-subs {
+  grid-area: subs;
+  min-width: 0;
+  overflow: hidden;
+  padding-top: var(--space-1);
+  color: var(--card-muted);
+  font-size: var(--fs-text-s);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.env-subs b {
+  color: var(--card-text);
+  font-weight: 500;
 }
 
 .env-legend {

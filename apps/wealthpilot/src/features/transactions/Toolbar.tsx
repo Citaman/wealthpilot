@@ -28,6 +28,7 @@ import { Field } from "../../ui/Field";
 import { Menu } from "../../ui/Menu";
 import { Popover } from "../../ui/Popover";
 import { Segmented } from "../../ui/Segmented";
+import { CategoryLabel } from "../shared/CategoryLabel";
 import {
   popoverFilterCount,
   sortLabels,
@@ -160,7 +161,6 @@ export function Toolbar({
         />
         <Segmented
           label="Densité"
-          size="compact"
           value={density}
           onChange={onDensity}
           options={densityOptions}
@@ -218,13 +218,11 @@ function FiltersPanel({
                   checked={selected.has(name)}
                   onChange={() => toggle(name)}
                 />
-                <CategoryDot
-                  color={categoryColor(
-                    name.split(" › ")[0],
-                    ledger.prefs.categoryDefinitions,
-                  )}
-                />
-                <span>{name.split(" › ").at(-1)}</span>
+                {name.includes(" › ") ? (
+                  <span>{name.split(" › ").at(-1)}</span>
+                ) : (
+                  <CategoryLabel ledger={ledger} category={name} size="s" />
+                )}
               </label>
             </li>
           ))}
@@ -347,7 +345,10 @@ export function filterChips(
     chips.push({
       key: `cat:${name}`,
       label: name,
-      color: categoryColor(name, ledger.prefs.categoryDefinitions),
+      color: categoryColor(
+        name.split(" › ")[0],
+        ledger.prefs.categoryDefinitions,
+      ),
       remove: () =>
         onChange({ categories: filters.categories.filter((c) => c !== name) }),
     });

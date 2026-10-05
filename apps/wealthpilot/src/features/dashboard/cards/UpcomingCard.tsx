@@ -3,6 +3,7 @@ import { useId, useRef, useState, type FormEvent } from "react";
 import { useToast } from "../../../app/toast";
 import { saveDue } from "../../../data/commands";
 import { available } from "../../../domain/available";
+import { subcategoryForLabel } from "../../../domain/categories";
 import { accountStatus } from "../../../domain/balances";
 import {
   addDays,
@@ -26,7 +27,9 @@ import { Money } from "../../../ui/Money";
 import { Picker } from "../../../ui/Picker";
 import { Segmented } from "../../../ui/Segmented";
 import { OccurrenceMenu } from "../../shared/OccurrenceMenu";
-import { FooterTile, Logo, MoreToggle } from "./cardParts";
+import { categoryText } from "../../shared/CategoryLabel";
+import { Logo } from "../../shared/Logo";
+import { FooterTile, MoreToggle } from "./cardParts";
 import type { CardProps } from "./types";
 import "./UpcomingCard.css";
 
@@ -118,12 +121,7 @@ function Agenda({
               />
               <ul className="agenda-rows" aria-label={formatWeekday(date)}>
                 {list.map((o) => (
-                  <Row
-                    key={o.id}
-                    ledger={ledger}
-                    o={o}
-                    wide={size === "wide"}
-                  />
+                  <Row key={o.id} ledger={ledger} o={o} />
                 ))}
               </ul>
               {size === "wide" && (
@@ -198,28 +196,29 @@ function ShortfallLine({
   );
 }
 
-function Row({
-  ledger,
-  o,
-  wide,
-}: {
-  ledger: Ledger;
-  o: Occurrence;
-  wide: boolean;
-}) {
+function Row({ ledger, o }: { ledger: Ledger; o: Occurrence }) {
   const late = o.overdue && o.amount > 0;
+  const sub = subcategoryForLabel(ledger, o.label, o.category);
   const meta = late
     ? "attendu, pas encore reçu"
-    : [accountName(ledger, o.account), wide && o.category]
+    : [
+        accountName(ledger, o.account),
+        o.category && categoryText(o.category, sub),
+      ]
         .filter(Boolean)
         .join(" · ");
   return (
     <li className="agenda-row" data-late={late || undefined}>
-      <Logo ledger={ledger} name={o.label} category={o.category} />
+      <Logo
+        ledger={ledger}
+        name={o.label}
+        category={o.category}
+        subcategory={sub}
+      />
       <span className="agenda-text">
         <span className="agenda-name">{o.label}</span>
         <span className="agenda-sub">
-          <span className="agenda-meta mono">{meta}</span>
+          <span className="agenda-meta">{meta}</span>
           {o.overdue && !late && (
             <Badge tone="warning" title="Date passée, pas encore rapprochée">
               À vérifier

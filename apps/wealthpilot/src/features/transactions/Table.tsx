@@ -232,6 +232,7 @@ export function Table({
     <table
       className="tx-table"
       data-density={density}
+      data-grouped={dayTotals ? true : undefined}
       ref={tableRef}
       aria-label="Opérations"
     >

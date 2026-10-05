@@ -47,6 +47,7 @@ export function AccountsCard({ card, ledger, account }: CardProps) {
     <CardShell
       palette={card.palette}
       title="Comptes"
+      className="acc-card"
       footer={
         rows.length > 1 && (
           <FooterTile

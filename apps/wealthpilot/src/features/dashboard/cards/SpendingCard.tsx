@@ -1,9 +1,10 @@
-import { ChevronDown } from "lucide-react";
-import { useId, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { navigate } from "../../../app/router";
 import {
   spendingByCategory,
+  spendingBySubcategory,
   type CategorySpending,
+  type SubcategorySpending,
 } from "../../../domain/analytics";
 import { categoryColor, OTHERS_COLOR } from "../../../domain/categories";
 import type { DateRange } from "../../../domain/dates";
@@ -11,6 +12,7 @@ import type { Ledger } from "../../../domain/ledger";
 import { formatEuro } from "../../../domain/money";
 import {
   filterTransactions,
+  subcategoryKey,
   summarize,
   type TransactionFilters,
 } from "../../../domain/search";
@@ -30,15 +32,11 @@ const OTHERS = "Autres";
 const percent = (share: number) =>
   `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(share * 100)} %`;
 
-const expenses = (
-  account: string,
-  range: DateRange,
-  categories: string[] = [],
-): TransactionFilters => ({
+const expenses = (account: string, range: DateRange): TransactionFilters => ({
   account,
   range,
   kind: "expense",
-  categories,
+  categories: [],
   min: null,
   max: null,
   uncategorized: false,
@@ -81,7 +79,11 @@ interface Bar {
   usual: number | null;
   deltaPct: number | null;
   color: string;
+  subs: SubcategorySpending[];
 }
+
+/** Subcategory segments of a bar, darkest first; the rest folds into the last shade. */
+const SHADES = [100, 68, 44, 26];
 
 function Ranking({
   ledger,
@@ -95,10 +97,14 @@ function Ranking({
   rows: CategorySpending[];
 }) {
   const { size } = useCardWidth();
-  const [expanded, setExpanded] = useState<string | null>(null);
   const limit = LIMIT[size];
   const head = rows.length > limit ? rows.slice(0, limit) : rows;
   const rest = rows.slice(head.length);
+  const split = spendingBySubcategory(ledger, {
+    account,
+    range,
+    asOf: ledger.asOf,
+  });
   const bars: Bar[] = head.map((r) => ({
     key: r.category,
     amount: r.amount,
@@ -106,6 +112,7 @@ function Ranking({
     usual: r.usual,
     deltaPct: r.deltaPct,
     color: categoryColor(r.category, ledger.prefs.categoryDefinitions),
+    subs: split.get(r.category) ?? [],
   }));
   if (rest.length)
     bars.push({
@@ -115,120 +122,72 @@ function Ranking({
       usual: null,
       deltaPct: null,
       color: OTHERS_COLOR,
+      subs: [],
     });
   const max = Math.max(1, ...bars.map((b) => Math.max(b.amount, b.usual ?? 0)));
-  const drill = (category: string) =>
+  const drill = (category: string, subcategory?: string) =>
     navigate("transactions", {
-      cat: category,
+      cat: subcategoryKey(category, subcategory),
       from: range.from,
       to: range.to,
       acct: acctParam(account),
     });
 
-  const split = new Map(
-    bars.map((bar) => [
-      bar.key,
-      size === "wide" && bar.key !== OTHERS
-        ? subcategories(ledger, account, range, bar.key)
-        : [],
-    ]),
-  );
-  const expandable = [...split.values()].some((s) => s.length > 0);
-
   return (
-    <ol
-      className="rank"
-      aria-label="Dépenses par catégorie"
-      data-size={size}
-      data-expandable={expandable || undefined}
-    >
+    <ol className="rank" aria-label="Dépenses par catégorie" data-size={size}>
       {bars.map((bar) => (
         <Row
           key={bar.key}
           bar={bar}
           max={max}
           size={size}
-          expandable={expandable}
-          subs={split.get(bar.key) ?? []}
-          open={expanded === bar.key}
-          onToggle={() => setExpanded(expanded === bar.key ? null : bar.key)}
-          onDrill={bar.key === OTHERS ? undefined : () => drill(bar.key)}
+          onDrill={bar.key === OTHERS ? undefined : drill}
         />
       ))}
     </ol>
   );
 }
 
-/** Spending of one category split by subcategory (domain totals per group). */
-function subcategories(
-  ledger: Ledger,
-  account: string,
-  range: DateRange,
-  category: string,
-) {
-  const groups = new Map<string, ReturnType<typeof filterTransactions>>();
-  for (const t of filterTransactions(
-    ledger,
-    expenses(account, range, [category]),
-  )) {
-    const key = t.subcategory?.trim() || "";
-    groups.set(key, [...(groups.get(key) ?? []), t]);
-  }
-  if (groups.size < 2 && groups.has("")) return [];
-  return [...groups]
-    .map(([name, list]) => ({
-      name: name || "Sans sous-catégorie",
-      amount: summarize(list, ledger.asOf).spending,
-    }))
-    .filter((s) => s.amount > 0)
-    .sort((a, b) => b.amount - a.amount);
-}
-
 function Row({
   bar,
   max,
   size,
-  expandable,
-  subs,
-  open,
-  onToggle,
   onDrill,
 }: {
   bar: Bar;
   max: number;
   size: "narrow" | "medium" | "wide";
-  expandable: boolean;
-  subs: { name: string; amount: number }[];
-  open: boolean;
-  onToggle(): void;
-  onDrill?: () => void;
+  onDrill?: (category: string, subcategory?: string) => void;
 }) {
-  const panel = useId();
   const unusual = bar.deltaPct !== null && bar.deltaPct > UNUSUAL;
   const style = { "--bar": bar.color } as CSSProperties;
+  const named = bar.subs.some((s) => s.subcategory);
+  const segments = named
+    ? [
+        ...bar.subs.slice(0, SHADES.length - 1),
+        ...(bar.subs.length >= SHADES.length
+          ? [
+              {
+                subcategory: "",
+                amount: bar.subs
+                  .slice(SHADES.length - 1)
+                  .reduce((n, s) => n + s.amount, 0),
+              },
+            ]
+          : []),
+      ]
+    : [];
+  const listed =
+    size === "narrow" ? bar.subs.slice(0, 1) : bar.subs.slice(0, 4);
   return (
-    <li className="rank-row" style={style} data-open={open || undefined}>
+    <li className="rank-row" style={style}>
       <span className="rank-head">
-        {subs.length > 0 ? (
-          <button
-            type="button"
-            className="rank-toggle"
-            aria-expanded={open}
-            aria-controls={panel}
-            aria-label={`Sous-catégories de ${bar.key}`}
-            onClick={onToggle}
-          >
-            <ChevronDown size={16} aria-hidden />
-          </button>
-        ) : (
-          expandable && <span className="rank-toggle" aria-hidden />
-        )}
         <CategoryDot color={bar.color} size={10} />
         {onDrill ? (
           <button
             type="button"
             className="card-link rank-name"
-            onClick={onDrill}
+            onClick={() => onDrill(bar.key)}
             title={`Voir les opérations ${bar.key}`}
           >
             {bar.key}
@@ -264,7 +223,19 @@ function Row({
         <span
           className="rank-fill"
           style={{ width: `${(bar.amount / max) * 100}%` }}
-        />
+        >
+          {segments.map((s, i) => (
+            <span
+              key={s.subcategory || i}
+              style={
+                {
+                  flexGrow: s.amount,
+                  "--shade": `${SHADES[i]}%`,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </span>
         {bar.usual !== null && (
           <span
             className="rank-tick"
@@ -272,20 +243,33 @@ function Row({
           />
         )}
       </span>
-      {subs.length > 0 && (
-        <ul id={panel} className="rank-subs" hidden={!open}>
-          {subs.map((s) => (
-            <li key={s.name}>
-              <span className="rank-sub-name">{s.name}</span>
-              <span className="rank-sub-track" aria-hidden>
-                <span style={{ width: `${(s.amount / bar.amount) * 100}%` }} />
-              </span>
-              <Money value={s.amount} tone="none" cents="never" />
-              <span className="mono muted rank-share">
-                {percent(s.amount / bar.amount)}
-              </span>
+      {named && (
+        <ul className="rank-subs" aria-label={`${bar.key} par sous-catégorie`}>
+          {listed.map((s, i) => (
+            <li key={s.subcategory || "none"}>
+              <button
+                type="button"
+                className="rank-sub"
+                style={
+                  {
+                    "--shade": `${SHADES[Math.min(i, SHADES.length - 1)]}%`,
+                  } as CSSProperties
+                }
+                onClick={() => onDrill?.(bar.key, s.subcategory || undefined)}
+                title={`Voir les opérations ${bar.key} › ${s.subcategory || "sans sous-catégorie"}`}
+              >
+                <span className="rank-sub-name">
+                  {s.subcategory || "Autres"}
+                </span>
+                <Money value={s.amount} tone="none" cents="never" />
+              </button>
             </li>
           ))}
+          {bar.subs.length > listed.length && size !== "narrow" && (
+            <li className="rank-sub-more mono muted">
+              +{bar.subs.length - listed.length}
+            </li>
+          )}
         </ul>
       )}
     </li>

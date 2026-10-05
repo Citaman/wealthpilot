@@ -1,6 +1,5 @@
 import { ArrowRight } from "lucide-react";
 import { navigate } from "../../../app/router";
-import { categoryColor, isUncategorized } from "../../../domain/categories";
 import { formatWeekday } from "../../../domain/dates";
 import { accountName, type Ledger } from "../../../domain/ledger";
 import {
@@ -11,10 +10,12 @@ import {
 import type { IsoDate, Transaction } from "../../../domain/types";
 import { Button } from "../../../ui/Button";
 import { CardShell, useCardWidth } from "../../../ui/CardShell";
-import { CategoryDot } from "../../../ui/CategoryDot";
 import { Empty } from "../../../ui/Empty";
 import { Money } from "../../../ui/Money";
-import { acctParam, Logo } from "./cardParts";
+import { AccountTag } from "../../shared/AccountTag";
+import { CategoryLabel, categoryText } from "../../shared/CategoryLabel";
+import { Logo } from "../../shared/Logo";
+import { acctParam } from "./cardParts";
 import type { CardProps } from "./types";
 import "./RecentCard.css";
 
@@ -120,16 +121,15 @@ function Days({
                       ledger={ledger}
                       name={merchantLabel(t)}
                       category={t.category}
+                      subcategory={t.subcategory}
                       size={28}
                     />
                     <span className="recent-text">
                       <span className="recent-name">{merchantLabel(t)}</span>
                       {!wide && (
-                        <span className="recent-meta mono">
+                        <span className="recent-meta">
                           {[
-                            isUncategorized(t.category)
-                              ? "À catégoriser"
-                              : t.category,
+                            categoryText(t.category, t.subcategory),
                             !account && accountName(ledger, t.account),
                           ]
                             .filter(Boolean)
@@ -140,20 +140,16 @@ function Days({
                     {wide && (
                       <>
                         <span className="recent-category">
-                          <CategoryDot
-                            color={categoryColor(
-                              t.category,
-                              ledger.prefs.categoryDefinitions,
-                            )}
+                          <CategoryLabel
+                            ledger={ledger}
+                            category={t.category}
+                            subcategory={t.subcategory}
+                            derived={Boolean(t.subcategorySource)}
+                            size="s"
                           />
-                          <span>
-                            {isUncategorized(t.category)
-                              ? "À catégoriser"
-                              : t.category}
-                          </span>
                         </span>
-                        <span className="recent-account mono">
-                          {accountName(ledger, t.account)}
+                        <span className="recent-account">
+                          <AccountTag ledger={ledger} id={t.account} />
                         </span>
                       </>
                     )}

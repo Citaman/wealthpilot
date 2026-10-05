@@ -85,6 +85,7 @@
 
 .agenda-meta {
   color: var(--card-muted);
+  font-size: var(--fs-text-s);
 }
 
 .agenda-row[data-late] .agenda-meta {

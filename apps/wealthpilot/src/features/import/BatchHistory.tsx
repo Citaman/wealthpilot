@@ -70,9 +70,9 @@ export function BatchHistory({
               <span className="mono muted"> op.</span>
             </span>
             <span className="mono history-period">{batchPeriod(batch)}</span>
-            <span className="mono muted history-accounts">
-              {accountsOf(batch) || "—"} · importé le{" "}
-              {formatDay(localDay(batch.createdAt))}{" "}
+            <span className="history-accounts">{accountsOf(batch) || "—"}</span>
+            <span className="mono muted history-imported">
+              importé le {formatDay(localDay(batch.createdAt))} à{" "}
               {localTime(batch.createdAt)}
             </span>
             <Menu

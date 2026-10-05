@@ -1,3 +1,4 @@
+import { Pencil } from "lucide-react";
 import {
   useId,
   useRef,
@@ -132,6 +133,7 @@ function EditableShell({
         onClick={edit.start}
       >
         {children}
+        <Pencil className="ui-editable-pen" size={12} aria-hidden />
       </button>
     );
   return (

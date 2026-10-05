@@ -49,8 +49,8 @@ ledger identity + args: call them freely from render.
 
 ## Analyses, inbox, categories, search
 - *memo* `monthlyFlows(ledger, account, count) → {month, range, income, spending, net, complete}[]` (oldest first, transfers excluded, ≤ asOf).
-- *memo* `spendingByCategory(ledger, scope) → {category, amount, share, usual, deltaPct}[]` — usual = median of the 3 previous months with data. *memo* `unusualExpenses(ledger, scope) → Transaction[]` · *memo* `usualSpending(ledger, account, month) → Map`.
+- *memo* `spendingByCategory(ledger, scope) → {category, amount, share, usual, deltaPct}[]` — usual = median of the 3 previous months with data.  *memo* `spendingBySubcategory(ledger, scope) → Map<category, {subcategory ("" = none), amount}[]>`. *memo* `unusualExpenses(ledger, scope) → Transaction[]` · *memo* `usualSpending(ledger, account, month) → Map`.
 - *memo* `inbox(ledger, account) → ({kind: uncategorized, ids} | {kind: recurrence, recurrence} | {kind: balance, account, freshness, ageDays} | {kind: future, ids} | {kind: overdue, ids}  // dues > 31 days, « échéance passée à vérifier »)[]`.
-- `isUncategorized(name)` · `categoryColor(name, definitions)` · `CATEGORY_COLORS`, `OTHERS_COLOR` · *memo* `categoryNames(ledger)`, `subcategoryNames(ledger, category)` · `similarTransactions(ledger, t)` · `suggestCategories(ledger, t) → string[3]`.
+- `isUncategorized(name)` · `categoryColor(name, definitions)` · `CATEGORY_COLORS`, `OTHERS_COLOR` · *memo* `categoryNames(ledger)`, `subcategoryNames(ledger, category)` · `similarTransactions(ledger, t)` · `suggestCategories(ledger, t) → string[3]` · `suggestCategoryChoices(ledger, t) → {category, subcategory?}[3]` · `subcategoryForLabel(ledger, label, category)` (expected movements).
 - *memo* `filterTransactions(ledger, {account, range, kind, categories, min, max, uncategorized, withNote, query, sort, batchId?}) → Transaction[]` · `sortTransactions(rows, sort)` · `summarize(rows, asOf) → {count, income, spending, net}` · `searchScore`, `normalize`, `merchantLabel`.
 - `brandFor(name)`, `subcategoryOf(raw)` (`merchants.ts`) · `normalizedText`, `recurrenceIdentity` (`text.ts`, frozen identity normalisation).

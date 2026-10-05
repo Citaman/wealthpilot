@@ -39,7 +39,8 @@ import { DivergingBars } from "../../ui/charts/DivergingBars";
 import { LineChart } from "../../ui/charts/LineChart";
 import { IconButton } from "../../ui/IconButton";
 import { Menu } from "../../ui/Menu";
-import { Logo } from "../dashboard/cards/cardParts";
+import { CategoryLabel, groupText, splitGroup } from "../shared/CategoryLabel";
+import { Logo } from "../shared/Logo";
 import { Button } from "../../ui/Button";
 import { CardShell } from "../../ui/CardShell";
 import { EditableMoney } from "../../ui/Editable";
@@ -751,10 +752,14 @@ function Split({
                   <Logo
                     ledger={ledger}
                     name={g.group}
-                    category={g.group}
+                    {...splitGroup(g.group)}
                     size={28}
                   />
-                  {g.group}
+                  <CategoryLabel
+                    ledger={ledger}
+                    {...splitGroup(g.group)}
+                    icon={false}
+                  />
                 </span>
               </td>
               <td>
@@ -768,7 +773,7 @@ function Split({
               </td>
               <td>
                 <Picker
-                  label={`Répartition de ${g.group}`}
+                  label={`Répartition de ${groupText(g.group)}`}
                   size="compact"
                   variant="ghost"
                   value={g.mode === "custom" ? "income" : g.mode}
@@ -907,8 +912,8 @@ function Allowances({
         allowances: { ...settings.allowances, [account]: limits },
       },
       line.limit
-        ? `${line.category} retirée · ${formatEuro(line.limit)} réparti sur les autres`
-        : `${line.category} retirée`,
+        ? `${groupText(line.category)} retirée · ${formatEuro(line.limit)} réparti sur les autres`
+        : `${groupText(line.category)} retirée`,
     );
   };
   const add = (account: string, key: string) =>
@@ -925,7 +930,7 @@ function Allowances({
           ),
         },
       },
-      `${key} ajoutée`,
+      `${groupText(key)} ajoutée`,
     );
   return (
     <div className="plan-people">
@@ -937,7 +942,10 @@ function Allowances({
           `Cette semaine pour ${name} :`,
           ...rows
             .filter((r) => r.limit > 0)
-            .map((r) => `• ${r.category} : ${formatEuro(r.limit)}${times(r)}`),
+            .map(
+              (r) =>
+                `• ${groupText(r.category)} : ${formatEuro(r.limit)}${times(r)}`,
+            ),
           `Total : ${formatEuro(total)}.`,
           ...(account === who.partner && s.asked
             ? [
@@ -961,7 +969,7 @@ function Allowances({
                   items={spendingGroups(ledger, account)
                     .filter((k) => !rows.some((r) => r.category === k))
                     .map((k) => ({
-                      label: k,
+                      label: groupText(k),
                       onSelect: () => void add(account, k),
                     }))}
                 />
@@ -993,7 +1001,7 @@ function Allowances({
                   .map((r) => (
                     <span
                       key={r.category}
-                      title={`${r.category} ${formatEuro(r.limit)}`}
+                      title={`${groupText(r.category)} ${formatEuro(r.limit)}`}
                       style={{
                         flexGrow: r.limit,
                         background: colorOf(r.category),
@@ -1016,11 +1024,14 @@ function Allowances({
                     <Logo
                       ledger={ledger}
                       name={r.category}
-                      category={r.category.split(" · ")[0]}
-                      subcategory={r.category.split(" · ")[1]}
+                      {...splitGroup(r.category)}
                     />
                     <span className="plan-item">
-                      {r.category}
+                      <CategoryLabel
+                        ledger={ledger}
+                        {...splitGroup(r.category)}
+                        icon={false}
+                      />
                       <small>
                         {formatEuro(r.spent)} dépensés · d’habitude{" "}
                         {formatEuro(r.usual)}
@@ -1038,7 +1049,7 @@ function Allowances({
                       />
                     </span>
                     <EditableMoney
-                      label={`Limite ${r.category} pour ${name}`}
+                      label={`Limite ${groupText(r.category)} pour ${name}`}
                       value={r.limit}
                       onCommit={(v) =>
                         save(
@@ -1051,12 +1062,12 @@ function Allowances({
                               },
                             },
                           },
-                          `Limite ${r.category} : ${formatEuro(v ?? r.suggested)}`,
+                          `Limite ${groupText(r.category)} : ${formatEuro(v ?? r.suggested)}`,
                         )
                       }
                     />
                     <IconButton
-                      label={`Retirer ${r.category} de la semaine de ${name}`}
+                      label={`Retirer ${groupText(r.category)} de la semaine de ${name}`}
                       icon={<X size={14} aria-hidden />}
                       onClick={() => void remove(account, rows, r)}
                     />

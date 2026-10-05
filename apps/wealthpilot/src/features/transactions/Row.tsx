@@ -1,20 +1,16 @@
 import { ArrowLeftRight, StickyNote, X } from "lucide-react";
 import { memo, type KeyboardEvent, type MouseEvent } from "react";
-import {
-  categoryColor,
-  isUncategorized,
-  suggestCategories,
-} from "../../domain/categories";
+import { isUncategorized, suggestCategories } from "../../domain/categories";
 import { formatDay } from "../../domain/dates";
-import { accountName, type Ledger } from "../../domain/ledger";
-import { brandFor } from "../../domain/merchants";
+import type { Ledger } from "../../domain/ledger";
 import { merchantLabel, normalize } from "../../domain/search";
 import type { IsoDate, Transaction } from "../../domain/types";
 import { Badge } from "../../ui/Badge";
-import { categoryIcon } from "../shared/categoryIcon";
-import { MerchantLogo } from "../../ui/MerchantLogo";
 import { Money } from "../../ui/Money";
+import { AccountTag } from "../shared/AccountTag";
+import { CategoryLabel, categoryText } from "../shared/CategoryLabel";
 import { CategoryMenu } from "../shared/CategoryMenu";
+import { Logo } from "../shared/Logo";
 
 export interface RowProps {
   t: Transaction;
@@ -33,15 +29,9 @@ export interface RowProps {
   onFocusRow(id: string): void;
 }
 
-export function logoFor(t: Transaction, ledger: Ledger) {
-  const name = merchantLabel(t);
-  const brand = brandFor(name);
-  return {
-    name,
-    src: brand ? (brand.src ?? `/brands/${brand.slug}.svg`) : undefined,
-    color: categoryColor(t.category, ledger.prefs.categoryDefinitions),
-  };
-}
+/** The category already says it is a transfer: no extra « Virement » tag. */
+const saysTransfer = (t: Transaction) =>
+  /transfer|virement/.test(normalize(t.category));
 
 export const Row = memo(function Row({
   t,
@@ -57,13 +47,12 @@ export const Row = memo(function Row({
   onKeyDown,
   onFocusRow,
 }: RowProps) {
-  const logo = logoFor(t, ledger);
-  const CatIcon = categoryIcon(t.category, t.subcategory);
+  const name = merchantLabel(t);
   const future = t.date > asOf;
   const tab = current ? 0 : -1;
   const uncategorized = isUncategorized(t.category);
   const raw = [t.label, t.merchant].find(
-    (text) => text && normalize(text) !== normalize(logo.name),
+    (text) => text && normalize(text) !== normalize(name),
   );
 
   const onClick = (event: MouseEvent<HTMLTableRowElement>) => {
@@ -82,7 +71,7 @@ export const Row = memo(function Row({
       tabIndex={tab}
       aria-selected={selected}
       aria-expanded={open}
-      aria-label={`${logo.name}, ${formatDay(t.date)}`}
+      aria-label={`${name}, ${formatDay(t.date)}`}
       onClick={onClick}
       onKeyDown={(event) => onKeyDown(event, t.id)}
       onFocus={(event) => {
@@ -95,7 +84,7 @@ export const Row = memo(function Row({
             type="checkbox"
             tabIndex={tab}
             checked={selected}
-            aria-label={`Sélectionner ${logo.name} du ${formatDay(t.date)}`}
+            aria-label={`Sélectionner ${name} du ${formatDay(t.date)}`}
             onChange={() => undefined}
             onClick={(event) => onSelect(t.id, event.shiftKey)}
           />
@@ -104,22 +93,19 @@ export const Row = memo(function Row({
       <td className="tx-c-date">{formatDay(t.date)}</td>
       <td className="tx-c-op">
         <span className="tx-op">
-          <MerchantLogo
-            name={logo.name}
-            color={logo.color}
-            src={logo.src}
-            icon={
-              t.internal
-                ? ArrowLeftRight
-                : categoryIcon(t.category, t.subcategory)
-            }
+          <Logo
+            ledger={ledger}
+            name={name}
+            category={t.category}
+            subcategory={t.subcategory}
+            icon={t.internal ? ArrowLeftRight : undefined}
             size={28}
           />
           <span className="tx-op-text">
             <span className="tx-op-name">
-              <span className="tx-op-merchant">{logo.name}</span>
+              <span className="tx-op-merchant">{name}</span>
               {future && <Badge tone="new">À venir</Badge>}
-              {t.internal && (
+              {t.internal && !saysTransfer(t) && (
                 <Badge title="Virement interne, hors totaux">Virement</Badge>
               )}
               {t.note?.trim() && (
@@ -156,6 +142,7 @@ export const Row = memo(function Row({
         <CategoryMenu
           ledger={ledger}
           value={t.category}
+          subcategory={t.subcategory}
           suggestions={uncategorized ? suggestCategories(ledger, t) : undefined}
           direction={t.amount > 0 ? "income" : "expense"}
           onSelect={(category, subcategory) =>
@@ -165,39 +152,22 @@ export const Row = memo(function Row({
             <button
               type="button"
               className="tx-cat"
-              data-empty={uncategorized || undefined}
               tabIndex={tab}
-              aria-label={`Catégorie : ${uncategorized ? "à catégoriser" : t.category}. Changer`}
+              aria-label={`Catégorie : ${categoryText(t.category, t.subcategory)}. Changer`}
             >
-              {uncategorized ? (
-                <span>À catégoriser</span>
-              ) : (
-                <>
-                  <span
-                    className="tx-cat-icon"
-                    style={{
-                      background: categoryColor(
-                        t.category,
-                        ledger.prefs.categoryDefinitions,
-                      ),
-                    }}
-                    aria-hidden
-                  >
-                    <CatIcon size={13} />
-                  </span>
-                  <span className="tx-cat-text">
-                    <span className="tx-cat-name">{t.category}</span>
-                    {t.subcategory && (
-                      <span className="tx-cat-sub">{t.subcategory}</span>
-                    )}
-                  </span>
-                </>
-              )}
+              <CategoryLabel
+                ledger={ledger}
+                category={t.category}
+                subcategory={t.subcategory}
+                derived={Boolean(t.subcategorySource)}
+              />
             </button>
           }
         />
       </td>
-      <td className="tx-c-acct">{accountName(ledger, t.account)}</td>
+      <td className="tx-c-acct">
+        <AccountTag ledger={ledger} id={t.account} />
+      </td>
       <td className="tx-c-amount">
         <Money value={t.amount} signed cents="always" />
       </td>

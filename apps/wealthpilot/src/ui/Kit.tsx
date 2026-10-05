@@ -378,7 +378,6 @@ function Scene() {
             <li key={u.id}>
               <DateChip date={u.date} soon={u.date <= data.dayAfter(3)} />
               <MerchantLogo
-                name={u.name}
                 color="#9ccbef"
                 src={u.src}
                 icon={u.amount > 0 ? ArrowUpRight : undefined}
@@ -804,18 +803,10 @@ function Values() {
         <div className="kit-row">
           <DateChip date="2026-10-15" soon />
           <DateChip date="2026-10-26" />
-          <MerchantLogo
-            name="Free"
-            color="#9ccbef"
-            src="/merchant-assets/free.png"
-          />
-          <MerchantLogo name="Carrefour" color="#f3c447" />
-          <MerchantLogo name="SNCF" color="#21a9c0" icon={ShoppingCart} />
-          <MerchantLogo
-            name="Inconnu"
-            color="#4d473f"
-            src="/merchant-assets/absent.png"
-          />
+          <MerchantLogo color="#9ccbef" src="/merchant-assets/free.png" />
+          <MerchantLogo color="#f3c447" />
+          <MerchantLogo color="#21a9c0" icon={ShoppingCart} />
+          <MerchantLogo color="#4d473f" src="/merchant-assets/absent.png" />
           <CategoryDot color="var(--series-3)" label="Restaurants" />
           <CategoryDot color="var(--series-2)" size={12} />
         </div>

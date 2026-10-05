@@ -1,4 +1,4 @@
-import { Ban, Check, CircleAlert } from "lucide-react";
+import { Ban, Calculator, Check, CircleAlert } from "lucide-react";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { categoryColor, categoryNames } from "../../domain/categories";
 import {
@@ -197,6 +197,7 @@ export function PurchaseTester({
           />
         ) : (
           <p className="purchase-idle">
+            <Calculator size={18} aria-hidden />
             {categories.length
               ? "Saisir un montant pour voir l’effet"
               : "Aucune catégorie de dépense"}
@@ -204,21 +205,22 @@ export function PurchaseTester({
         )}
       </div>
 
-      <div className="purchase-actions">
-        <Button
-          variant="ghost"
-          title="Simulation : rien n’est enregistré"
-          disabledReason={touched ? undefined : "Rien à effacer"}
-          onClick={() => {
-            setDraft("");
-            setCategory(null);
-            setDate(null);
-            setPayer(null);
-          }}
-        >
-          Effacer
-        </Button>
-      </div>
+      {touched && (
+        <div className="purchase-actions">
+          <Button
+            variant="ghost"
+            title="Simulation : rien n’est enregistré"
+            onClick={() => {
+              setDraft("");
+              setCategory(null);
+              setDate(null);
+              setPayer(null);
+            }}
+          >
+            Effacer
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

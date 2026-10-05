@@ -45,30 +45,6 @@
   text-align: right;
 }
 
-.rank-toggle {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: var(--h-icon);
-  height: var(--h-icon);
-  margin-block: calc(-1 * var(--space-2));
-  border-radius: var(--r-bubble);
-  color: var(--card-text);
-  transition: background-color var(--dur-press) var(--ease);
-}
-
-button.rank-toggle:hover {
-  background: var(--card-sunk);
-}
-
-.rank-toggle svg {
-  transition: rotate var(--dur-panel) var(--ease);
-}
-
-.rank-row[data-open] .rank-toggle svg {
-  rotate: 180deg;
-}
-
 .rank-track {
   position: relative;
   display: block;
@@ -78,11 +54,23 @@ button.rank-toggle:hover {
 }
 
 .rank-fill {
-  display: block;
+  display: flex;
+  gap: 2px;
   height: 100%;
+  overflow: hidden;
   border-radius: var(--r-pill);
   background: var(--bar);
   box-shadow: inset 0 0 0 1px var(--card-mark-stroke);
+}
+
+.rank-fill > span {
+  flex-basis: 0;
+  min-width: 3px;
+  background: color-mix(in srgb, var(--bar) var(--shade), var(--card-bg));
+}
+
+.rank-fill:has(> span) {
+  background: var(--card-bg);
 }
 
 .rank-tick {
@@ -96,64 +84,60 @@ button.rank-toggle:hover {
 }
 
 .rank-subs {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-2) 0 var(--space-1) var(--space-4);
-  border-left: 2px solid var(--bar);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  padding: 0;
   list-style: none;
-  animation: card-row-in var(--dur-panel) var(--ease);
 }
 
-.rank-subs[hidden] {
-  display: none;
-}
-
-.rank-subs li {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 1fr) minmax(80px, 1.5fr) minmax(64px, auto)
-    5ch;
+.rank-sub {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-  min-height: var(--h-compact);
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 var(--space-2) 0 6px;
+  border-radius: var(--r-pill);
+  color: var(--card-text);
   font-size: var(--fs-text-s);
+  transition: background-color var(--dur-press) var(--ease);
+}
+
+.rank-sub::before {
+  content: "";
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--bar) var(--shade), var(--card-bg));
+  box-shadow: inset 0 0 0 1px var(--card-hairline);
+}
+
+.rank-sub:hover {
+  background: var(--card-sunk);
 }
 
 .rank-sub-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 500;
 }
 
-.rank-sub-track {
-  display: flex;
-  height: 6px;
-  border-radius: var(--r-pill);
-  background: var(--card-track);
+.rank-sub .ui-money {
+  color: var(--card-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
 }
 
-.rank-sub-track span {
-  border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--bar) 70%, var(--card-track));
-}
-
-.rank-subs .ui-money {
-  text-align: right;
+.rank-sub-more {
+  align-self: center;
 }
 
 /* Wide: one line per category, the bar takes the free width. */
 .rank[data-size="wide"] .rank-row {
   grid-template-columns:
-    0 auto minmax(120px, 200px) minmax(0, 1fr) auto minmax(56px, auto)
+    auto minmax(120px, 200px) minmax(0, 1fr) auto minmax(56px, auto)
     5ch 11ch;
   align-items: center;
   column-gap: var(--space-3);
-}
-
-.rank[data-size="wide"][data-expandable] .rank-row {
-  grid-template-columns:
-    var(--h-icon) auto minmax(120px, 200px) minmax(0, 1fr) auto
-    minmax(56px, auto) 5ch 11ch;
 }
 
 .rank[data-size="wide"] .rank-head {
@@ -165,33 +149,30 @@ button.rank-toggle:hover {
   grid-row: 1;
 }
 
-.rank[data-size="wide"] .rank-toggle {
-  grid-column: 1;
-  margin-block: 0;
-}
 .rank[data-size="wide"] .ui-dot {
-  grid-column: 2;
+  grid-column: 1;
 }
 .rank[data-size="wide"] .rank-name {
-  grid-column: 3;
+  grid-column: 2;
 }
 .rank[data-size="wide"] .rank-track {
-  grid-column: 4;
+  grid-column: 3;
 }
 .rank[data-size="wide"] .ui-badge {
-  grid-column: 5;
+  grid-column: 4;
 }
 .rank[data-size="wide"] .rank-amount {
-  grid-column: 6;
+  grid-column: 5;
   text-align: right;
 }
 .rank[data-size="wide"] .rank-share {
-  grid-column: 7;
+  grid-column: 6;
 }
 .rank[data-size="wide"] .rank-usual {
-  grid-column: 8;
+  grid-column: 7;
 }
 .rank[data-size="wide"] .rank-subs {
   grid-row: 2;
-  grid-column: 3 / -1;
+  grid-column: 2 / -1;
+  margin-top: var(--space-1);
 }

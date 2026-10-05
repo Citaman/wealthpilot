@@ -1,0 +1,68 @@
+.cat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--card-text);
+  font-size: var(--fs-text-s);
+  font-weight: 500;
+  line-height: var(--lh-text-s);
+  white-space: nowrap;
+}
+
+.cat-label[data-size="m"] {
+  font-size: var(--fs-text);
+  line-height: var(--lh-text);
+}
+
+.cat-label-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 30%;
+  background: var(--cat);
+  color: var(--cat-fg);
+  box-shadow: inset 0 0 0 1px var(--card-mark-stroke);
+}
+
+.cat-label-icon[data-size="s"] {
+  width: 18px;
+  height: 18px;
+}
+
+.cat-label-name {
+  flex: none;
+  font-weight: 600;
+}
+
+.cat-label-sep {
+  flex: none;
+  color: var(--card-muted);
+  font-weight: 400;
+}
+
+.cat-label-sub {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cat-label-sub[data-derived] {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 55%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.22em;
+}
+
+.cat-label[data-empty] {
+  height: 22px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  background: var(--pink-soft);
+  color: var(--ink);
+  font-size: var(--fs-mono);
+  font-weight: 500;
+}

@@ -21,6 +21,25 @@
   text-decoration-color: currentColor;
 }
 
+.ui-editable-pen {
+  flex: none;
+  align-self: center;
+  margin-left: 4px;
+  opacity: 0;
+  transition: opacity var(--dur-press) var(--ease);
+}
+
+.ui-editable:hover .ui-editable-pen,
+.ui-editable:focus-visible .ui-editable-pen {
+  opacity: 0.8;
+}
+
+@media (hover: none) {
+  .ui-editable-pen {
+    opacity: 0.5;
+  }
+}
+
 .ui-editable-field {
   position: relative;
   display: inline-flex;

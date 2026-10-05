@@ -26,6 +26,7 @@ import {
 } from "../../domain/search";
 import type { IsoDate, Transaction } from "../../domain/types";
 import { Button } from "../../ui/Button";
+import { categoryText } from "../shared/CategoryLabel";
 import { Empty } from "../../ui/Empty";
 import { Menu } from "../../ui/Menu";
 import { Pagination } from "./Pagination";
@@ -279,7 +280,7 @@ export function TransactionsPage({ ledger, params, active }: PageProps) {
         const others = otherCandidates(
           similarTransactions(ledger, t),
           t,
-          category,
+          patch,
         );
         toast.undoable("Catégorie changée", async () => {
           setSimilar(null);
@@ -290,7 +291,7 @@ export function TransactionsPage({ ledger, params, active }: PageProps) {
             ? {
                 ids: others.map((o) => o.id),
                 merchant: merchantLabel(t),
-                category,
+                category: categoryText(category, subcategory),
                 patch,
               }
             : null,
@@ -434,7 +435,7 @@ export function TransactionsPage({ ledger, params, active }: PageProps) {
           kind={filters.kind}
           future={result.filter((t) => t.date > asOf).length}
         />
-        {pager("haut")}
+        {pageCount > 1 && pager("haut")}
       </div>
       <div
         className="tx-card"

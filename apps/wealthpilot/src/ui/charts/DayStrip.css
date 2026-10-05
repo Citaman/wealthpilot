@@ -11,10 +11,11 @@
 
 .ui-day {
   display: grid;
-  grid-template-rows: auto 72px 1fr auto;
-  gap: var(--space-2);
+  grid-template-rows: auto auto 1fr auto;
+  align-content: start;
+  gap: var(--space-3);
   min-width: 0;
-  padding: var(--space-2);
+  padding: var(--space-3);
   border: var(--border-pill) solid transparent;
   border-radius: var(--r-tile);
   background: var(--card-sunk);
@@ -24,7 +25,7 @@
 }
 
 .ui-day:hover {
-  background: color-mix(in srgb, var(--card-sunk) 80%, var(--card-text));
+  background: color-mix(in srgb, var(--card-sunk) 88%, var(--card-text));
 }
 
 .ui-day[aria-pressed="true"] {
@@ -60,52 +61,58 @@
   line-height: 1;
 }
 
-.ui-day-bar {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  padding-top: 16px;
-  border-bottom: 1px solid color-mix(in srgb, var(--card-text) 40%, transparent);
-}
-
 .ui-day-spent {
-  position: relative;
-  width: 60%;
-  height: var(--h);
-  min-height: 3px;
-  border-radius: var(--r-bar) var(--r-bar) 0 0;
-  background: var(--card-text);
+  display: grid;
+  gap: var(--space-2);
+  grid-row: 2;
 }
 
 .ui-day-spent-value {
-  position: absolute;
-  bottom: calc(100% + 2px);
-  left: 0;
-  font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
+.ui-day-spent-value[data-zero] {
+  color: var(--card-muted);
+}
+
+.ui-day-meter {
+  display: flex;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--card-track);
+}
+
+.ui-day-meter > span {
+  width: var(--h);
+  border-radius: var(--r-pill);
+  background: var(--card-text);
+}
+
 .ui-day-items {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-1);
+  grid-row: 3;
   min-width: 0;
 }
 
 .ui-day-chip {
   display: grid;
-  gap: 0;
+  gap: 2px;
   min-width: 0;
-  padding: 3px 6px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid transparent;
   border-radius: var(--r-bubble);
   background: var(--pink-soft);
   color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: var(--fs-micro);
-  line-height: 1.25;
-  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-text-s);
+  line-height: var(--lh-text-s);
 }
 
 .ui-day-chip[data-kind="income"] {
@@ -118,16 +125,27 @@
 }
 
 .ui-day-chip-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-text);
-  font-weight: 500;
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+.ui-day-chip-amount {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-day-empty {
+  color: var(--card-muted);
+  font-size: var(--fs-text-s);
 }
 
 .ui-day-balance {
+  grid-row: 4;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--card-hairline);
   font-family: var(--font-mono);
-  font-size: var(--fs-mono);
+  font-size: var(--fs-micro);
   font-variant-numeric: tabular-nums;
   color: var(--card-muted);
   white-space: nowrap;
@@ -142,42 +160,50 @@
   }
 
   .ui-day {
-    grid-template-columns: 64px 56px minmax(0, 1fr) auto;
+    grid-template-columns: 60px 44px minmax(0, 1fr) auto;
     grid-template-rows: auto;
     align-items: center;
+    gap: var(--space-2);
     min-height: var(--h-row);
+    padding: var(--space-2) var(--space-3);
   }
 
   .ui-day-head {
     margin: 0;
   }
 
-  .ui-day-bar {
-    height: 10px;
-    padding-top: 0;
-    align-items: stretch;
-    border-bottom: 0;
-    border-radius: var(--r-pill);
-    background: var(--card-track);
+  .ui-day-spent,
+  .ui-day-items,
+  .ui-day-balance {
+    grid-row: 1;
   }
 
   .ui-day-spent {
-    width: var(--h);
-    height: auto;
-    border-radius: var(--r-pill);
-  }
-
-  .ui-day-spent-value {
-    display: none;
+    grid-column: 2;
   }
 
   .ui-day-items {
-    display: flex;
-    flex-wrap: wrap;
+    grid-column: 3;
+    flex-flow: row wrap;
+  }
+
+  .ui-day-balance {
+    grid-column: 4;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .ui-day-meter {
+    display: none;
+  }
+
+  .ui-day-spent-value {
+    font-size: var(--fs-text-l);
   }
 
   .ui-day-chip {
     display: inline-flex;
-    gap: var(--space-1);
+    gap: var(--space-2);
+    align-items: baseline;
   }
 }

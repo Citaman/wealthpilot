@@ -2,19 +2,16 @@ import { ChevronDown } from "lucide-react";
 import { useState, type KeyboardEvent } from "react";
 import { useToast } from "../../app/toast";
 import { updateTransactions, type TransactionPatch } from "../../data/commands";
-import {
-  categoryColor,
-  isUncategorized,
-  suggestCategories,
-} from "../../domain/categories";
+import { isUncategorized, suggestCategories } from "../../domain/categories";
 import { formatDate, formatFullDay } from "../../domain/dates";
-import { accountName, type Ledger } from "../../domain/ledger";
+import type { Ledger } from "../../domain/ledger";
 import { merchantLabel } from "../../domain/search";
 import type { IsoDate, Transaction } from "../../domain/types";
 import { Badge } from "../../ui/Badge";
-import { CategoryDot } from "../../ui/CategoryDot";
 import { Disclosure } from "../../ui/Disclosure";
 import { EditableText } from "../../ui/Editable";
+import { AccountTag } from "../shared/AccountTag";
+import { CategoryLabel, DERIVED_TITLE } from "../shared/CategoryLabel";
 import { CategoryMenu } from "../shared/CategoryMenu";
 
 export interface RowDetailProps {
@@ -37,7 +34,7 @@ export function RowDetail({
   const toast = useToast();
   const batch = ledger.batches.find((b) => b.id === t.batchId);
   const raw = Object.entries(t.raw ?? {});
-  const uncategorized = isUncategorized(t.category);
+  const derived = Boolean(t.subcategorySource) && !isUncategorized(t.category);
 
   const save = async (message: string, patch: TransactionPatch) => {
     try {
@@ -80,12 +77,13 @@ export function RowDetail({
                 />
               </dd>
             </div>
-            <div className="tx-field">
-              <dt>Catégorie</dt>
-              <dd>
+            <div className="tx-field tx-field-2">
+              <dt>Catégorie › sous-catégorie</dt>
+              <dd className="tx-detail-cat">
                 <CategoryMenu
                   ledger={ledger}
                   value={t.category}
+                  subcategory={t.subcategory}
                   suggestions={suggestCategories(ledger, t)}
                   direction={t.amount > 0 ? "income" : "expense"}
                   onSelect={(category, subcategory) =>
@@ -95,26 +93,34 @@ export function RowDetail({
                     <button
                       type="button"
                       className="tx-cat"
-                      data-empty={uncategorized || undefined}
+                      aria-label="Changer la catégorie"
                     >
-                      {!uncategorized && (
-                        <CategoryDot
-                          color={categoryColor(
-                            t.category,
-                            ledger.prefs.categoryDefinitions,
-                          )}
-                        />
-                      )}
-                      <span className="tx-cat-name">
-                        {uncategorized ? "À catégoriser" : t.category}
-                      </span>
-                      {t.subcategory && (
-                        <span className="tx-cat-sub">{t.subcategory}</span>
-                      )}
+                      <CategoryLabel
+                        ledger={ledger}
+                        category={t.category}
+                        subcategory={t.subcategory}
+                        derived={derived}
+                      />
                       <ChevronDown size={14} aria-hidden />
                     </button>
                   }
                 />
+                {derived && (
+                  <span className="tx-derived" title={DERIVED_TITLE}>
+                    déduite
+                    <button
+                      type="button"
+                      className="tx-link"
+                      onClick={() =>
+                        void save("Sous-catégorie confirmée", {
+                          subcategory: t.subcategory,
+                        }).catch(() => undefined)
+                      }
+                    >
+                      Confirmer
+                    </button>
+                  </span>
+                )}
               </dd>
             </div>
             <div className="tx-field">
@@ -143,7 +149,9 @@ export function RowDetail({
             </div>
             <div className="tx-field">
               <dt>Compte</dt>
-              <dd>{accountName(ledger, t.account)}</dd>
+              <dd>
+                <AccountTag ledger={ledger} id={t.account} />
+              </dd>
             </div>
             <div className="tx-field tx-field-2">
               <dt>Libellé bancaire</dt>

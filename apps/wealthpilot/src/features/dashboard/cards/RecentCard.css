@@ -58,8 +58,7 @@
 }
 
 .recent-name,
-.recent-meta,
-.recent-category span {
+.recent-meta {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -72,6 +71,7 @@
 
 .recent-meta {
   color: var(--card-muted);
+  font-size: var(--fs-text-s);
 }
 
 .recent-row[data-internal] .recent-name,
@@ -81,19 +81,14 @@
 
 .recent-category {
   display: flex;
-  flex: 0 1 200px;
-  align-items: center;
-  gap: var(--space-2);
+  flex: 0 1 260px;
   min-width: 0;
-  font-size: var(--fs-text-s);
 }
 
 .recent-account {
-  flex: 0 0 9ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--card-muted);
+  display: flex;
+  flex: 0 0 11ch;
+  min-width: 0;
 }
 
 .recent-amount {

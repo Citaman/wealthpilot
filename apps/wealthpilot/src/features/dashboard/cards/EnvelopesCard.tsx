@@ -1,5 +1,6 @@
 import { GripVertical, Plus } from "lucide-react";
 import {
+  Fragment,
   useEffect,
   useId,
   useLayoutEffect,
@@ -10,7 +11,12 @@ import {
 import { navigate } from "../../../app/router";
 import { useToast } from "../../../app/toast";
 import { reorderEnvelopes, setBudget, type Undo } from "../../../data/commands";
-import { spendingByCategory, usualSpending } from "../../../domain/analytics";
+import {
+  spendingByCategory,
+  spendingBySubcategory,
+  usualSpending,
+  type SubcategorySpending,
+} from "../../../domain/analytics";
 import { categoryColor, categoryNames } from "../../../domain/categories";
 import {
   envelopes,
@@ -282,6 +288,11 @@ function Envelopes({
   }, [created, createdIndex, onCreatedShown]);
 
   const r = monthRange(month, ledger.calendar);
+  const subs = spendingBySubcategory(ledger, {
+    account,
+    range: r,
+    asOf: ledger.asOf,
+  });
   const drill = (category: string) =>
     navigate("transactions", {
       cat: category,
@@ -419,6 +430,7 @@ function Envelopes({
                   <Money value={remaining} size="s" tone="auto" cents="never" />
                   {e.over && <span className="env-over mono">dépassé</span>}
                 </span>
+                <SubcategoryMeta list={subs.get(category) ?? []} />
                 <span className="env-bar">
                   <ProgressBar
                     label={category}
@@ -451,5 +463,21 @@ function Envelopes({
       {sortable.placeholder}
       {sortable.status}
     </div>
+  );
+}
+
+/** « Groceries 300 € · Fast Food 120 € »: where the envelope went this month. */
+function SubcategoryMeta({ list }: { list: SubcategorySpending[] }) {
+  const named = list.filter((s) => s.subcategory).slice(0, 3);
+  if (!named.length) return null;
+  return (
+    <span className="env-subs">
+      {named.map((s, i) => (
+        <Fragment key={s.subcategory}>
+          {i > 0 && " · "}
+          <b>{s.subcategory}</b> {formatEuro(s.amount, { cents: "never" })}
+        </Fragment>
+      ))}
+    </span>
   );
 }

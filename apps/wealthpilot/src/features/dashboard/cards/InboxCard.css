@@ -145,12 +145,10 @@
 .inbox-chip[data-variant="more"] {
   border-color: transparent;
   background: transparent;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .inbox-chip[data-variant="more"]:hover {
-  background: var(--card-bg);
+  background: color-mix(in srgb, var(--card-text) 8%, transparent);
 }
 
 /* Room enough: the decision sits on the same line as what it decides. */

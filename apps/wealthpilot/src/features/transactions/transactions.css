@@ -618,36 +618,19 @@
   background: color-mix(in srgb, var(--track) 70%, transparent);
 }
 
-.tx-cat[data-empty] {
-  height: 26px;
-  margin-left: 0;
-  padding: 0 var(--space-3);
-  background: var(--pink-soft);
-  font-weight: 600;
-}
-
-.tx-cat[data-empty]:hover,
-.tx-cat[data-empty][data-state="open"] {
-  background: var(--pink);
-}
-
-.tx-cat-name,
-.tx-cat-sub {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tx-cat-sub {
+.tx-derived {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--text-muted);
+  font: var(--fs-mono) / 1 var(--font-mono);
 }
 
-.tx-cat-sub::before {
-  content: "· ";
-}
-
-.tx-c-acct {
-  color: var(--text-muted);
+.tx-detail-cat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
 }
 
 .tx-c-amount .ui-money {
@@ -1032,7 +1015,7 @@
     grid-template-columns: 40px minmax(0, 1fr) auto auto;
     grid-template-areas:
       "check op op amount"
-      "check cat acct date";
+      "check cat date acct";
     align-items: center;
     gap: 2px var(--space-2);
     height: auto;
@@ -1068,22 +1051,24 @@
   .tx-table td.tx-c-acct {
     display: block;
     grid-area: acct;
-    font: var(--fs-micro) / 1 var(--font-mono);
+    justify-self: end;
   }
   .tx-c-date {
     grid-area: date;
     font-size: var(--fs-micro);
     text-align: right;
   }
+  .tx-table[data-grouped] .tx-c-date {
+    display: none !important;
+  }
+  .tx-cat .cat-label {
+    font-size: var(--fs-text-s);
+  }
   .tx-op-raw {
     display: none;
   }
   .tx-cat {
     height: 28px;
-    font-size: var(--fs-mono);
-  }
-  .tx-cat[data-empty] {
-    height: 24px;
   }
   .tx-day {
     display: flex;
@@ -1128,25 +1113,6 @@
     width: 44px;
     height: 44px;
   }
-}
-
-.tx-cat-icon {
-  display: inline-grid;
-  flex: none;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 30%;
-  color: var(--ink);
-}
-.tx-cat-text {
-  display: grid;
-  min-width: 0;
-  text-align: left;
-  line-height: 1.2;
-}
-.tx-cat-sub {
-  font-size: var(--fs-text-s);
 }
 
 .tx-filters-cats li[data-sub] {

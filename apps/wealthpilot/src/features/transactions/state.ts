@@ -110,15 +110,17 @@ export function categoryPatch(
   };
 }
 
-/** Operations that would take the same category as `t` (same merchant, same sign). */
+/** Operations that would take the same category and subcategory as `t` (same merchant, same sign). */
 export const otherCandidates = (
   similar: Transaction[],
   t: Transaction,
-  category: string,
+  patch: TransactionPatch,
 ) =>
   similar.filter(
     (o) =>
-      o.category !== category && Math.sign(o.amount) === Math.sign(t.amount),
+      (o.category !== patch.category ||
+        (o.subcategory ?? "") !== (patch.subcategory ?? "")) &&
+      Math.sign(o.amount) === Math.sign(t.amount),
   );
 
 export const isTyping = (target: EventTarget | null) =>

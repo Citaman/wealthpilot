@@ -50,7 +50,7 @@
   align-items: center;
   gap: var(--space-2);
   color: var(--text-muted);
-  font-size: var(--fs-text-s);
+  font-size: var(--fs-text);
   font-weight: 500;
 }
 .import-step[data-index="1"] {
@@ -66,10 +66,11 @@
 
 .import-step + .import-step::before {
   content: "";
-  width: var(--space-6);
-  height: 1.5px;
+  width: var(--space-10);
+  height: 2px;
   margin-inline: var(--space-2);
-  background: var(--hairline);
+  border-radius: 1px;
+  background: var(--track);
 }
 
 .import-step[data-state="done"] + .import-step::before,
@@ -80,12 +81,12 @@
 .import-step-dot {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: var(--h-compact);
+  height: var(--h-compact);
   border: var(--border-pill) solid var(--text-muted);
   border-radius: 50%;
   font-family: var(--font-mono);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   font-weight: 500;
 }
 
@@ -163,10 +164,9 @@
 
 .dropzone-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-3) var(--space-4);
+  gap: var(--space-2);
 }
 
 .dropzone-reading {
@@ -622,7 +622,8 @@
   grid-template-areas:
     "icon name count menu"
     "icon period period menu"
-    "icon accounts accounts menu";
+    "icon accounts accounts menu"
+    "icon imported imported menu";
   align-items: center;
   gap: 2px var(--space-3);
   padding-block: var(--space-3);
@@ -648,9 +649,7 @@
   background: var(--card-sunk);
 }
 
-.history-name,
-.history-period,
-.history-accounts {
+.history-name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -669,6 +668,11 @@
 
 .history-accounts {
   grid-area: accounts;
+  font-size: var(--fs-text-s);
+}
+
+.history-imported {
+  grid-area: imported;
 }
 
 .history-count {
@@ -792,4 +796,21 @@
   align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
+}
+
+@media (max-width: 719px) {
+  .import-steps {
+    flex-wrap: nowrap;
+  }
+  .import-step + .import-step::before {
+    width: var(--space-4);
+  }
+  .import-step:not([data-state="active"]) .import-step-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }

@@ -11,21 +11,22 @@ import {
   type ReactNode,
 } from "react";
 import {
-  categoryColor,
   categoryNames,
   isUncategorized,
   subcategoryNames,
 } from "../../domain/categories";
 import type { Ledger } from "../../domain/ledger";
 import { normalize } from "../../domain/search";
-import { CategoryDot } from "../../ui/CategoryDot";
 import { Popover } from "../../ui/Popover";
+import { CategoryIcon } from "./CategoryLabel";
 import "./CategoryMenu.css";
 
 export interface CategoryMenuProps {
   ledger: Ledger;
   /** Current category name. */
   value: string;
+  /** Current subcategory, checked in the list. */
+  subcategory?: string;
   /** Up to 3 quick choices shown first (e.g. domain suggestCategories). */
   suggestions?: string[];
   onSelect(category: string, subcategory?: string): void;
@@ -38,6 +39,7 @@ export interface CategoryMenuProps {
 export function CategoryMenu({
   ledger,
   value,
+  subcategory,
   suggestions,
   onSelect,
   trigger,
@@ -56,6 +58,7 @@ export function CategoryMenu({
       <CategoryList
         ledger={ledger}
         value={value}
+        subcategory={subcategory}
         suggestions={suggestions ?? []}
         direction={direction}
         onPick={(category, subcategory) => {
@@ -99,8 +102,17 @@ interface Option {
   section: string;
   category: string;
   subcategory?: string;
+  /** A new category, a new subcategory (with subcategory), or « type one » (empty). */
   create?: boolean;
   hasChildren?: boolean;
+}
+
+/** « Food › Drive », « Food / Drive » or « Food > Drive ». */
+function splitPath(query: string) {
+  const [category, ...rest] = query.split(/\s*[›/>]\s*/);
+  return rest.length
+    ? { category: category.trim(), subcategory: rest.join(" ").trim() }
+    : null;
 }
 
 const signs = new WeakMap<Ledger, Map<string, number>>();
@@ -119,12 +131,14 @@ function categorySign(ledger: Ledger) {
 function CategoryList({
   ledger,
   value,
+  subcategory,
   suggestions,
   direction,
   onPick,
 }: {
   ledger: Ledger;
   value: string;
+  subcategory?: string;
   suggestions: string[];
   direction?: "expense" | "income";
   onPick(category: string, subcategory?: string): void;
@@ -139,7 +153,6 @@ function CategoryList({
   );
   const [active, setActive] = useState(0);
   const recent = useMemo(readRecent, []);
-  const colors = ledger.prefs.categoryDefinitions;
 
   const options = useMemo<Option[]>(() => {
     const sign = categorySign(ledger);
@@ -151,6 +164,35 @@ function CategoryList({
           a.localeCompare(b, "fr")
         : 0,
     );
+    const path = splitPath(query);
+    if (path) {
+      const category =
+        all.find((c) => normalize(c) === normalize(path.category)) ??
+        path.category;
+      const subs = category ? subcategoryNames(ledger, category) : [];
+      const q = normalize(path.subcategory);
+      const matches: Option[] = subs
+        .filter((sub) => normalize(sub).includes(q))
+        .map((sub) => ({
+          key: `p:${category}/${sub}`,
+          section: "",
+          category,
+          subcategory: sub,
+        }));
+      const exact = subs.some((sub) => normalize(sub) === q);
+      return category && q && !exact && !isUncategorized(category)
+        ? [
+            ...matches,
+            {
+              key: "create-sub",
+              section: "",
+              category,
+              subcategory: path.subcategory,
+              create: true,
+            },
+          ]
+        : matches;
+    }
     const q = normalize(query);
     if (q) {
       const matches: Option[] = [];
@@ -166,18 +208,34 @@ function CategoryList({
               subcategory: sub,
             });
       }
-      const exact = all.some((c) => normalize(c) === q);
-      return exact || isUncategorized(query)
-        ? matches
-        : [
-            ...matches,
-            {
-              key: "create",
-              section: "",
-              category: query.trim(),
-              create: true,
-            },
-          ];
+      if (isUncategorized(query)) return matches;
+      const parents = [
+        ...new Set([...(isUncategorized(value) ? [] : [value]), ...expanded]),
+      ].filter(
+        (c) =>
+          all.includes(c) &&
+          !subcategoryNames(ledger, c).some((sub) => normalize(sub) === q),
+      );
+      return [
+        ...matches,
+        ...(all.some((c) => normalize(c) === q)
+          ? []
+          : [
+              {
+                key: "create",
+                section: "",
+                category: query.trim(),
+                create: true,
+              },
+            ]),
+        ...parents.map((category) => ({
+          key: `create-sub:${category}`,
+          section: "",
+          category,
+          subcategory: query.trim(),
+          create: true,
+        })),
+      ];
     }
     const known = new Set(all);
     const quick = [...new Set(suggestions)].filter((c) => known.has(c));
@@ -205,18 +263,27 @@ function CategoryList({
             hasChildren: subs.length > 0,
           },
           ...(expanded.has(category)
-            ? subs.map((sub) => ({
-                key: `a:${category}/${sub}`,
-                section: "Toutes",
-                category,
-                subcategory: sub,
-              }))
+            ? [
+                ...subs.map((sub) => ({
+                  key: `a:${category}/${sub}`,
+                  section: "Toutes",
+                  category,
+                  subcategory: sub,
+                })),
+                {
+                  key: `a:${category}/+`,
+                  section: "Toutes",
+                  category,
+                  subcategory: "",
+                  create: true,
+                },
+              ]
             : []),
         ];
       }),
       { key: "new", section: "Toutes", category: "", create: true },
     ];
-  }, [ledger, query, suggestions, recent, expanded, direction]);
+  }, [ledger, query, suggestions, recent, expanded, direction, value]);
 
   const current = Math.min(active, options.length - 1);
   const activeOption = options[current];
@@ -230,6 +297,12 @@ function CategoryList({
   const choose = (option: Option) => {
     if (option.create && !option.category) {
       setCreating(true);
+      input.current?.focus();
+      return;
+    }
+    if (option.create && option.subcategory === "") {
+      setQuery(`${option.category} › `);
+      setActive(0);
       input.current?.focus();
       return;
     }
@@ -284,7 +357,9 @@ function CategoryList({
           aria-autocomplete="list"
           aria-label="Rechercher ou créer une catégorie"
           placeholder={
-            creating ? "Nom de la catégorie" : "Rechercher ou créer…"
+            creating
+              ? "Nom de la catégorie"
+              : "Rechercher, ou Catégorie › Sous-cat."
           }
           value={query}
           maxLength={60}
@@ -314,7 +389,7 @@ function CategoryList({
           const selected =
             !option.create &&
             option.category === value &&
-            !option.subcategory &&
+            (option.subcategory ?? "") === (subcategory ?? "") &&
             !option.key.startsWith("s:") &&
             !option.key.startsWith("r:");
           return (
@@ -327,7 +402,7 @@ function CategoryList({
               selected={selected}
               expanded={expanded.has(option.category)}
               option={option}
-              color={categoryColor(option.category, colors)}
+              ledger={ledger}
               onHover={() => setActive(index)}
               onChoose={() => choose(option)}
               onToggle={() =>
@@ -349,7 +424,7 @@ function OptionRow({
   selected,
   expanded,
   option,
-  color,
+  ledger,
   onHover,
   onChoose,
   onToggle,
@@ -361,13 +436,27 @@ function OptionRow({
   selected: boolean;
   expanded: boolean;
   option: Option;
-  color: string;
+  ledger: Ledger;
   onHover(): void;
   onChoose(): void;
   onToggle(): void;
 }) {
   let content: ReactNode;
-  if (option.create)
+  if (option.create && option.subcategory !== undefined)
+    content = (
+      <>
+        <Plus size={14} aria-hidden className="cat-menu-plus" />
+        <span className="cat-menu-name">
+          {option.subcategory
+            ? `Nouvelle sous-catégorie « ${option.subcategory} »`
+            : "Nouvelle sous-catégorie…"}
+        </span>
+        {option.subcategory && (
+          <span className="cat-menu-parent">{option.category}</span>
+        )}
+      </>
+    );
+  else if (option.create)
     content = (
       <>
         <Plus size={14} aria-hidden className="cat-menu-plus" />
@@ -391,7 +480,7 @@ function OptionRow({
   else
     content = (
       <>
-        <CategoryDot color={color} size={10} />
+        <CategoryIcon ledger={ledger} category={option.category} size="s" />
         <span className="cat-menu-name">{option.category}</span>
         {option.hasChildren && (
           <span
@@ -423,7 +512,7 @@ function OptionRow({
         aria-current={selected || undefined}
         data-index={index}
         data-active={active || undefined}
-        data-sub={option.subcategory ? true : undefined}
+        data-sub={option.subcategory !== undefined || undefined}
         className="cat-menu-option"
         onMouseMove={active ? undefined : onHover}
         onMouseDown={(event) => event.preventDefault()}

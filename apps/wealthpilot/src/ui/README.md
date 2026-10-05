@@ -20,7 +20,7 @@ Import once: `./fonts`, `./tokens.css`, `./base.css`. Colours only through token
 - `Skeleton` {width, height, shape: text|tile|card|pill} · `Empty` {children, action?} · `VisuallyHidden`
 - `CardShell` {palette?, title? | eyebrow?, actions?, footer?, motif?, headingLevel} — `container: card`, `data-width` narrow(<360)|medium|wide(>640); `useCardWidth()` → {width, size}
 - `ErrorBoundary` {label = « Cette carte », onError?} — « … n’a pas pu s’afficher · Réessayer »
-- `CategoryDot` {color, size: 8|10|12|16, label?} · `MerchantLogo` {name, color(hex), src?, icon?: LucideIcon, size: 28|32|44}
+- `CategoryDot` {color, size: 8|10|12|16, label?} · `MerchantLogo` {color(hex), src?, icon?: LucideIcon (default shop, never an initial), size: 28|32|44}
 - `ProgressBar` {paid, committed?, total, color, label, showPercent} — hatched committed, over-budget tick
 - `DateChip` {date, soon?} · `ToastView` {message, action?{label,onClick}, onClose, tone: neutral|error}
 - `useMeasure<T>()` → [ref, {width, height}]

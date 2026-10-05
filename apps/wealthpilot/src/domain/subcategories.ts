@@ -5,16 +5,29 @@ import type { Transaction } from "./types";
 // Well-known merchants, for rows that have neither a stored subcategory nor
 // a history to learn from. Names follow the bank exports (English).
 const KNOWN: [RegExp, string][] = [
-  [/mc ?donald|burger king|\bkfc\b|\bquick\b|five guys|o tacos|subway|big fernand|kebab/, "Fast Food"],
+  [
+    /mc ?donald|burger king|\bkfc\b|\bquick\b|five guys|o tacos|subway|big fernand|kebab/,
+    "Fast Food",
+  ],
   [/uber ?eats|deliveroo|just ?eat/, "Delivery"],
-  [/boulang|\bpaul\b|pain|patisser|starbucks|columbus|levain/, "Coffee & Bakery"],
-  [/lidl|carrefour|leclerc|auchan|monoprix|franprix|intermarche|\baldi\b|picard|\bg20\b|biocoop|casino|super u/, "Groceries"],
+  [
+    /boulang|\bpaul\b|pain|patisser|starbucks|columbus|levain/,
+    "Coffee & Bakery",
+  ],
+  [
+    /lidl|carrefour|leclerc|auchan|monoprix|franprix|intermarche|\baldi\b|picard|\bg20\b|biocoop|casino|super u/,
+    "Groceries",
+  ],
   [/total ?energies|\besso\b|\bbp\b|\bshell\b|avia|relais/, "Fuel"],
   [/netflix|spotify|disney|deezer|prime video|canal/, "Streaming"],
   [/ratp|sncf|navigo|transilien/, "Public Transit"],
   [/\buber\b|bolt|heetch|\btaxi/, "Ride Hailing"],
   [/pharmac/, "Pharmacy"],
 ];
+
+/** Subcategory of a well-known merchant name, or undefined. */
+export const knownSubcategory = (text: string) =>
+  KNOWN.find(([pattern]) => pattern.test(normalizedText(text)))?.[1];
 
 const merchantKey = (t: Transaction) =>
   `${t.category}|${normalizedText(t.merchantName || t.merchant || t.label)}`;
@@ -38,12 +51,20 @@ export function withSubcategories(rows: Transaction[]): Transaction[] {
   return rows.map((t) => {
     if (t.subcategory) return t;
     const raw = subcategoryOf(t.raw ?? {});
-    if (raw) return { ...t, subcategory: raw, subcategorySource: "raw" as const };
+    if (raw)
+      return { ...t, subcategory: raw, subcategorySource: "raw" as const };
     const fromMerchant = best(learned.get(merchantKey(t)));
     if (fromMerchant)
-      return { ...t, subcategory: fromMerchant, subcategorySource: "merchant" as const };
-    const text = normalizedText(`${t.merchantName ?? ""} ${t.merchant} ${t.label}`);
-    const known = KNOWN.find(([pattern]) => pattern.test(text))?.[1];
-    return known ? { ...t, subcategory: known, subcategorySource: "known" as const } : t;
+      return {
+        ...t,
+        subcategory: fromMerchant,
+        subcategorySource: "merchant" as const,
+      };
+    const known = knownSubcategory(
+      `${t.merchantName ?? ""} ${t.merchant} ${t.label}`,
+    );
+    return known
+      ? { ...t, subcategory: known, subcategorySource: "known" as const }
+      : t;
   });
 }

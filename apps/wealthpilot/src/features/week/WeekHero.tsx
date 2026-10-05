@@ -49,7 +49,7 @@ export function WeekHero({
           {tense === "past" ? (
             <PastAmount plan={plan} />
           ) : (
-            <>
+            <div className="week-hero-head">
               <p className="week-hero-amount">
                 {unlimited ? (
                   <span className="week-hero-none">Aucune limite</span>
@@ -94,7 +94,7 @@ export function WeekHero({
                   </Badge>
                 )}
               </p>
-            </>
+            </div>
           )}
           <SegmentBar
             label="Enveloppes de la semaine"
@@ -118,7 +118,7 @@ function PastAmount({ plan }: { plan: WeekPlan }) {
     .reduce((n, e) => n + e.paid, 0);
   const gap = planned - limit;
   return (
-    <>
+    <div className="week-hero-head">
       <p className="week-hero-amount">
         <Money value={paid} size="hero" tone="none" cents="never" />
         <span className="week-hero-lead">dépensés</span>
@@ -134,7 +134,7 @@ function PastAmount({ plan }: { plan: WeekPlan }) {
           </Badge>
         </p>
       )}
-    </>
+    </div>
   );
 }
 

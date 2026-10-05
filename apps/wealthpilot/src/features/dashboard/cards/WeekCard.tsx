@@ -11,7 +11,11 @@ import { Empty } from "../../../ui/Empty";
 import { SegmentBar } from "../../../ui/charts/SegmentBar";
 import { Money } from "../../../ui/Money";
 import type { CardProps } from "./types";
-import { isActiveEnvelope, visibleMovement } from "../../week/weekDates";
+import {
+  isActiveEnvelope,
+  visibleMovement,
+  weekdayShort,
+} from "../../week/weekDates";
 import "./WeekCard.css";
 
 const interactive = "a, button, input, select, textarea, [role='menuitem']";
@@ -34,6 +38,10 @@ export function WeekCard({ card, ledger, account, editing }: CardProps) {
     .toSorted((a, b) => a.possible - b.possible)
     .slice(0, 3);
   const visible = visibleMovement(account);
+  const charges = plan.days
+    .flatMap((d) => d.charges)
+    .filter((o) => visible(o) && o.date >= asOf)
+    .slice(0, 3);
   const days = plan.days.map((d) => ({
     date: d.date,
     spent: d.date <= asOf ? d.spent : 0,
@@ -132,6 +140,20 @@ export function WeekCard({ card, ledger, account, editing }: CardProps) {
               />
               <span className="week-card-env-name">{e.category}</span>
               <Money value={e.possible} cents="never" tone="none" />
+            </li>
+          ))}
+        </ul>
+      )}
+      {charges.length > 0 && (
+        <ul
+          className="week-card-charges"
+          aria-label="Charges à venir cette semaine"
+        >
+          {charges.map((o) => (
+            <li key={o.id}>
+              <span className="mono">{weekdayShort(o.date)}</span>
+              <span className="week-card-env-name">{o.label}</span>
+              <Money value={o.amount} cents="never" tone="none" />
             </li>
           ))}
         </ul>

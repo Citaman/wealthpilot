@@ -1,9 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 import { hrefFor } from "../../app/router";
-import { categoryColor } from "../../domain/categories";
 import { formatFullDay } from "../../domain/dates";
-import { brandFor } from "../../domain/merchants";
 import type { Occurrence } from "../../domain/events";
 import { accountName, type Ledger } from "../../domain/ledger";
 import { filterTransactions, merchantLabel } from "../../domain/search";
@@ -11,10 +9,10 @@ import type { IsoDate } from "../../domain/types";
 import type { WeekPlan } from "../../domain/week";
 import { Badge } from "../../ui/Badge";
 import { CardShell } from "../../ui/CardShell";
-import { CategoryDot } from "../../ui/CategoryDot";
 import { DayStrip, type DayItem } from "../../ui/charts/DayStrip";
-import { MerchantLogo } from "../../ui/MerchantLogo";
 import { Money } from "../../ui/Money";
+import { CategoryLabel } from "../shared/CategoryLabel";
+import { Logo } from "../shared/Logo";
 import { OccurrenceMenu } from "../shared/OccurrenceMenu";
 import { isEstimated, visibleMovement } from "./weekDates";
 
@@ -104,7 +102,6 @@ function DayPanel({
         })
       : [];
   const title = formatFullDay(date);
-  const definitions = ledger.prefs.categoryDefinitions;
   return (
     <section className="week-day-panel" aria-label={title}>
       <header className="week-day-panel-head">
@@ -126,22 +123,28 @@ function DayPanel({
         <ul className="week-ops">
           {operations.map((t) => {
             const name = merchantLabel(t);
-            const color = categoryColor(t.category, definitions);
             return (
               <li key={t.id} className="week-op">
-                <MerchantLogo
+                <Logo
+                  ledger={ledger}
                   name={name}
-                  color={color}
-                  src={brandFor(name)?.src}
+                  category={t.category}
+                  subcategory={t.subcategory}
                   size={28}
                 />
                 <span className="week-op-name">
                   {name}
                   <span className="week-op-meta">
-                    <CategoryDot color={color} />
-                    {t.category}
-                    {!account && ` · ${accountName(ledger, t.account)}`}
-                    {t.internal && " · virement interne"}
+                    <CategoryLabel
+                      ledger={ledger}
+                      category={t.category}
+                      subcategory={t.subcategory}
+                      derived={Boolean(t.subcategorySource)}
+                      size="s"
+                      icon={false}
+                    />
+                    {!account && <span>{accountName(ledger, t.account)}</span>}
+                    {t.internal && <span>virement interne</span>}
                   </span>
                 </span>
                 <Money value={t.amount} signed cents="always" />
@@ -155,15 +158,15 @@ function DayPanel({
                 {o.label}
                 <span className="week-op-meta">
                   {o.category && (
-                    <>
-                      <CategoryDot
-                        color={categoryColor(o.category, definitions)}
-                      />
-                      {o.category} ·{" "}
-                    </>
+                    <CategoryLabel
+                      ledger={ledger}
+                      category={o.category}
+                      size="s"
+                      icon={false}
+                    />
                   )}
-                  {!account && `${accountName(ledger, o.account)} · `}
-                  {o.overdue ? "en retard" : "prévu"}
+                  {!account && <span>{accountName(ledger, o.account)}</span>}
+                  <span>{o.overdue ? "en retard" : "prévu"}</span>
                 </span>
               </span>
               {isEstimated(o) && <Badge tone="estimated">Estimé</Badge>}

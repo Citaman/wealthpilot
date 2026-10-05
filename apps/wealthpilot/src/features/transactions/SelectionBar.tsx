@@ -7,6 +7,7 @@ import { Dialog, DialogClose } from "../../ui/Dialog";
 import { IconButton } from "../../ui/IconButton";
 import { CategoryMenu } from "../shared/CategoryMenu";
 import { categoryPatch } from "./state";
+import { categoryText } from "../shared/CategoryLabel";
 
 const nf = new Intl.NumberFormat("fr-FR");
 export const plural = (n: number, word: string) =>
@@ -85,7 +86,7 @@ export function SelectionBar({
           value=""
           onSelect={(category, subcategory) =>
             request({
-              title: `Catégoriser ${ops} en ${subcategory ? `${category} · ${subcategory}` : category} ?`,
+              title: `Catégoriser ${ops} en ${categoryText(category, subcategory)} ?`,
               confirm: "Catégoriser",
               patch: categoryPatch(ledger, category, subcategory),
               message: `${ops} ${count > 1 ? "catégorisées" : "catégorisée"}`,

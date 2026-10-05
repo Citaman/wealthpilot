@@ -26,12 +26,12 @@ import { Picker } from "../../../ui/Picker";
 import { Segmented } from "../../../ui/Segmented";
 import { LineChart, type LineSeries } from "../../../ui/charts/LineChart";
 import { Sparkline } from "../../../ui/charts/Sparkline";
+import { accountColor } from "../../shared/AccountTag";
 import { Tile } from "./Tile";
 import type { CardProps } from "./types";
 import "./BalanceCard.css";
 
 const euro = (value: number) => formatEuro(value, { cents: "never" });
-const accountColor = (index: number) => `var(--series-${(index % 7) + 1})`;
 
 export function BalanceCard(props: CardProps) {
   const { card, ledger, range, setOption } = props;

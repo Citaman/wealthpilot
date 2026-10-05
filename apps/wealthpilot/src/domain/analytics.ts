@@ -1,3 +1,4 @@
+import { isUncategorized } from "./categories";
 import { minDate, shiftMonth, within, type DateRange } from "./dates";
 import { memo, rowsIn, type Ledger, type Scope } from "./ledger";
 import { median } from "./money";
@@ -147,6 +148,35 @@ export const spendingByCategory = memo(
         };
       })
       .sort((a, b) => b.amount - a.amount);
+  },
+);
+
+export interface SubcategorySpending {
+  /** "" for operations without a subcategory. */
+  subcategory: string;
+  amount: number;
+}
+
+/** Spending of each category split by subcategory, largest first (same rows as spendingByCategory). */
+export const spendingBySubcategory = memo(
+  (ledger: Ledger, scope: Scope): Map<string, SubcategorySpending[]> => {
+    const totals = new Map<string, Map<string, number>>();
+    for (const t of spentIn(ledger, scope)) {
+      const subs = totals.get(t.category) ?? new Map<string, number>();
+      const key = isUncategorized(t.category)
+        ? ""
+        : (t.subcategory?.trim() ?? "");
+      subs.set(key, (subs.get(key) ?? 0) - t.amount);
+      totals.set(t.category, subs);
+    }
+    return new Map(
+      [...totals].map(([category, subs]) => [
+        category,
+        [...subs]
+          .map(([subcategory, amount]) => ({ subcategory, amount }))
+          .sort((a, b) => b.amount - a.amount),
+      ]),
+    );
   },
 );
 

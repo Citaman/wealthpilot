@@ -64,18 +64,20 @@ export function Pagination({
         {nf.format(first)}–{nf.format(last)} <span className="muted">sur</span>{" "}
         {nf.format(total)}
       </span>
-      <Picker
-        label="Lignes par page"
-        size="compact"
-        variant="ghost"
-        value={String(pageSize)}
-        valueLabel={`${pageSize} lignes`}
-        onValueChange={(v) => onPageSize(Number(v))}
-        options={pageSizes.map((size) => ({
-          value: String(size),
-          label: `${size} lignes`,
-        }))}
-      />
+      {position === "bas" && (
+        <Picker
+          label="Lignes par page"
+          size="compact"
+          variant="ghost"
+          value={String(pageSize)}
+          valueLabel={`${pageSize} lignes`}
+          onValueChange={(v) => onPageSize(Number(v))}
+          options={pageSizes.map((size) => ({
+            value: String(size),
+            label: `${size} lignes`,
+          }))}
+        />
+      )}
       {count > 1 && (
         <>
           <ol className="tx-pages">
@@ -120,25 +122,27 @@ export function Pagination({
               />
             </li>
           </ol>
-          <label className="tx-jump">
-            <span>Aller à</span>
-            <input
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder={String(page + 1)}
-              aria-label={`Aller à la page (1 à ${count})`}
-              value={jump}
-              onChange={(event) =>
-                setJump(event.currentTarget.value.replace(/\D/g, ""))
-              }
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  go();
+          {position === "bas" && (
+            <label className="tx-jump">
+              <span>Aller à</span>
+              <input
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder={String(page + 1)}
+                aria-label={`Aller à la page (1 à ${count})`}
+                value={jump}
+                onChange={(event) =>
+                  setJump(event.currentTarget.value.replace(/\D/g, ""))
                 }
-              }}
-            />
-          </label>
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    go();
+                  }
+                }}
+              />
+            </label>
+          )}
         </>
       )}
     </nav>

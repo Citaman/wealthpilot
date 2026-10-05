@@ -1,5 +1,6 @@
 import { useToast } from "../../app/toast";
 import { setSafety } from "../../data/commands";
+import { subcategoryForLabel } from "../../domain/categories";
 import { maxDate } from "../../domain/dates";
 import { accountName, type Ledger } from "../../domain/ledger";
 import { formatEuro } from "../../domain/money";
@@ -10,6 +11,7 @@ import { CardShell } from "../../ui/CardShell";
 import { EditableMoney } from "../../ui/Editable";
 import { Empty } from "../../ui/Empty";
 import { Money } from "../../ui/Money";
+import { categoryText } from "../shared/CategoryLabel";
 import { OccurrenceMenu } from "../shared/OccurrenceMenu";
 import { PurchaseTester } from "../shared/PurchaseTester";
 import { isEstimated, visibleMovement, weekdayShort } from "./weekDates";
@@ -72,12 +74,19 @@ export function WeekCharges({
               </span>
               <span className="week-charge-name">
                 {o.label}
-                {!plan.account && (
-                  <span className="week-charge-meta">
-                    {accountName(ledger, o.account)}
-                    {o.overdue && " · en retard"}
-                  </span>
-                )}
+                <span className="week-charge-meta">
+                  {[
+                    !plan.account && accountName(ledger, o.account),
+                    o.category &&
+                      categoryText(
+                        o.category,
+                        subcategoryForLabel(ledger, o.label, o.category),
+                      ),
+                    o.overdue && "en retard",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
               </span>
               {isEstimated(o) && <Badge tone="estimated">Estimé</Badge>}
               <Money value={o.amount} cents="never" />

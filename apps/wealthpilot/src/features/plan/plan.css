@@ -399,3 +399,29 @@
     grid-template-columns: 1fr;
   }
 }
+
+@container card (max-width: 480px) {
+  .plan-people .plan-list li {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "logo item item item"
+      "logo meter money close";
+    row-gap: var(--space-2);
+    padding-block: var(--space-2);
+  }
+  .plan-people .plan-list li > :nth-child(1) {
+    grid-area: logo;
+  }
+  .plan-people .plan-list li > :nth-child(2) {
+    grid-area: item;
+  }
+  .plan-people .plan-list li > :nth-child(3) {
+    grid-area: meter;
+  }
+  .plan-people .plan-list li > :nth-child(4) {
+    grid-area: money;
+  }
+  .plan-people .plan-list li > :nth-child(5) {
+    grid-area: close;
+  }
+}

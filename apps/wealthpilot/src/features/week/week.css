@@ -27,61 +27,54 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Page grid: hero, days, then envelopes (⅔) beside the side column (⅓). */
+/* Page grid: hero, then two independent columns (⅔ envelopes + days, ⅓ tools). */
 .week {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  grid-template-rows: auto auto auto auto auto 1fr;
-  grid-template-areas:
-    "hero hero"
-    "days days"
-    "env tester"
-    "env charges"
-    "env reserve"
-    "env .";
   gap: var(--grid-gap);
   align-items: start;
 }
 
 .week-hero {
-  grid-area: hero;
+  grid-column: 1 / -1;
 }
-.week-days {
-  grid-area: days;
-}
-.week-envelopes {
-  grid-area: env;
-}
-.week-tester {
-  grid-area: tester;
-}
-.week-charges {
-  grid-area: charges;
-}
-.week-reserve {
-  grid-area: reserve;
+
+.week-col {
+  display: grid;
+  gap: var(--grid-gap);
+  min-width: 0;
 }
 
 @media (max-width: 899px) {
   .week {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: none;
-    grid-template-areas:
-      "hero hero"
-      "env env"
-      "tester tester"
-      "days days"
-      "charges reserve";
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .week-col {
+    display: contents;
+  }
+  .week-hero {
+    order: 0;
+  }
+  .week-envelopes {
+    order: 1;
+  }
+  .week-tester {
+    order: 2;
+  }
+  .week-days {
+    order: 3;
+  }
+  .week-charges {
+    order: 4;
+  }
+  .week-reserve {
+    order: 5;
   }
 }
 
 @media (max-width: 719px) {
   .week-dock {
     flex-wrap: wrap;
-  }
-  .week {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "hero" "env" "tester" "days" "charges" "reserve";
   }
 }
 
@@ -105,25 +98,36 @@
   gap: var(--space-5);
 }
 
+.week-hero .ui-card-motif {
+  top: -48px;
+  right: -48px;
+  width: 176px;
+}
+
 .week-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
   gap: var(--space-6) var(--space-10);
-  align-items: end;
-  padding-right: clamp(0px, 14cqi, 200px);
+  align-items: stretch;
 }
 
 .week-hero-main {
-  display: grid;
-  gap: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-5);
   min-width: 0;
 }
 
+.week-hero-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .week-hero-amount {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-4);
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
   color: var(--card-highlight);
 }
 
@@ -143,8 +147,8 @@
   color: var(--card-text);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--fs-l);
-  line-height: var(--lh-l);
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
   letter-spacing: var(--tracking-display);
 }
 
@@ -153,7 +157,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  margin-top: calc(-1 * var(--space-2));
   font-size: var(--fs-text-l);
   line-height: var(--lh-text-l);
 }
@@ -250,21 +253,14 @@
 @container card (max-width: 760px) {
   .week-hero-grid {
     grid-template-columns: minmax(0, 1fr);
-    padding-right: 0;
-  }
-  .week-hero-main {
-    padding-right: clamp(0px, 24cqi, 160px);
   }
 }
 
 @container card (max-width: 560px) {
   .week-hero .ui-card-motif {
-    top: -36px;
-    right: -64px;
-    width: 150px;
-  }
-  .week-hero-main {
-    padding-right: 0;
+    top: -40px;
+    right: -52px;
+    width: 128px;
   }
 }
 
@@ -304,16 +300,6 @@
 @container card (max-width: 640px) {
   .week-days-legend {
     display: none;
-  }
-}
-
-.week-days .ui-day {
-  min-height: 200px;
-}
-
-@container daystrip (max-width: 559px) {
-  .week-days .ui-day {
-    min-height: var(--h-row);
   }
 }
 
@@ -372,15 +358,19 @@
 }
 
 .week-op-meta {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
+  min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  font-family: var(--font-mono);
-  font-size: var(--fs-mono);
+  font-size: var(--fs-text-s);
   font-weight: 400;
   color: var(--card-muted);
+}
+
+.week-op-meta > * + *::before {
+  content: "·";
+  margin-right: var(--space-2);
 }
 
 .week-op-expected {
@@ -409,6 +399,7 @@
   grid-template-areas:
     "name amount"
     "bar bar"
+    "subs subs"
     "detail detail";
   align-items: center;
   gap: var(--space-2) var(--space-4);
@@ -560,9 +551,45 @@
   display: none;
 }
 
+.week-env-subs {
+  grid-area: subs;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-text-s);
+}
+
+.week-env-subs li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.week-env-subs li > span:first-child {
+  font-weight: 600;
+}
+
+.week-env-subs .ui-money {
+  color: var(--card-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+}
+
 .week-env-idle {
+  display: grid;
+  gap: var(--space-2);
   padding-top: var(--space-3);
   border-top: 1px solid var(--card-hairline);
+}
+
+.week-env-idle-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
 }
 
 @container card (min-width: 641px) {
@@ -570,6 +597,7 @@
     grid-template-columns: minmax(140px, 1fr) minmax(0, 2.2fr) auto;
     grid-template-areas:
       "name bar amount"
+      ". subs subs"
       ". detail detail";
     column-gap: var(--space-6);
   }
@@ -615,10 +643,11 @@
 }
 
 .week-charge-meta {
-  font-family: var(--font-mono);
-  font-size: var(--fs-mono);
+  overflow: hidden;
+  font-size: var(--fs-text-s);
   font-weight: 400;
   color: var(--card-muted);
+  text-overflow: ellipsis;
 }
 
 .week-charge > .ui-money {

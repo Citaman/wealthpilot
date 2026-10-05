@@ -8,7 +8,10 @@ import {
   updateTransactions,
   type Undo,
 } from "../../../data/commands";
-import { suggestCategories } from "../../../domain/categories";
+import {
+  suggestCategories,
+  suggestCategoryChoices,
+} from "../../../domain/categories";
 import { formatDay } from "../../../domain/dates";
 import { inbox, type InboxItem } from "../../../domain/inbox";
 import { accountName, type Ledger } from "../../../domain/ledger";
@@ -19,8 +22,10 @@ import { Badge } from "../../../ui/Badge";
 import { Button } from "../../../ui/Button";
 import { CardShell, useCardWidth } from "../../../ui/CardShell";
 import { Money } from "../../../ui/Money";
+import { categoryText } from "../../shared/CategoryLabel";
 import { CategoryMenu } from "../../shared/CategoryMenu";
-import { acctParam, Logo, MoreToggle } from "./cardParts";
+import { Logo } from "../../shared/Logo";
+import { acctParam, MoreToggle } from "./cardParts";
 import type { CardProps } from "./types";
 import "./InboxCard.css";
 
@@ -328,10 +333,13 @@ function Uncategorized({
       toast.error(error);
       return;
     }
-    toast.undoable(`${merchantLabel(t)} · ${category}`, async () => {
-      await undo();
-      mark(t.id, false);
-    });
+    toast.undoable(
+      `${merchantLabel(t)} · ${categoryText(category, subcategory)}`,
+      async () => {
+        await undo();
+        mark(t.id, false);
+      },
+    );
   };
 
   if (!left) return null;
@@ -376,11 +384,16 @@ function QueueRow({
   t: Transaction;
   onApply(t: Transaction, category: string, subcategory?: string): void;
 }) {
-  const suggestions = suggestCategories(ledger, t);
+  const choices = suggestCategoryChoices(ledger, t);
   return (
     <li className="inbox-tx card-row-in">
       <span className="inbox-tx-head">
-        <Logo ledger={ledger} name={merchantLabel(t)} size={28} />
+        <Logo
+          ledger={ledger}
+          name={merchantLabel(t)}
+          subcategory={t.subcategory}
+          size={28}
+        />
         <span className="inbox-tx-text">
           <button
             type="button"
@@ -400,20 +413,20 @@ function QueueRow({
         role="group"
         aria-label={`Catégorie de ${merchantLabel(t)}`}
       >
-        {suggestions.map((category) => (
+        {choices.map((c) => (
           <button
-            key={category}
+            key={c.category}
             type="button"
             className="inbox-chip"
-            onClick={() => onApply(t, category)}
+            onClick={() => onApply(t, c.category, c.subcategory)}
           >
-            {category}
+            {categoryText(c.category, c.subcategory)}
           </button>
         ))}
         <CategoryMenu
           ledger={ledger}
           value={t.category}
-          suggestions={suggestions}
+          suggestions={suggestCategories(ledger, t)}
           direction={t.amount > 0 ? "income" : "expense"}
           onSelect={(category, subcategory) =>
             onApply(t, category, subcategory)
