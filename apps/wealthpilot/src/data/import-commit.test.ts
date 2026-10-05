@@ -122,6 +122,13 @@ describe("Import atomique, provenance et annulation", () => {
     expect(await db.accounts.count()).toBe(1);
   });
 
+  it("supprime le compte créé par le lot quand plus rien n’y fait référence", async () => {
+    const batch = await importText("date;amount;libelle\n2026-10-02;-10;Courses");
+    expect(await db.accounts.count()).toBe(1);
+    await undoImport(batch.id);
+    expect(await db.accounts.count()).toBe(0);
+  });
+
   it("garde les opérations partagées et met à jour le lot qui les reprend", async () => {
     const original = await ingest();
     const overlap = await importText(source(), {

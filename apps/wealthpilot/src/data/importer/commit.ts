@@ -216,12 +216,10 @@ export function undoBlockers(batchId: string): Promise<Transaction[]> {
 export function undoImport(batchId: string): Promise<void> {
   return db.transaction(
     "rw",
-    db.transactions,
-    db.batches,
-    db.dues,
-    db.accounts,
+    [db.transactions, db.batches, db.dues, db.accounts, db.budgets],
     async () => {
       const { owners, deleted, reassigned } = await undoPlan(batchId);
+      const touched = new Set(deleted.map((t) => t.account));
       const blockers = deleted.filter(edited);
       if (blockers.length)
         throw new ImportError(
@@ -254,6 +252,8 @@ export function undoImport(batchId: string): Promise<void> {
         });
       }
       for (const account of await db.accounts.toArray()) {
+        if (account.checkpoints?.some((c) => c.batchId === batchId))
+          touched.add(account.id);
         if (
           !account.checkpoints?.some((c) => c.batchId === batchId) &&
           !account.coverage?.some((c) => c.batchId === batchId)
@@ -272,6 +272,19 @@ export function undoImport(batchId: string): Promise<void> {
         });
       }
       await db.batches.delete(batchId);
+      // An account the batch brought in disappears with it once nothing refers to it.
+      for (const id of touched) {
+        const account = await db.accounts.get(id);
+        const used =
+          !account ||
+          account.checkpoint ||
+          account.checkpoints?.length ||
+          account.coverage?.length ||
+          (await db.transactions.where("account").equals(id).count()) ||
+          (await db.dues.where("account").equals(id).count()) ||
+          (await db.budgets.filter((b) => b.account === id).count());
+        if (!used) await db.accounts.delete(id);
+      }
     },
   );
 }

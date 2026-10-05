@@ -1,3 +1,4 @@
+import type { DateFormat } from "../../domain/dates";
 import type { Account, Batch, ImportAccountMetadata } from "../../domain/types";
 import type { ParsedFile } from "./parse";
 
@@ -17,7 +18,7 @@ export const mappingFields = [
 ] as const;
 export type Field = (typeof mappingFields)[number];
 /** Field → source column name ("" = unmapped). */
-export type Mapping = Record<Field, string>;
+export type Mapping = Record<Field, string> & { dateFormat?: DateFormat };
 
 export const normal = (s: string) =>
   s

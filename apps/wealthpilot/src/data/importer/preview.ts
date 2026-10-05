@@ -124,7 +124,7 @@ function readRow(
   const get = (field: Field) => raw[m[field]]?.trim() ?? "";
   const extra = (keys: string[]) =>
     Object.entries(raw).find(([k]) => keys.includes(normal(k)))?.[1] ?? "";
-  const date = parseDate(get("date"));
+  const date = parseDate(get("date"), m.dateFormat);
   const label = get("label") || get("merchant");
   const account = destination(choice, get("account"));
   const direction = normal(get("direction"));
@@ -194,7 +194,7 @@ function derivedBalances(
   const entries = new Map<string, ImportAccountMetadata>();
   for (const raw of file.rows) {
     if (!raw[m.balance]?.trim()) continue;
-    const date = parseDate(raw[m.date] ?? "");
+    const date = parseDate(raw[m.date] ?? "", m.dateFormat);
     const amount = parseMoney(raw[m.balance]);
     if ((raw[m.currency]?.trim().toUpperCase() || "EUR") !== "EUR") {
       errors.push(

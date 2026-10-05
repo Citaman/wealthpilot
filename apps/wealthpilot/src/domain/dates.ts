@@ -55,19 +55,28 @@ export function isIsoDate(value: unknown): value is IsoDate {
   return !Number.isNaN(d.getTime()) && iso(d) === value;
 }
 
-/** Accepts `YYYY-MM-DD[T…]`, `DD/MM/YYYY`, `DD.MM.YYYY`, `DD-MM-YYYY`. */
-export function parseDate(value: string): IsoDate | null {
+export type DateFormat = "auto" | "dmy" | "mdy" | "ymd";
+
+/**
+ * `auto` accepts `YYYY-MM-DD[T…]` and day-first `DD/MM/YYYY` (French banks).
+ * An explicit order also accepts `/ . -` separators and two-digit years.
+ */
+export function parseDate(value: string, format: DateFormat = "auto"): IsoDate | null {
   const s = value.trim();
-  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/);
-  const frMatch = s.match(/^(\d{2})[/.\-](\d{2})[/.\-](\d{4})$/);
-  const parts = isoMatch
-    ? [isoMatch[1], isoMatch[2], isoMatch[3]]
-    : frMatch
-      ? [frMatch[3], frMatch[2], frMatch[1]]
-      : null;
-  if (!parts) return null;
-  const candidate = parts.join("-");
-  return isIsoDate(candidate) ? candidate : null;
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/);
+  if (iso && (format === "auto" || format === "ymd")) return valid(iso[1], iso[2], iso[3]);
+  const m = s.match(/^(\d{1,4})[/.\-](\d{1,2})[/.\-](\d{1,4})$/);
+  if (!m) return null;
+  const [, a, b, c] = m;
+  if (format === "ymd") return valid(a, b, c);
+  if (format === "mdy") return valid(c, a, b);
+  return format === "auto" && c.length !== 4 ? null : valid(c, b, a);
+}
+
+function valid(year: string, month: string, day: string): IsoDate | null {
+  const y = year.length === 2 ? `20${year}` : year;
+  const candidate = `${y}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  return y.length === 4 && isIsoDate(candidate) ? candidate : null;
 }
 
 export const minDate = (a: IsoDate, b: IsoDate) => (a < b ? a : b);

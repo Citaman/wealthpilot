@@ -7,6 +7,7 @@ import {
   type Mapping,
 } from "../../data/importer/mapping";
 import type { ParsedFile } from "../../data/importer/parse";
+import { formatDate, parseDate } from "../../domain/dates";
 import { Button } from "../../ui/Button";
 import { CardShell } from "../../ui/CardShell";
 import { Picker } from "../../ui/Picker";
@@ -63,6 +64,7 @@ export function MappingStep({
       return next;
     });
   const format = dateFormat(file.rows[0]?.[mapping.date]);
+  const firstDate = parseDate(file.rows[0]?.[mapping.date] ?? "", mapping.dateFormat);
   const options: { value: Role; label: string }[] = [
     { value: IGNORE, label: "Ignorer" },
     ...mappingFields.map((f) => ({ value: f, label: fieldLabels[f] })),
@@ -81,8 +83,26 @@ export function MappingStep({
       <p className="mono muted import-facts">
         {file.name} · {plural(file.rows.length, "ligne", "lignes")} ·{" "}
         {fileFacts(file)}
-        {format && ` · dates ${format}`}
       </p>
+      {mapping.date && (
+        <div className="import-date-format">
+          <Picker
+            label="Format des dates"
+            size="compact"
+            value={mapping.dateFormat ?? "auto"}
+            onValueChange={(v) => setMapping((m) => ({ ...m, dateFormat: v }))}
+            options={[
+              { value: "auto", label: `Automatique${format ? ` (${format})` : ""}` },
+              { value: "dmy", label: "JJ/MM/AAAA" },
+              { value: "mdy", label: "MM/JJ/AAAA" },
+              { value: "ymd", label: "AAAA-MM-JJ" },
+            ]}
+          />
+          <span className="mono muted">
+            {firstDate ? `1re ligne : ${formatDate(firstDate)}` : "Date de la 1re ligne illisible"}
+          </span>
+        </div>
+      )}
       {file.errors.length > 0 && (
         <div className="import-block" data-tone="error">
           <p className="import-block-title">
