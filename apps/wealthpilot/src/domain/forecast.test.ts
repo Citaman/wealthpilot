@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { available } from "./available";
 import { balanceSeries } from "./balances";
+import { upcoming } from "./events";
+import { inbox } from "./inbox";
 import { envelopes } from "./envelopes";
 import { forecast } from "./forecast";
 import {
@@ -265,5 +268,51 @@ describe("envelope provisions and budget months", () => {
     expect(
       forecast(ledgerOf(w, "2026-11-05"), "", "2026-11-06").points,
     ).toEqual(f.points.slice(0, 2));
+  });
+});
+
+describe("overdue items", () => {
+  const base = (): World => ({
+    accounts: [anchored("A", "2026-10-04", 100000)],
+  });
+
+  it("drops unreconciled dues older than 31 days from cash, leaving them to the inbox", () => {
+    const w = {
+      ...base(),
+      dues: [
+        due("recent", "2026-09-10", -5000),
+        due("stale", "2026-09-02", -7000),
+      ],
+    };
+    const ledger = ledgerOf(w, "2026-10-04");
+    expect(forecast(ledger, "A", "2026-10-10").points[0].value).toBe(95000);
+    expect(available(ledger, "").charges.map((c) => c.id)).toEqual(["recent"]);
+    expect(inbox(ledger, "")).toContainEqual({
+      kind: "overdue",
+      ids: ["stale"],
+    });
+  });
+
+  it("never counts a late income as cash, estimated or manual, but keeps it listed", () => {
+    const salaries = ["07", "08", "09"].map((m) =>
+      tx(`pay-${m}`, `2026-${m}-01`, 200000, { merchant: "Salaire" }),
+    );
+    const w = {
+      ...base(),
+      transactions: salaries,
+      dues: [due("refund", "2026-10-02", 3000)],
+    };
+    const ledger = ledgerOf(w, "2026-10-04");
+    const late = upcoming(ledger, "A", "2026-10-10").filter(
+      (o) => o.amount > 0,
+    );
+    expect(late.map((o) => [o.kind, o.date, o.overdue])).toEqual([
+      ["estimate", "2026-10-01", true],
+      ["due", "2026-10-02", true],
+    ]);
+    const f = forecast(ledger, "A", "2026-10-10");
+    expect(f.points.map((p) => p.value)).toEqual(f.points.map(() => 100000));
+    expect(available(ledger, "")).toMatchObject({ free: 100000 });
+    expect(available(ledger, "").expectedIncome).toHaveLength(2);
   });
 });

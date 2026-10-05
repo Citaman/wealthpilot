@@ -1,5 +1,6 @@
 import { accountStatus } from "./balances";
 import { isUncategorized } from "./categories";
+import { staleBefore } from "./events";
 import { memo, rowsIn, type Ledger } from "./ledger";
 import { activeRecurrences, type Recurrence } from "./recurring";
 
@@ -12,7 +13,9 @@ export type InboxItem =
       freshness: "stale" | "unknown";
       ageDays: number | null;
     }
-  | { kind: "future"; ids: string[] };
+  | { kind: "future"; ids: string[] }
+  /** Unreconciled dues older than 31 days, out of every projection. */
+  | { kind: "overdue"; ids: string[] };
 
 /** Decisions waiting for the user, in display order; empty kinds are omitted. */
 export const inbox = memo((ledger: Ledger, account: string): InboxItem[] => {
@@ -21,6 +24,12 @@ export const inbox = memo((ledger: Ledger, account: string): InboxItem[] => {
     (t) => !t.internal && isUncategorized(t.category),
   );
   const future = rows.filter((t) => t.date > ledger.asOf);
+  const stale = ledger.dues.filter(
+    (d) =>
+      !d.transactionId &&
+      d.date < staleBefore(ledger.asOf) &&
+      (!account || d.account === account),
+  );
   return [
     ...(uncategorized.length
       ? [
@@ -47,6 +56,9 @@ export const inbox = memo((ledger: Ledger, account: string): InboxItem[] => {
           ]
         : [],
     ),
+    ...(stale.length
+      ? [{ kind: "overdue" as const, ids: stale.map((d) => d.id) }]
+      : []),
     ...(future.length
       ? [{ kind: "future" as const, ids: future.map((t) => t.id) }]
       : []),

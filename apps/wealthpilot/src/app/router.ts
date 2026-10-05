@@ -33,7 +33,10 @@ export function parseHash(hash: string): Route & { canonical: boolean } {
   return { page: legacy[path] ?? "dashboard", params, canonical: false };
 }
 
-export function hrefFor(page: Page, params?: Record<string, string | undefined>) {
+export function hrefFor(
+  page: Page,
+  params?: Record<string, string | undefined>,
+) {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params ?? {}))
     if (value) query.set(key, value);
@@ -41,7 +44,10 @@ export function hrefFor(page: Page, params?: Record<string, string | undefined>)
   return `#/${paths[page]}${q ? `?${q}` : ""}`;
 }
 
-export function navigate(page: Page, params?: Record<string, string | undefined>) {
+export function navigate(
+  page: Page,
+  params?: Record<string, string | undefined>,
+) {
   const next = hrefFor(page, params);
   if (location.hash !== next) location.hash = next;
 }
@@ -62,7 +68,11 @@ export function useRoute(): Route {
   const route = useMemo(() => parseHash(hash), [hash]);
   useEffect(() => {
     if (!route.canonical)
-      history.replaceState(null, "", hrefFor(route.page, Object.fromEntries(route.params)));
+      history.replaceState(
+        null,
+        "",
+        hrefFor(route.page, Object.fromEntries(route.params)),
+      );
   }, [route]);
   return route;
 }

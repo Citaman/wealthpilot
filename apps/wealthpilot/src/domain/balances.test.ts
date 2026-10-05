@@ -189,3 +189,69 @@ describe("account status", () => {
     });
   });
 });
+
+describe("coverage gaps", () => {
+  it("treats an account without coverage metadata as covered between its first and last data", () => {
+    const ledger = ledgerOf(
+      {
+        accounts: [anchored("A", "2026-10-05", 1000)],
+        transactions: [
+          tx("a", "2026-10-01", -100),
+          tx("b", "2026-10-03", -100),
+        ],
+      },
+      "2026-10-06",
+    );
+    const series = balanceSeries(ledger, {
+      account: "A",
+      range: range("2026-09-29", "2026-10-06"),
+      asOf: "2026-10-06",
+    });
+    expect(series.points.filter((p) => p.gap).map((p) => p.date)).toEqual([
+      "2026-09-29",
+      "2026-09-30",
+      "2026-10-06",
+    ]);
+  });
+
+  it("marks a hole between declared statements, and the days it cuts off from the anchor, as gaps", () => {
+    const ledger = ledgerOf(
+      {
+        accounts: [
+          {
+            ...anchored("A", "2026-10-10", 0),
+            coverage: [
+              {
+                from: "2026-10-01",
+                through: "2026-10-03",
+                sourceHash: "1",
+                batchId: "1",
+                complete: true,
+              },
+              {
+                from: "2026-10-06",
+                through: "2026-10-10",
+                sourceHash: "2",
+                batchId: "2",
+                complete: true,
+              },
+            ],
+          },
+        ],
+      },
+      "2026-10-10",
+    );
+    const series = balanceSeries(ledger, {
+      account: "A",
+      range: range("2026-10-01", "2026-10-10"),
+      asOf: "2026-10-10",
+    });
+    expect(series.points.filter((p) => p.gap).map((p) => p.date)).toEqual([
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-03",
+      "2026-10-04",
+      "2026-10-05",
+    ]);
+  });
+});

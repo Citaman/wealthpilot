@@ -29,7 +29,10 @@ interface ToastApi {
 }
 
 const ToastContext = createContext<ToastApi | null>(null);
-const ToastList = createContext<{ toasts: Toast[]; dismiss(id: number): void } | null>(null);
+const ToastList = createContext<{
+  toasts: Toast[];
+  dismiss(id: number): void;
+} | null>(null);
 
 const DURATION = 6000;
 
@@ -49,7 +52,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     return {
       show,
       undoable(message, undo) {
-        show(undo ? { message, action: { label: "Annuler", run: undo } } : { message });
+        show(
+          undo
+            ? { message, action: { label: "Annuler", run: undo } }
+            : { message },
+        );
       },
       error(error) {
         const message = error instanceof Error ? error.message : String(error);

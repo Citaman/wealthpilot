@@ -14,7 +14,7 @@ export interface Occurrence {
   account: string;
   category?: string;
   internal?: boolean;
-  /** Dated before `asOf` and not reconciled: applied to cash at `asOf`. */
+  /** Dated before `asOf`, not reconciled: a charge is applied on `asOf`, an income waits until received. */
   overdue: boolean;
   recurrenceKey?: string;
   confirmed?: boolean;
@@ -23,13 +23,23 @@ export interface Occurrence {
   spread: number;
 }
 
-/** Expected movements up to `until`, overdue first, each counted once. */
+// An unreconciled due older than this is no longer assumed pending: it leaves the
+// projection and waits in the inbox for a decision.
+export const staleBefore = (asOf: IsoDate) => addDays(asOf, -31);
+
+/** Expected movements up to `until`, recent overdue first, each counted once. */
 export const upcoming = memo(
   (ledger: Ledger, account: string, until: IsoDate): Occurrence[] => {
     const { asOf } = ledger;
     const inScope = (id: string) => !account || id === account;
     const dues: Occurrence[] = ledger.dues
-      .filter((d) => !d.transactionId && d.date <= until && inScope(d.account))
+      .filter(
+        (d) =>
+          !d.transactionId &&
+          d.date >= staleBefore(asOf) &&
+          d.date <= until &&
+          inScope(d.account),
+      )
       .map((d) => ({
         id: d.id,
         kind: "due",
@@ -65,6 +75,9 @@ export const upcoming = memo(
     ].sort((a, b) => a.date.localeCompare(b.date) || a.amount - b.amount);
   },
 );
+
+/** A late income is not cash: it stays listed as expected but out of the projection. */
+export const movesCash = (o: Occurrence) => !(o.overdue && o.amount > 0);
 
 /** Date on which an occurrence moves cash: overdue items land on `asOf`. */
 export const effectiveDate = (o: Occurrence, asOf: IsoDate) =>

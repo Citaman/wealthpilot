@@ -1,7 +1,7 @@
 import { addDays, daysBetween, maxDate, weekStart } from "./dates";
 import { householdBalance } from "./balances";
 import { envelopes } from "./envelopes";
-import { effectiveDate, upcoming, type Occurrence } from "./events";
+import { effectiveDate, movesCash, upcoming, type Occurrence } from "./events";
 import { memo, type Ledger } from "./ledger";
 import { currentMonthKey, monthOf, monthRange } from "./periods";
 import type { IsoDate } from "./types";
@@ -105,7 +105,7 @@ export const forecast = memo(
         shortfalls,
       };
     const byDay = new Map<IsoDate, Occurrence[]>();
-    for (const o of events) {
+    for (const o of events.filter(movesCash)) {
       const day = effectiveDate(o, asOf);
       const list = byDay.get(day);
       if (list) list.push(o);

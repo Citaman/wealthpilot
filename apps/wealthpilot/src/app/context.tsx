@@ -8,7 +8,11 @@ import {
 } from "react";
 import { today } from "../domain/dates";
 import type { Ledger } from "../domain/ledger";
-import { currentMonthKey, resolvePeriod, type PeriodValue } from "../domain/periods";
+import {
+  currentMonthKey,
+  resolvePeriod,
+  type PeriodValue,
+} from "../domain/periods";
 import type { DateRange, IsoDate } from "../domain/types";
 
 const keys = {
@@ -40,7 +44,10 @@ export function encodePeriod(p: PeriodValue): string {
 }
 
 /** Reads v2 values and the v1 presets (current|30d|1|3|4|6|12|all|custom). */
-export function decodePeriod(value: string | null, legacyMonth: string | null): PeriodValue | null {
+export function decodePeriod(
+  value: string | null,
+  legacyMonth: string | null,
+): PeriodValue | null {
   if (!value) return null;
   const month = value.match(/^month:(\d{4}-\d{2})$/);
   if (month) return { kind: "month", key: month[1] };
@@ -95,15 +102,22 @@ export function ReadingProvider({
   asOf: IsoDate;
   children: ReactNode;
 }) {
-  const [storedAccount, setStoredAccount] = useState(() => read(keys.account) ?? "");
+  const [storedAccount, setStoredAccount] = useState(
+    () => read(keys.account) ?? "",
+  );
   const [period, setStoredPeriod] = useState<PeriodValue | null>(() =>
     decodePeriod(read(keys.period), read(keys.legacyMonth)),
   );
   // A deleted or restored-away account falls back to the household view.
-  const account = ledger.accounts.some((a) => a.id === storedAccount) ? storedAccount : "";
+  const account = ledger.accounts.some((a) => a.id === storedAccount)
+    ? storedAccount
+    : "";
 
   const value = useMemo<ReadingContext>(() => {
-    const current: PeriodValue = { kind: "month", key: currentMonthKey(ledger.calendar, asOf) };
+    const current: PeriodValue = {
+      kind: "month",
+      key: currentMonthKey(ledger.calendar, asOf),
+    };
     const range = resolvePeriod(period ?? current, ledger.calendar, asOf);
     return {
       asOf,

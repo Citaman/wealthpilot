@@ -146,6 +146,23 @@ const bucket = (date: IsoDate, granularity: Granularity) =>
       ? weekStart(date)
       : date;
 
+/** Days backed by data: declared statement coverage, or, without any, the span from
+ * the first operation or anchor to the last one. */
+function knownDays(account: Account, rows: Transaction[]) {
+  if (account.coverage?.length)
+    return (date: IsoDate) =>
+      ["observed", "covered"].includes(coverageStatus(account, date));
+  const ends = [
+    rows[0]?.date,
+    rows.at(-1)?.date,
+    ...anchors(account).map((c) => c.date),
+  ]
+    .filter((d) => d !== undefined)
+    .sort();
+  return (date: IsoDate) =>
+    ends.length > 0 && date >= ends[0] && date <= ends.at(-1)!;
+}
+
 /** Daily closing balances, anchored on checkpoints, up to `asOf`. */
 export const balanceSeries = memo((ledger: Ledger, scope: Scope) => {
   const range: DateRange = {
@@ -167,6 +184,9 @@ export const balanceSeries = memo((ledger: Ledger, scope: Scope) => {
     name: accountName(ledger, a.id),
     values: days.map((d) => reader(ledger, a.id)(d)),
   }));
+  const known = accounts.map((a) =>
+    knownDays(a, ledger.byAccount.get(a.id) ?? []),
+  );
   const daily: SeriesPoint[] = days.map((date, i) => {
     const values = perAccount.map((p) => p.values[i]);
     const statuses = accounts.map((a) => coverageStatus(a, date));
@@ -176,7 +196,7 @@ export const balanceSeries = memo((ledger: Ledger, scope: Scope) => {
         accounts.length && values.every((v) => v !== null)
           ? values.reduce<number>((total, v) => total + v!, 0)
           : null,
-      gap: statuses.some((s) => s !== "observed" && s !== "covered"),
+      gap: known.some((isKnown) => !isKnown(date)),
       observed: statuses.includes("observed"),
       count: moves.get(date)?.count ?? 0,
       net: moves.get(date)?.net ?? 0,

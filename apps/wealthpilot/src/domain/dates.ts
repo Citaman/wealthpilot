@@ -49,7 +49,8 @@ export function clampDay(month: string, day: number): IsoDate {
 }
 
 export function isIsoDate(value: unknown): value is IsoDate {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+    return false;
   const d = noon(value);
   return !Number.isNaN(d.getTime()) && iso(d) === value;
 }
@@ -90,7 +91,11 @@ const format = (options: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat("fr-FR", { ...options, timeZone: "UTC" });
 const short = format({ day: "numeric", month: "short" });
 const long = format({ day: "numeric", month: "short", year: "numeric" });
-const withWeekday = format({ weekday: "short", day: "numeric", month: "short" });
+const withWeekday = format({
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+});
 const fullDay = format({ weekday: "long", day: "numeric", month: "long" });
 const monthName = format({ month: "long" });
 const monthYear = format({ month: "long", year: "numeric" });

@@ -21,13 +21,13 @@ ledger identity + args: call them freely from render.
 ## Balances (`balances.ts`)
 - `checkpointForDate(account, date)` · `coverageStatus(account, date) → observed|covered|derived|incomplete|unknown`.
 - `balanceAt(account, rows, date) → number | null` · `householdBalance(ledger, account, date) → number | null` (null if any account has no anchor).
-- *memo* `balanceSeries(ledger, scope) → {granularity, points: {date, value|null, gap, observed, count, net}[], perAccount: {account, name, values[]}[]}` — closing balances up to `min(range.to, asOf)`; day ≤ 120 d, week ≤ 2 y, else month (bucket = last day; first point kept).
+- *memo* `balanceSeries(ledger, scope) → {granularity, points: {date, value|null, gap, observed, count, net}[], perAccount: {account, name, values[]}[]}` — closing balances up to `min(range.to, asOf)`; `gap` = outside declared statement coverage, or (account without coverage metadata) outside its first→last operation/anchor span; day ≤ 120 d, week ≤ 2 y, else month (bucket = last day; first point kept).
 - *memo* `accountStatus(ledger) → {id, name, balance, checkpoint, ageDays, freshness: ok|stale(>7 d)|unknown, lastImport, coverage: DateRange[]}[]`.
 
 ## Expected movements (`events.ts`, `recurring.ts`)
 - `Occurrence = {id, kind: due|estimate|known, date, amount, label, account, category?, internal?, overdue, recurrenceKey?, confirmed?, confidence?, spread}`.
-- *memo* `upcoming(ledger, account, until) → Occurrence[]` — unlinked dues (overdue included), estimates, future-dated imports; sorted.
-- `effectiveDate(o, asOf)` — overdue items move cash on `asOf`. *memo* `nextIncome(ledger, account) → Occurrence | null`.
+- *memo* `upcoming(ledger, account, until) → Occurrence[]` — unlinked dues (overdue up to 31 days; older ones go to the inbox), estimates, future-dated imports; sorted.
+- `effectiveDate(o, asOf)` — overdue charges move cash on `asOf`; `movesCash(o)` — false for an overdue income (« attendu, pas encore reçu », never projected); `staleBefore(asOf)` = asOf − 31 d. *memo* `nextIncome(ledger, account) → Occurrence | null`.
 - `detectRecurrences(tx, asOf) → Recurrence[]` (cached) · *memo* `activeRecurrences(ledger)` — rules + detected, `confirmed`, `paused` (paused rule or dismissed).
 - *memo* `estimates(ledger, end) → Occurrence[]` — ids `estimate:<key>:<date>`, key `JSON.stringify([account, identity, sign])` (`recurrenceKey(t)`).
 
@@ -38,7 +38,7 @@ ledger identity + args: call them freely from render.
 
 ## Forecast (`forecast.ts`)
 - *memo* `forecast(ledger, account, end) → {start, points: {date, value, low, high}[], events, lowPoint: {date, value, account?} | null, committedLow, provisions: Record<month, cents>, reserve, shortfalls}`.
-  Points start at `asOf` (overdue applied there). `shortfalls: {account, date, threshold, low, amount}[]` per account (household = all accounts).
+  Points start at `asOf` (overdue charges applied there, late incomes never). `shortfalls: {account, date, threshold, low, amount}[]` per account (household = all accounts).
 - `reserveFor(ledger, account)` — household: safety + projects; account: this week's saved plan reserve. `planningEnd(ledger, date)` — horizon used by week/simulation.
 
 ## Week (`week.ts`)
@@ -50,7 +50,7 @@ ledger identity + args: call them freely from render.
 ## Analyses, inbox, categories, search
 - *memo* `monthlyFlows(ledger, account, count) → {month, range, income, spending, net, complete}[]` (oldest first, transfers excluded, ≤ asOf).
 - *memo* `spendingByCategory(ledger, scope) → {category, amount, share, usual, deltaPct}[]` — usual = median of the 3 previous months with data. *memo* `unusualExpenses(ledger, scope) → Transaction[]` · *memo* `usualSpending(ledger, account, month) → Map`.
-- *memo* `inbox(ledger, account) → ({kind: uncategorized, ids} | {kind: recurrence, recurrence} | {kind: balance, account, freshness, ageDays} | {kind: future, ids})[]`.
+- *memo* `inbox(ledger, account) → ({kind: uncategorized, ids} | {kind: recurrence, recurrence} | {kind: balance, account, freshness, ageDays} | {kind: future, ids} | {kind: overdue, ids}  // dues > 31 days, « échéance passée à vérifier »)[]`.
 - `isUncategorized(name)` · `categoryColor(name, definitions)` · `CATEGORY_COLORS`, `OTHERS_COLOR` · *memo* `categoryNames(ledger)`, `subcategoryNames(ledger, category)` · `similarTransactions(ledger, t)` · `suggestCategories(ledger, t) → string[3]`.
 - *memo* `filterTransactions(ledger, {account, range, kind, categories, min, max, uncategorized, withNote, query, sort, batchId?}) → Transaction[]` · `sortTransactions(rows, sort)` · `summarize(rows, asOf) → {count, income, spending, net}` · `searchScore`, `normalize`, `merchantLabel`.
 - `brandFor(name)`, `subcategoryOf(raw)` (`merchants.ts`) · `normalizedText`, `recurrenceIdentity` (`text.ts`, frozen identity normalisation).
