@@ -84,8 +84,11 @@ function history(ledger: Ledger, account: string) {
   const weeks = verified.length
     ? verified
     : past.filter((w) => first && w >= first);
+  // Limits are set in whole euros; a proposal of 192,63 € reads as 193 €.
   const proposal = (category: string) =>
-    median(weeks.map((w) => samples.get(category)?.get(w) ?? 0));
+    Math.round(
+      median(weeks.map((w) => samples.get(category)?.get(w) ?? 0)) / 100,
+    ) * 100;
   return { samples, weeks, verified, proposal };
 }
 

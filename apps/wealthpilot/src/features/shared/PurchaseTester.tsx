@@ -73,9 +73,11 @@ export function PurchaseTester({
   const category =
     chosenCategory && categories.includes(chosenCategory)
       ? chosenCategory
-      : categories.includes("Restaurants")
-        ? "Restaurants"
-        : (categories[0] ?? "");
+      : (["Restaurants", "Food", "Courses"].find((c) =>
+          categories.includes(c),
+        ) ??
+        categories[0] ??
+        "");
   const defaultDate = clampDate(ledger.asOf, min, max);
   const dateInRange =
     chosenDate !== null && chosenDate >= min && (!max || chosenDate <= max);
