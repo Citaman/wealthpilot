@@ -27,6 +27,8 @@ export interface Recurrence {
   paused: boolean;
   ruleId?: string;
   end?: IsoDate;
+  /** Regular transfer between own accounts: real for each account, neutral for the household. */
+  internal?: boolean;
 }
 
 export const recurrenceKey = (t: Transaction) =>
@@ -52,11 +54,16 @@ function paymentDays(rows: Transaction[]): Payment[] {
   return [...days.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function detect(transactions: Transaction[], asOf: IsoDate): Recurrence[] {
+function detect(
+  transactions: Transaction[],
+  asOf: IsoDate,
+  internal = false,
+): Recurrence[] {
   const groups = new Map<string, Transaction[]>();
   const earliest = addDays(asOf, -370);
   for (const t of transactions) {
-    if (t.internal || !t.amount || t.date > asOf || t.date < earliest) continue;
+    if (Boolean(t.internal) !== internal) continue;
+    if (!t.amount || t.date > asOf || t.date < earliest) continue;
     const identity = recurrenceIdentity(t);
     if (identity.length < 3) continue;
     const key = JSON.stringify([t.account, identity, Math.sign(t.amount)]);
@@ -121,6 +128,7 @@ function detect(transactions: Transaction[], asOf: IsoDate): Recurrence[] {
         stable.length !== amounts.length ? 65 : recent.length >= 5 ? 90 : 70,
       confirmed: false,
       paused: false,
+      ...(internal && { internal: true }),
     });
   }
   return result.sort((a, b) => a.next.localeCompare(b.next));
@@ -190,6 +198,11 @@ export const activeRecurrences = memo((ledger: Ledger): Recurrence[] => {
   ].sort((a, b) => a.next.localeCompare(b.next));
 });
 
+/** Regular transfers between own accounts: never suggested, only projected per account. */
+const transferRecurrences = memo((ledger: Ledger) =>
+  detect(ledger.transactions, ledger.asOf, true),
+);
+
 /** Transactions by series key and by display-name alias, for occurrence matching. */
 const paymentIndex = memo((ledger: Ledger) => {
   const index = new Map<string, Transaction[]>();
@@ -199,7 +212,6 @@ const paymentIndex = memo((ledger: Ledger) => {
     else index.set(key, [t]);
   };
   for (const t of ledger.transactions) {
-    if (t.internal) continue;
     add(recurrenceKey(t), t);
     add(
       "name:" +
@@ -240,7 +252,10 @@ export const estimates = memo((ledger: Ledger, end: IsoDate): Occurrence[] => {
   ]);
   const index = paymentIndex(ledger);
   const events: Occurrence[] = [];
-  for (const r of activeRecurrences(ledger)) {
+  for (const r of [
+    ...activeRecurrences(ledger),
+    ...transferRecurrences(ledger),
+  ]) {
     if (r.paused) continue;
     const dates = scheduleDates(r, earliest, end);
     if (!dates.length) continue;
@@ -321,6 +336,7 @@ export const estimates = memo((ledger: Ledger, end: IsoDate): Occurrence[] => {
           label: r.name,
           account: r.account,
           category: r.category,
+          ...(r.internal && { internal: true }),
           overdue: date < asOf,
           recurrenceKey: r.key,
           confirmed: r.confirmed,

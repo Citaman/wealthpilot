@@ -9,7 +9,7 @@ import {
   Table2,
   X,
 } from "lucide-react";
-import { Fragment, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import type { PageProps } from "../../app/App";
 import { useToast } from "../../app/toast";
 import { dismissRecurrence, patchPreferences } from "../../data/commands";
@@ -42,7 +42,7 @@ import { Menu } from "../../ui/Menu";
 import { CategoryLabel, groupText, splitGroup } from "../shared/CategoryLabel";
 import { Logo } from "../shared/Logo";
 import { Button } from "../../ui/Button";
-import { CardShell } from "../../ui/CardShell";
+import { CardShell, useCardWidth } from "../../ui/CardShell";
 import { EditableMoney } from "../../ui/Editable";
 import { Empty } from "../../ui/Empty";
 import { Money } from "../../ui/Money";
@@ -96,6 +96,18 @@ export function PlanPage({ ledger }: PageProps) {
 
 type Save = (patch: Partial<PlanSettings>, message?: string) => Promise<void>;
 
+/** A slider keeps its own value while saves round-trip: fast keys or drags never jump back. */
+function useSliderValue(stored: number) {
+  const [draft, setDraft] = useState<number | null>(null);
+  useEffect(() => {
+    if (draft === stored) setDraft(null);
+  }, [draft, stored]);
+  return [draft ?? stored, setDraft] as const;
+}
+
+/** Below this card width the money tables become stacked lists. */
+const STACKED = 560;
+
 const pressureLabel: Record<
   Pressure,
   [string, Parameters<typeof Badge>[0]["tone"]]
@@ -119,6 +131,7 @@ function Recovery({
   save: Save;
 }) {
   const effort = settings.effort ?? 0;
+  const [slider, setSlider] = useSliderValue(effort);
   const firstPositive = path.months.find((m) => m.withEffort >= 0);
   const now = path.months[0];
   const options = scenarios(path);
@@ -135,13 +148,13 @@ function Recovery({
               type="button"
               className="plan-month"
               aria-pressed={settings.target === m.key}
-              disabled={s.pressure === "impossible"}
+              aria-disabled={s.pressure === "impossible" || undefined}
               title={
                 s.pressure === "impossible"
                   ? "Plus de la moitié des dépenses variables"
                   : `Être au-dessus de zéro dès fin ${month(m.key)}`
               }
-              onClick={() => void choose(s)}
+              onClick={() => s.pressure !== "impossible" && void choose(s)}
             >
               <span className="plan-month-name">
                 {month(m.key)}
@@ -289,21 +302,23 @@ function Recovery({
           </div>
           <label className="plan-effort">
             <span className="eyebrow">Effort d’épargne</span>
-            <strong>{formatEuro(effort)} / semaine</strong>
+            <strong>{formatEuro(slider)} / semaine</strong>
             <input
               type="range"
               min={0}
               max={sliderMax}
               step={500}
-              value={effort}
-              onChange={(e) =>
-                void save({ effort: Number(e.target.value), target: undefined })
-              }
-              aria-valuetext={`${formatEuro(effort)} par semaine`}
+              value={slider}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setSlider(next);
+                void save({ effort: next, target: undefined });
+              }}
+              aria-valuetext={`${formatEuro(slider)} par semaine`}
             />
             <span className="plan-muted">
               {path.weeklyVariable
-                ? `${pct(effort / path.weeklyVariable)} des dépenses variables (${formatEuro(path.weeklyVariable)} / sem.)`
+                ? `${pct(slider / path.weeklyVariable)} des dépenses variables (${formatEuro(path.weeklyVariable)} / sem.)`
                 : "Pas assez d’historique pour les dépenses variables"}
             </span>
           </label>
@@ -375,15 +390,22 @@ function Recovery({
             : view === "bars"
               ? bars
               : table}
-        <p className="plan-muted">
-          Fin de mois = veille du salaire. Cliquer un mois règle l’effort pour
-          être au-dessus de zéro dès ce mois-là.
+        <p
+          className="plan-muted"
+          title="Choisir un mois règle l’effort pour être au-dessus de zéro dès ce mois-là"
+        >
+          Fin de mois = veille du salaire
         </p>
       </CardShell>
 
       <MoneyTable ledger={ledger} path={path} settings={settings} save={save} />
     </>
   );
+}
+
+interface MoneyLine {
+  line: Trajectory["fixed"][number];
+  sign: 1 | -1;
 }
 
 function MoneyTable({
@@ -398,94 +420,203 @@ function MoneyTable({
   save: Save;
 }) {
   const [adding, setAdding] = useState(false);
+  return (
+    <CardShell
+      title="Ce qui entre et sort chaque mois"
+      className="plan-fixed"
+      actions={
+        <Button
+          size="s"
+          icon={<Plus size={16} aria-hidden />}
+          aria-expanded={adding}
+          onClick={() => setAdding(true)}
+        >
+          Charge
+        </Button>
+      }
+    >
+      <MoneyLines
+        ledger={ledger}
+        path={path}
+        settings={settings}
+        save={save}
+        adding={
+          adding && (
+            <AddCharge
+              settings={settings}
+              save={save}
+              onDone={() => setAdding(false)}
+            />
+          )
+        }
+      />
+    </CardShell>
+  );
+}
+
+/** Table on wide cards; on narrow ones a stacked list where the amount always stays in view. */
+function MoneyLines({
+  ledger,
+  path,
+  settings,
+  save,
+  adding,
+}: {
+  ledger: Ledger;
+  path: Trajectory;
+  settings: PlanSettings;
+  save: Save;
+  adding: ReactNode;
+}) {
+  const { width } = useCardWidth();
+  const stacked = width > 0 && width < STACKED;
   const toast = useToast();
   const months = path.months.map((m) => m.key);
   const fixedTotal = path.fixed.reduce((n, f) => n + f.monthly, 0);
+  const rest = path.income - fixedTotal - path.variable;
   const setEnd = (key: string, v: string) => {
     const ends = { ...settings.ends };
     if (v === "always") delete ends[key];
     else ends[key] = v;
     void save({ ends });
   };
-  const row = (line: Trajectory["fixed"][number], sign: 1 | -1) => (
-    <tr key={line.key}>
-      <td>
-        <span className="plan-cell-name">
-          <Logo ledger={ledger} name={line.merchant} category={line.category} />
-          <span>
-            {line.name}
-            {line.manual && <small> · ajoutée à la main</small>}
-          </span>
-        </span>
-      </td>
-      <td>{line.account ? accountName(ledger, line.account) : "—"}</td>
-      <td className="plan-num">{line.day ? `le ${line.day}` : "—"}</td>
-      <td>
-        {sign < 0 ? (
-          <Picker
-            label={`Fin de ${line.name}`}
-            size="compact"
-            variant="ghost"
-            value={line.end ?? "always"}
-            onValueChange={(v) =>
-              line.manual
-                ? void save({
-                    extra: (settings.extra ?? []).map((e) =>
-                      e.id === line.key
-                        ? { ...e, end: v === "always" ? undefined : v }
-                        : e,
-                    ),
-                  })
-                : setEnd(line.key, v)
+
+  const name = ({ line }: MoneyLine) => (
+    <span className="plan-cell-name">
+      <Logo ledger={ledger} name={line.merchant} category={line.category} />
+      <span>
+        {line.name}
+        {line.manual && <small> · ajoutée à la main</small>}
+      </span>
+    </span>
+  );
+  const account = ({ line }: MoneyLine) =>
+    line.account ? accountName(ledger, line.account) : "—";
+  const day = ({ line }: MoneyLine) => (line.day ? `le ${line.day}` : "—");
+  const duration = ({ line, sign }: MoneyLine) =>
+    sign < 0 ? (
+      <Picker
+        label={`Fin de ${line.name}`}
+        size="compact"
+        variant="ghost"
+        value={line.end ?? "always"}
+        onValueChange={(v) =>
+          line.manual
+            ? void save({
+                extra: (settings.extra ?? []).map((e) =>
+                  e.id === line.key
+                    ? { ...e, end: v === "always" ? undefined : v }
+                    : e,
+                ),
+              })
+            : setEnd(line.key, v)
+        }
+        options={[
+          { value: "always", label: "Chaque mois" },
+          ...months.map((m) => ({
+            value: m,
+            label: `Jusqu’à ${month(m)}`,
+          })),
+        ]}
+      />
+    ) : (
+      "Chaque mois"
+    );
+  const amount = ({ line, sign }: MoneyLine) => (
+    <>
+      <Money value={sign * line.monthly} tone="auto" signed={sign > 0} />
+      {line.manual ? (
+        <IconButton
+          label={`Retirer ${line.name}`}
+          icon={<X size={14} aria-hidden />}
+          onClick={() =>
+            void save(
+              {
+                extra: (settings.extra ?? []).filter((e) => e.id !== line.key),
+              },
+              `${line.name} retirée`,
+            )
+          }
+        />
+      ) : (
+        <IconButton
+          label={`Arrêter ${line.name}`}
+          title={`${line.name} n’existe plus : ne plus la compter`}
+          icon={<Ban size={14} aria-hidden />}
+          onClick={async () => {
+            try {
+              toast.undoable(
+                `${line.name} arrêtée`,
+                await dismissRecurrence(line.key),
+              );
+            } catch (e) {
+              toast.error(e);
             }
-            options={[
-              { value: "always", label: "Chaque mois" },
-              ...months.map((m) => ({
-                value: m,
-                label: `Jusqu’à ${month(m)}`,
-              })),
-            ]}
-          />
-        ) : (
-          "Chaque mois"
-        )}
-      </td>
-      <td className="plan-num">
-        <Money value={sign * line.monthly} tone="auto" signed={sign > 0} />
-        {!line.manual && (
-          <IconButton
-            label={`Arrêter ${line.name}`}
-            title={`${line.name} n’existe plus : ne plus la compter`}
-            icon={<Ban size={14} aria-hidden />}
-            onClick={async () => {
-              try {
-                toast.undoable(
-                  `${line.name} arrêtée`,
-                  await dismissRecurrence(line.key),
-                );
-              } catch (e) {
-                toast.error(e);
-              }
-            }}
-          />
-        )}
-        {line.manual && (
-          <IconButton
-            label={`Retirer ${line.name}`}
-            icon={<X size={14} aria-hidden />}
-            onClick={() =>
-              void save(
-                {
-                  extra: (settings.extra ?? []).filter(
-                    (e) => e.id !== line.key,
-                  ),
-                },
-                `${line.name} retirée`,
-              )
-            }
-          />
-        )}
-      </td>
+          }}
+        />
+      )}
+    </>
+  );
+
+  const incomes = path.incomes.map((line) => ({ line, sign: 1 as const }));
+  const charges = path.fixed.map((line) => ({ line, sign: -1 as const }));
+  const variable =
+    "Courses, restaurants, achats… (médiane des 3 derniers mois)";
+
+  if (stacked)
+    return (
+      <div className="plan-stack plan-money-list">
+        <StackSection
+          title="Revenus réguliers"
+          total={["Total des revenus", path.income]}
+        >
+          {incomes.map((l) => (
+            <li key={l.line.key} className="plan-stack-row">
+              {name(l)}
+              <span className="plan-stack-amount">{amount(l)}</span>
+              <span className="plan-stack-meta">
+                {account(l)} · {day(l)} · Chaque mois
+              </span>
+            </li>
+          ))}
+        </StackSection>
+        <StackSection
+          title="Charges fixes"
+          total={["Total des charges fixes", -fixedTotal]}
+          after={adding}
+        >
+          {charges.map((l) => (
+            <li key={l.line.key} className="plan-stack-row">
+              {name(l)}
+              <span className="plan-stack-amount">{amount(l)}</span>
+              <span className="plan-stack-meta">
+                {account(l)} · {day(l)} · {duration(l)}
+              </span>
+            </li>
+          ))}
+        </StackSection>
+        <StackSection title="Vie courante">
+          <li className="plan-stack-row">
+            <span>{variable}</span>
+            <span className="plan-stack-amount">
+              <Money value={-path.variable} tone="auto" />
+            </span>
+          </li>
+        </StackSection>
+        <p className="plan-stack-rest">
+          <span>Reste chaque mois</span>
+          <Money value={rest} tone="auto" size="m" signed={rest > 0} />
+        </p>
+      </div>
+    );
+
+  const row = (l: MoneyLine) => (
+    <tr key={l.line.key}>
+      <td>{name(l)}</td>
+      <td>{account(l)}</td>
+      <td className="plan-num">{day(l)}</td>
+      <td>{duration(l)}</td>
+      <td className="plan-num">{amount(l)}</td>
     </tr>
   );
   const subtotal = (label: string, value: number) => (
@@ -496,73 +627,80 @@ function MoneyTable({
       </td>
     </tr>
   );
-  const rest = path.income - fixedTotal - path.variable;
   return (
-    <CardShell
-      title="Ce qui entre et sort chaque mois"
-      className="plan-fixed"
-      actions={
-        <Button
-          size="s"
-          icon={<Plus size={16} aria-hidden />}
-          onClick={() => setAdding(true)}
-        >
-          Charge
-        </Button>
-      }
-    >
-      <div className="plan-table-wrap">
-        <table className="plan-table plan-money">
-          <thead>
+    <div className="plan-table-wrap">
+      <table className="plan-table plan-money">
+        <thead>
+          <tr>
+            <th>Libellé</th>
+            <th>Compte</th>
+            <th className="plan-num">Jour</th>
+            <th>Durée</th>
+            <th className="plan-num">Par mois</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="plan-section">
+            <th colSpan={5}>Revenus réguliers</th>
+          </tr>
+          {incomes.map(row)}
+          {subtotal("Total des revenus", path.income)}
+          <tr className="plan-section">
+            <th colSpan={5}>Charges fixes</th>
+          </tr>
+          {charges.map(row)}
+          {adding && (
             <tr>
-              <th>Libellé</th>
-              <th>Compte</th>
-              <th className="plan-num">Jour</th>
-              <th>Durée</th>
-              <th className="plan-num">Par mois</th>
+              <td colSpan={5}>{adding}</td>
             </tr>
-          </thead>
-          <tbody>
-            <tr className="plan-section">
-              <th colSpan={5}>Revenus réguliers</th>
-            </tr>
-            {path.incomes.map((i) => row(i, 1))}
-            {subtotal("Total des revenus", path.income)}
-            <tr className="plan-section">
-              <th colSpan={5}>Charges fixes</th>
-            </tr>
-            {path.fixed.map((f) => row(f, -1))}
-            {adding && (
-              <AddCharge
-                settings={settings}
-                save={save}
-                onDone={() => setAdding(false)}
-              />
-            )}
-            {subtotal("Total des charges fixes", -fixedTotal)}
-            <tr className="plan-section">
-              <th colSpan={5}>Vie courante</th>
-            </tr>
-            <tr>
-              <td colSpan={4}>
-                Courses, restaurants, achats… (médiane des 3 derniers mois)
-              </td>
-              <td className="plan-num">
-                <Money value={-path.variable} tone="auto" />
-              </td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr>
-              <th colSpan={4}>Reste chaque mois</th>
-              <td className="plan-num">
-                <Money value={rest} tone="auto" size="m" signed={rest > 0} />
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </CardShell>
+          )}
+          {subtotal("Total des charges fixes", -fixedTotal)}
+          <tr className="plan-section">
+            <th colSpan={5}>Vie courante</th>
+          </tr>
+          <tr>
+            <td colSpan={4}>{variable}</td>
+            <td className="plan-num">
+              <Money value={-path.variable} tone="auto" />
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th colSpan={4}>Reste chaque mois</th>
+            <td className="plan-num">
+              <Money value={rest} tone="auto" size="m" signed={rest > 0} />
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
+function StackSection({
+  title,
+  total,
+  after,
+  children,
+}: {
+  title: string;
+  total?: [string, number];
+  after?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="plan-stack-section" aria-label={title}>
+      <h3 className="plan-stack-title">{title}</h3>
+      <ul className="plan-stack-rows">{children}</ul>
+      {after}
+      {total && (
+        <p className="plan-stack-total">
+          <span>{total[0]}</span>
+          <Money value={total[1]} tone="auto" signed={total[1] > 0} />
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -577,10 +715,12 @@ function AddCharge({
 }) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const cents = parseMoney(amount);
-    if (!name.trim() || !cents) return;
+    if (!name.trim()) return setError("Libellé requis");
+    if (!cents) return setError("Montant invalide");
     await save(
       {
         extra: [
@@ -597,44 +737,58 @@ function AddCharge({
     onDone();
   };
   return (
-    <tr>
-      <td colSpan={5}>
-        <form
-          className="plan-add"
-          onSubmit={submit}
-          onKeyDown={(e) => e.key === "Escape" && onDone()}
-        >
-          <input
-            autoFocus
-            aria-label="Libellé de la charge"
-            placeholder="Impôt sur le revenu"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            aria-label="Montant par mois"
-            placeholder="854"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-          <Button type="submit" size="s" variant="primary">
-            Ajouter
-          </Button>
-          <Button size="s" variant="ghost" onClick={onDone}>
-            Annuler
-          </Button>
-        </form>
-      </td>
-    </tr>
+    <form
+      className="plan-add"
+      aria-label="Nouvelle charge"
+      onSubmit={submit}
+      onKeyDown={(e) => e.key === "Escape" && onDone()}
+    >
+      <input
+        autoFocus
+        aria-label="Libellé de la charge"
+        aria-invalid={error === "Libellé requis" || undefined}
+        placeholder="Impôt sur le revenu"
+        maxLength={80}
+        value={name}
+        onChange={(e) => {
+          setName(e.target.value);
+          setError(null);
+        }}
+      />
+      <input
+        aria-label="Montant par mois"
+        aria-invalid={error === "Montant invalide" || undefined}
+        placeholder="854"
+        inputMode="decimal"
+        value={amount}
+        onChange={(e) => {
+          setAmount(e.target.value);
+          setError(null);
+        }}
+      />
+      <Button type="submit" size="s" variant="primary">
+        Ajouter
+      </Button>
+      <Button size="s" variant="ghost" onClick={onDone}>
+        Annuler
+      </Button>
+      {error && (
+        <span className="plan-add-error" role="alert">
+          {error}
+        </span>
+      )}
+    </form>
   );
 }
 
-const modeOptions: { value: ShareMode; label: string }[] = [
+const modeOptions = (
+  me: string,
+  partner: string,
+): { value: ShareMode; label: string }[] => [
   { value: "income", label: "Selon revenus" },
   { value: "half", label: "50 / 50" },
-  { value: "me", label: "100 % moi" },
-  { value: "partner", label: "100 % elle" },
+  { value: "me", label: `100 % ${me}` },
+  { value: "partner", label: `100 % ${partner}` },
   { value: "personal", label: "Chacun le sien" },
 ];
 
@@ -653,12 +807,15 @@ function Split({
   const partner = accountName(ledger, who.partner);
   const s = settlement(ledger, settings, who);
   const usual = s.usual.filter((g) => g.total > 0);
+  // « Réglage » stays chosen even when the slider passes through 50 %.
+  const [tuning, setTuning] = useState(false);
+  const [share, setShare] = useSliderValue(Math.round(who.share * 100));
   const mode =
     settings.share === undefined
       ? "income"
-      : settings.share === 0.5
-        ? "half"
-        : "custom";
+      : tuning || settings.share !== 0.5
+        ? "custom"
+        : "half";
   return (
     <CardShell title="Partage des charges" className="plan-split">
       <div className="plan-key">
@@ -668,12 +825,13 @@ function Split({
             label="Clé de partage"
             size="compact"
             value={mode}
-            onChange={(v) =>
+            onChange={(v) => {
+              setTuning(v === "custom");
               void save({
                 share:
                   v === "income" ? undefined : v === "half" ? 0.5 : who.share,
-              })
-            }
+              });
+            }}
             options={[
               { value: "income", label: "Revenus" },
               { value: "half", label: "50 / 50" },
@@ -682,11 +840,11 @@ function Split({
           />
         </div>
         <div className="plan-key-bar" aria-hidden>
-          <span style={{ flexGrow: who.share }}>
-            {me} {pct(who.share)}
+          <span style={{ flexGrow: share }}>
+            {me} {share} %
           </span>
-          <span style={{ flexGrow: 1 - who.share }}>
-            {partner} {pct(1 - who.share)}
+          <span style={{ flexGrow: 100 - share }}>
+            {partner} {100 - share} %
           </span>
         </div>
         {mode === "custom" && (
@@ -694,10 +852,14 @@ function Split({
             type="range"
             min={0}
             max={100}
-            value={Math.round(who.share * 100)}
-            onChange={(e) => void save({ share: Number(e.target.value) / 100 })}
+            value={share}
+            onChange={(e) => {
+              const next = Number(e.target.value);
+              setShare(next);
+              void save({ share: next / 100 });
+            }}
             aria-label={`Part de ${me}`}
-            aria-valuetext={`${me} ${pct(who.share)}`}
+            aria-valuetext={`${me} ${share} %`}
           />
         )}
         <div className="plan-key-salaries">
@@ -734,60 +896,104 @@ function Split({
 
       <Settle ledger={ledger} who={who} settings={settings} save={save} />
 
-      <table className="plan-table">
-        <thead>
-          <tr>
-            <th>Charge</th>
-            <th>Par mois</th>
-            <th>Payé {me}</th>
-            <th>Payé {partner}</th>
-            <th>Répartition</th>
-          </tr>
-        </thead>
-        <tbody>
-          {usual.map((g) => (
-            <tr key={g.group} data-personal={g.share === null || undefined}>
-              <td>
-                <span className="plan-cell-name">
-                  <Logo
-                    ledger={ledger}
-                    name={g.group}
-                    {...splitGroup(g.group)}
-                    size={28}
-                  />
-                  <CategoryLabel
-                    ledger={ledger}
-                    {...splitGroup(g.group)}
-                    icon={false}
-                  />
-                </span>
-              </td>
-              <td>
-                <Money value={g.total} tone="none" />
-              </td>
-              <td>
-                <Money value={g.paidMe} tone="none" />
-              </td>
-              <td>
-                <Money value={g.paidPartner} tone="none" />
-              </td>
-              <td>
-                <Picker
-                  label={`Répartition de ${groupText(g.group)}`}
-                  size="compact"
-                  variant="ghost"
-                  value={g.mode === "custom" ? "income" : g.mode}
-                  onValueChange={(v) =>
-                    void save({ modes: { ...settings.modes, [g.group]: v } })
-                  }
-                  options={modeOptions}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <SplitLines
+        ledger={ledger}
+        groups={usual}
+        me={me}
+        partner={partner}
+        settings={settings}
+        save={save}
+      />
     </CardShell>
+  );
+}
+
+/** Charges paid per person and their split mode; stacked on narrow cards. */
+function SplitLines({
+  ledger,
+  groups,
+  me,
+  partner,
+  settings,
+  save,
+}: {
+  ledger: Ledger;
+  groups: ReturnType<typeof settlement>["usual"];
+  me: string;
+  partner: string;
+  settings: PlanSettings;
+  save: Save;
+}) {
+  const { width } = useCardWidth();
+  const name = (group: string) => (
+    <span className="plan-cell-name">
+      <Logo ledger={ledger} name={group} {...splitGroup(group)} size={28} />
+      <CategoryLabel ledger={ledger} {...splitGroup(group)} icon={false} />
+    </span>
+  );
+  const picker = (g: (typeof groups)[number]) => (
+    <Picker
+      label={`Répartition de ${groupText(g.group)}`}
+      size="compact"
+      variant="ghost"
+      value={g.mode === "custom" ? "income" : g.mode}
+      onValueChange={(v) =>
+        void save({ modes: { ...settings.modes, [g.group]: v } })
+      }
+      options={modeOptions(me, partner)}
+    />
+  );
+  if (width > 0 && width < STACKED)
+    return (
+      <ul className="plan-stack-rows plan-split-list">
+        {groups.map((g) => (
+          <li
+            key={g.group}
+            className="plan-stack-row"
+            data-personal={g.share === null || undefined}
+          >
+            {name(g.group)}
+            <span className="plan-stack-amount">
+              <Money value={g.total} tone="none" />
+            </span>
+            <span className="plan-stack-meta">
+              {me} {formatEuro(g.paidMe)} · {partner}{" "}
+              {formatEuro(g.paidPartner)}
+            </span>
+            <span className="plan-stack-control">{picker(g)}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  return (
+    <table className="plan-table">
+      <thead>
+        <tr>
+          <th>Charge</th>
+          <th>Par mois</th>
+          <th>Payé {me}</th>
+          <th>Payé {partner}</th>
+          <th>Répartition</th>
+        </tr>
+      </thead>
+      <tbody>
+        {groups.map((g) => (
+          <tr key={g.group} data-personal={g.share === null || undefined}>
+            <td>{name(g.group)}</td>
+            <td>
+              <Money value={g.total} tone="none" />
+            </td>
+            <td>
+              <Money value={g.paidMe} tone="none" />
+            </td>
+            <td>
+              <Money value={g.paidPartner} tone="none" />
+            </td>
+            <td>{picker(g)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -1051,6 +1257,7 @@ function Allowances({
                     <EditableMoney
                       label={`Limite ${groupText(r.category)} pour ${name}`}
                       value={r.limit}
+                      validate={(v) => (v < 0 ? "Montant positif" : null)}
                       onCommit={(v) =>
                         save(
                           {

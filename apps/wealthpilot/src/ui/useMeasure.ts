@@ -15,6 +15,8 @@ export function useMeasure<T extends Element>(): [
     if (!element) return;
     const observer = new ResizeObserver(([entry]) => {
       const box = entry.contentRect;
+      // A hidden page measures 0×0: keep the last size so it reappears unchanged.
+      if (!box.width && !box.height) return;
       setSize((previous) =>
         Math.round(previous.width) === Math.round(box.width) &&
         Math.round(previous.height) === Math.round(box.height)

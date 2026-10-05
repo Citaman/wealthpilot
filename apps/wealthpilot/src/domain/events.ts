@@ -70,7 +70,10 @@ export const upcoming = memo(
       }));
     return [
       ...dues,
-      ...estimates(ledger, until).filter((o) => inScope(o.account)),
+      // Projected transfers matter per account; for the household they cancel out.
+      ...estimates(ledger, until).filter(
+        (o) => inScope(o.account) && (account !== "" || !o.internal),
+      ),
       ...known,
     ].sort((a, b) => a.date.localeCompare(b.date) || a.amount - b.amount);
   },

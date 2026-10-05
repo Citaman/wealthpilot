@@ -12,6 +12,7 @@ import type { Ledger } from "../../../domain/ledger";
 import { formatEuro } from "../../../domain/money";
 import {
   filterTransactions,
+  NO_SUBCATEGORY,
   subcategoryKey,
   summarize,
   type TransactionFilters,
@@ -255,7 +256,9 @@ function Row({
                     "--shade": `${SHADES[Math.min(i, SHADES.length - 1)]}%`,
                   } as CSSProperties
                 }
-                onClick={() => onDrill?.(bar.key, s.subcategory || undefined)}
+                onClick={() =>
+                  onDrill?.(bar.key, s.subcategory || NO_SUBCATEGORY)
+                }
                 title={`Voir les opérations ${bar.key} › ${s.subcategory || "sans sous-catégorie"}`}
               >
                 <span className="rank-sub-name">

@@ -127,6 +127,9 @@ export const sortTransactions = (rows: Transaction[], sort: TransactionSort) =>
 export const subcategoryKey = (category: string, subcategory = "") =>
   subcategory ? `${category} › ${subcategory}` : category;
 
+/** Filter value for the operations of a category that have no subcategory. */
+export const NO_SUBCATEGORY = "sans sous-catégorie";
+
 export const filterTransactions = memo(
   (ledger: Ledger, f: TransactionFilters): Transaction[] => {
     const categories = new Set(f.categories);
@@ -138,7 +141,9 @@ export const filterTransactions = memo(
         !kindMatches(t, f.kind) ||
         (categories.size &&
           !categories.has(t.category) &&
-          !categories.has(subcategoryKey(t.category, t.subcategory))) ||
+          !categories.has(
+            subcategoryKey(t.category, t.subcategory || NO_SUBCATEGORY),
+          )) ||
         (f.min !== null && Math.abs(t.amount) < f.min) ||
         (f.max !== null && Math.abs(t.amount) > f.max) ||
         (f.uncategorized && !isUncategorized(t.category)) ||

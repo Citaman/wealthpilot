@@ -26,6 +26,7 @@ export function AvailableCard({ card, ledger, account }: CardProps) {
     ? accountName(ledger, account)
     : `Foyer · ${accountsIn(ledger, "").length} comptes`;
   const short = a.free !== null && a.free < 0;
+  const [calcOpen, setCalcOpen] = useState(false);
 
   return (
     <CardShell
@@ -48,7 +49,12 @@ export function AvailableCard({ card, ledger, account }: CardProps) {
           </a>
           <span className="mono muted available-scope">{scope}</span>
           {!a.unknownBalance && (
-            <Disclosure summary="Voir le calcul" className="available-calc">
+            <Disclosure
+              summary="Voir le calcul"
+              className="available-calc"
+              open={calcOpen}
+              onOpenChange={setCalcOpen}
+            >
               <Calculation ledger={ledger} account={account} />
             </Disclosure>
           )}
@@ -86,7 +92,49 @@ export function AvailableCard({ card, ledger, account }: CardProps) {
           </p>
         </div>
       )}
+      {!a.unknownBalance && !calcOpen && (
+        <Steps ledger={ledger} account={account} />
+      )}
     </CardShell>
+  );
+}
+
+/** The cascade at a glance; « Voir le calcul » opens the detailed, editable version. */
+function Steps({ ledger, account }: { ledger: Ledger; account: string }) {
+  const a = available(ledger, account);
+  const rows: WaterfallRow[] = [
+    { key: "cash", label: "Trésorerie", value: a.cash ?? 0, kind: "base" },
+    {
+      key: "charges",
+      label: "Charges à venir",
+      value: -a.chargesTotal,
+      kind: "step",
+    },
+    {
+      key: "envelopes",
+      label: "Enveloppes restantes",
+      value: -a.envelopesFree,
+      kind: "step",
+    },
+  ];
+  if (a.safety > 0)
+    rows.push({
+      key: "safety",
+      label: "Réserve de sécurité",
+      value: -a.safety,
+      kind: "step",
+    });
+  if (a.projects > 0)
+    rows.push({
+      key: "projects",
+      label: "Réservé aux projets",
+      value: -a.projects,
+      kind: "step",
+    });
+  return (
+    <div className="available-steps">
+      <Waterfall label="Du solde au libre" rows={rows} />
+    </div>
   );
 }
 

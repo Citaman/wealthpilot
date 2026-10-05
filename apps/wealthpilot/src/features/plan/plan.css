@@ -128,14 +128,6 @@
 .plan-table tr[data-personal] td:first-child {
   color: var(--card-muted);
 }
-@media (max-width: 719px) {
-  .plan-table th:nth-child(3),
-  .plan-table th:nth-child(4),
-  .plan-table td:nth-child(3),
-  .plan-table td:nth-child(4) {
-    display: none;
-  }
-}
 
 .plan-calendar {
   display: grid;
@@ -160,7 +152,7 @@
   font: inherit;
   cursor: pointer;
 }
-.plan-month:hover:not(:disabled) {
+.plan-month:hover:not([aria-disabled="true"]) {
   border-color: var(--card-text);
 }
 .plan-month[aria-pressed="true"] {
@@ -171,7 +163,7 @@
 .plan-month[aria-pressed="true"] .plan-muted {
   color: var(--on-dark-muted);
 }
-.plan-month:disabled {
+.plan-month[aria-disabled="true"] {
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -283,7 +275,7 @@
   gap: var(--space-4) var(--space-8);
   align-items: start;
 }
-.plan-split .ui-card-body > :is(header, .plan-table) {
+.plan-split .ui-card-body > :is(header, .plan-table, .plan-split-list) {
   grid-column: 1 / -1;
 }
 .plan-key {
@@ -424,4 +416,136 @@
   .plan-people .plan-list li > :nth-child(5) {
     grid-area: close;
   }
+}
+
+/* Narrow cards: headers wrap instead of hiding their title. */
+.plan .ui-card-header {
+  flex-wrap: wrap;
+}
+.plan .ui-card-actions {
+  flex-wrap: wrap;
+}
+
+.plan-add-error {
+  flex-basis: 100%;
+  color: var(--card-negative);
+  font: 500 var(--fs-mono) / var(--lh-mono) var(--font-text);
+}
+.plan-add input[aria-invalid="true"] {
+  border-color: var(--card-negative);
+}
+
+/* Stacked money list: name and amount on the first line, details below. */
+.plan-stack {
+  display: grid;
+  gap: var(--space-4);
+}
+.plan-stack-section {
+  display: grid;
+  gap: var(--space-2);
+}
+.plan-stack-title {
+  margin: 0;
+  font: 500 var(--fs-mono) / var(--lh-mono) var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--card-muted);
+}
+.plan-stack-rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-stack-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--card-hairline);
+  font-size: var(--fs-text-s);
+}
+.plan-stack-row .plan-cell-name {
+  min-width: 0;
+}
+.plan-stack-row .plan-cell-name > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.plan-stack-amount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  white-space: nowrap;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.plan-stack-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-1);
+  padding-left: calc(32px + var(--space-3));
+  color: var(--card-muted);
+}
+.plan-stack-control {
+  grid-column: 1 / -1;
+  padding-left: calc(28px + var(--space-3));
+}
+.plan-split-list .plan-stack-meta {
+  padding-left: calc(28px + var(--space-3));
+}
+.plan-stack-row[data-personal] .plan-cell-name {
+  color: var(--card-muted);
+}
+.plan-stack-total,
+.plan-stack-rest {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-field);
+  background: var(--card-sunk);
+  font-weight: 600;
+  font-size: var(--fs-text-s);
+}
+.plan-stack-rest {
+  padding: var(--space-4) 0 0;
+  border-top: var(--border-pill) solid var(--card-text);
+  border-radius: 0;
+  background: none;
+  font: 700 var(--fs-s) / 1 var(--font-display);
+}
+.plan-split-list .plan-stack-meta {
+  grid-column: 1;
+}
+.plan-split-list .plan-stack-control {
+  grid-column: 2;
+  justify-self: end;
+  padding-left: 0;
+}
+.plan-hero-grid .ui-money + .plan-hero-line {
+  margin: var(--space-3) 0 0;
+}
+
+/* The discs stay in the corner, never behind the effort tile. */
+.plan-hero .ui-card-motif {
+  top: -48px;
+  right: -48px;
+  width: 176px;
+}
+@container card (max-width: 560px) {
+  .plan-hero .ui-card-motif {
+    top: -40px;
+    right: -52px;
+    width: 128px;
+  }
+}
+.plan-money tfoot th {
+  background: none;
 }
