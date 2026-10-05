@@ -259,8 +259,9 @@ export function settlement(
 export interface FixedCharge {
   key: string;
   name: string;
-  /** Merchant name, for the logo. */
+  /** Merchant name and category, for the logo. */
   merchant: string;
+  category: string;
   account: string;
   day: number;
   monthly: Cents;
@@ -302,6 +303,7 @@ export function trajectory(
     key: r.key,
     name: chargeName(ledger, r.name, r.sourceIds),
     merchant: r.name,
+    category: r.category,
     account: r.account,
     day: r.day,
     monthly: Math.abs(monthly(r)),
@@ -318,6 +320,7 @@ export function trajectory(
       key: e.id,
       name: e.name,
       merchant: e.name,
+      category: e.name,
       account: "",
       day: 0,
       monthly: e.monthly,

@@ -5,7 +5,8 @@
   width: var(--logo-size);
   height: var(--logo-size);
   overflow: hidden;
-  border-radius: 50%;
+  /* Squircle, like app icons. */
+  border-radius: 30%;
   background: var(--logo-bg, var(--surface));
   color: var(--logo-fg, var(--ink));
   font-family: var(--font-display);

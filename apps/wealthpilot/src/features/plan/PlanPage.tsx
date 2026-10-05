@@ -1,8 +1,8 @@
-import { Copy, Plus, X } from "lucide-react";
+import { Ban, Copy, Plus, X } from "lucide-react";
 import { Fragment, useState, type FormEvent } from "react";
 import type { PageProps } from "../../app/App";
 import { useToast } from "../../app/toast";
-import { patchPreferences } from "../../data/commands";
+import { dismissRecurrence, patchPreferences } from "../../data/commands";
 import { usePreferences } from "../../data/hooks";
 import { formatMonth } from "../../domain/dates";
 import { accountName, type Ledger } from "../../domain/ledger";
@@ -21,6 +21,7 @@ import {
   type ShareMode,
   type Trajectory,
 } from "../../domain/plan";
+import { categoryColor } from "../../domain/categories";
 import { Badge } from "../../ui/Badge";
 import { IconButton } from "../../ui/IconButton";
 import { Logo } from "../dashboard/cards/cardParts";
@@ -255,6 +256,7 @@ function MoneyTable({
   save: Save;
 }) {
   const [adding, setAdding] = useState(false);
+  const toast = useToast();
   const months = path.months.map((m) => m.key);
   const fixedTotal = path.fixed.reduce((n, f) => n + f.monthly, 0);
   const setEnd = (key: string, v: string) => {
@@ -267,7 +269,7 @@ function MoneyTable({
     <tr key={line.key}>
       <td>
         <span className="plan-cell-name">
-          <Logo ledger={ledger} name={line.merchant} />
+          <Logo ledger={ledger} name={line.merchant} category={line.category} />
           <span>
             {line.name}
             {line.manual && <small> · ajoutée à la main</small>}
@@ -307,7 +309,24 @@ function MoneyTable({
         )}
       </td>
       <td className="plan-num">
-        <Money value={sign * line.monthly} tone="auto" />
+        <Money value={sign * line.monthly} tone="auto" signed={sign > 0} />
+        {!line.manual && (
+          <IconButton
+            label={`Arrêter ${line.name}`}
+            title={`${line.name} n’existe plus : ne plus la compter`}
+            icon={<Ban size={14} aria-hidden />}
+            onClick={async () => {
+              try {
+                toast.undoable(
+                  `${line.name} arrêtée`,
+                  await dismissRecurrence(line.key),
+                );
+              } catch (e) {
+                toast.error(e);
+              }
+            }}
+          />
+        )}
         {line.manual && (
           <IconButton
             label={`Retirer ${line.name}`}
@@ -331,7 +350,7 @@ function MoneyTable({
     <tr className="plan-subtotal">
       <td colSpan={4}>{label}</td>
       <td className="plan-num">
-        <Money value={value} tone="auto" />
+        <Money value={value} tone="auto" signed={value > 0} />
       </td>
     </tr>
   );
@@ -395,7 +414,7 @@ function MoneyTable({
             <tr>
               <th colSpan={4}>Reste chaque mois</th>
               <td className="plan-num">
-                <Money value={rest} tone="auto" size="m" />
+                <Money value={rest} tone="auto" size="m" signed={rest > 0} />
               </td>
             </tr>
           </tfoot>
@@ -635,7 +654,17 @@ function Split({
         <tbody>
           {usual.map((g) => (
             <tr key={g.group} data-personal={g.share === null || undefined}>
-              <td>{g.group}</td>
+              <td>
+                <span className="plan-cell-name">
+                  <Logo
+                    ledger={ledger}
+                    name={g.group}
+                    category={g.group}
+                    size={28}
+                  />
+                  {g.group}
+                </span>
+              </td>
               <td>
                 <Money value={g.total} tone="none" />
               </td>
@@ -723,11 +752,45 @@ function Allowances({
               </p>
             }
           >
+            {total > 0 && (
+              <div className="plan-mix" aria-hidden>
+                {rows
+                  .filter((r) => r.limit > 0)
+                  .map((r) => (
+                    <span
+                      key={r.category}
+                      title={`${r.category} ${formatEuro(r.limit)}`}
+                      style={{
+                        flexGrow: r.limit,
+                        background: categoryColor(
+                          r.category,
+                          ledger.prefs.categoryDefinitions,
+                        ),
+                      }}
+                    />
+                  ))}
+              </div>
+            )}
             {rows.length ? (
               <ul className="plan-list">
                 {rows.map((r) => (
-                  <li key={r.category}>
-                    <span>
+                  <li
+                    key={r.category}
+                    style={
+                      {
+                        "--cat": categoryColor(
+                          r.category,
+                          ledger.prefs.categoryDefinitions,
+                        ),
+                      } as React.CSSProperties
+                    }
+                  >
+                    <Logo
+                      ledger={ledger}
+                      name={r.category}
+                      category={r.category}
+                    />
+                    <span className="plan-item">
                       {r.category}
                       <small>
                         {formatEuro(r.spent)} dépensés · d’habitude{" "}

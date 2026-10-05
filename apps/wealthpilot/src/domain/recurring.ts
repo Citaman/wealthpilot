@@ -105,7 +105,8 @@ function detect(transactions: Transaction[], asOf: IsoDate): Recurrence[] {
       name: last.merchant || last.label,
       account: last.account,
       category: last.category,
-      amount,
+      // A new salary or allowance (CAF 700 → 1 000) applies from its first payment.
+      amount: amount > 0 ? lastDay.amount : amount,
       frequency: monthly ? "monthly" : "weekly",
       count: recent.length,
       last: lastDay.date,
