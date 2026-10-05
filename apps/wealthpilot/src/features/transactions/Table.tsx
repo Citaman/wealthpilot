@@ -110,16 +110,18 @@ export function Table({
   });
 
   const select = useStable((id: string, extend: boolean) => {
-      const from = lastClicked.current ? pageIds.indexOf(lastClicked.current) : -1;
-      const to = pageIds.indexOf(id);
-      lastClicked.current = id;
-      const value = !selected.has(id);
-      if (extend && from >= 0 && to >= 0)
-        onSelect(
-          pageIds.slice(Math.min(from, to), Math.max(from, to) + 1),
-          value,
-        );
-      else onSelect([id], value);
+    const from = lastClicked.current
+      ? pageIds.indexOf(lastClicked.current)
+      : -1;
+    const to = pageIds.indexOf(id);
+    lastClicked.current = id;
+    const value = !selected.has(id);
+    if (extend && from >= 0 && to >= 0)
+      onSelect(
+        pageIds.slice(Math.min(from, to), Math.max(from, to) + 1),
+        value,
+      );
+    else onSelect([id], value);
   });
 
   const onKeyDown = useStable(
@@ -173,7 +175,8 @@ export function Table({
     desc: TransactionSort,
     asc: TransactionSort,
   ) => {
-    const state = sort === desc ? "descending" : sort === asc ? "ascending" : "none";
+    const state =
+      sort === desc ? "descending" : sort === asc ? "ascending" : "none";
     return {
       "aria-sort": state,
       children: (
@@ -256,7 +259,11 @@ export function Table({
               <span className="tx-head-page">Cette page</span>
             </label>
           </th>
-          <th scope="col" className="tx-c-date" {...sortHeader("Date", "date-desc", "date-asc")} />
+          <th
+            scope="col"
+            className="tx-c-date"
+            {...sortHeader("Date", "date-desc", "date-asc")}
+          />
           <th scope="col" className="tx-c-op">
             Opération
           </th>
@@ -266,7 +273,11 @@ export function Table({
           <th scope="col" className="tx-c-acct">
             Compte
           </th>
-          <th scope="col" className="tx-c-amount" {...sortHeader("Montant", "amount-desc", "amount-asc")} />
+          <th
+            scope="col"
+            className="tx-c-amount"
+            {...sortHeader("Montant", "amount-desc", "amount-asc")}
+          />
         </tr>
       </thead>
       <tbody ref={body}>
@@ -282,7 +293,11 @@ export function Table({
               <tr className="tx-day" key={`day:${t.date}`}>
                 <td colSpan={COLUMNS - 1}>{formatWeekday(t.date)}</td>
                 <td className="tx-c-amount">
-                  <Money value={dayTotals.get(t.date) ?? 0} signed tone="none" />
+                  <Money
+                    value={dayTotals.get(t.date) ?? 0}
+                    signed
+                    tone="none"
+                  />
                 </td>
               </tr>
             ) : null;

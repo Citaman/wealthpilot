@@ -1,31 +1,11 @@
 // Small pieces shared by the Envelopes, Upcoming, Spending, Recent, Inbox and Accounts cards.
-import {
-  ArrowLeftRight,
-  Baby,
-  Banknote,
-  Car,
-  ChevronDown,
-  HandCoins,
-  HeartPulse,
-  House,
-  Landmark,
-  PiggyBank,
-  Plane,
-  Shield,
-  ShoppingBag,
-  ShoppingCart,
-  Ticket,
-  UtensilsCrossed,
-  Wifi,
-  Zap,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { categoryColor } from "../../../domain/categories";
 import type { Ledger } from "../../../domain/ledger";
 import { brandFor } from "../../../domain/merchants";
-import { normalize } from "../../../domain/search";
 import type { Cents } from "../../../domain/types";
+import { categoryIcon } from "../../shared/categoryIcon";
 import { MerchantLogo } from "../../../ui/MerchantLogo";
 import { Money } from "../../../ui/Money";
 import "./cardParts.css";
@@ -33,41 +13,20 @@ import "./cardParts.css";
 /** Drilldown value of the `acct` parameter. */
 export const acctParam = (account: string) => account || "household";
 
-const icons: [RegExp, LucideIcon][] = [
-  [/course|aliment|supermarch/, ShoppingCart],
-  [/restau|resto|fast|cafe/, UtensilsCrossed],
-  [/transport|carbur|essence|voiture|auto/, Car],
-  [/logement|loyer|maison/, House],
-  [/energie|electri|gaz/, Zap],
-  [/abonnement|telecom|internet|mobile/, Wifi],
-  [/assurance/, Shield],
-  [/enfant|ecole|creche/, Baby],
-  [/shopping|vetement|habill/, ShoppingBag],
-  [/sante|medecin|pharma/, HeartPulse],
-  [/loisir|sortie|culture/, Ticket],
-  [/salaire|revenu|paie/, Banknote],
-  [/allocation|aide/, HandCoins],
-  [/virement|transfert/, ArrowLeftRight],
-  [/impot|taxe/, Landmark],
-  [/epargne/, PiggyBank],
-  [/voyage|vacance/, Plane],
-];
-
-export function categoryIcon(category: string): LucideIcon | undefined {
-  const name = normalize(category);
-  return icons.find(([pattern]) => pattern.test(name))?.[1];
-}
+export { categoryIcon } from "../../shared/categoryIcon";
 
 /** Brand logo when known, otherwise the category icon on its colour. */
 export function Logo({
   ledger,
   name,
   category,
+  subcategory,
   size = 32,
 }: {
   ledger: Ledger;
   name: string;
   category?: string;
+  subcategory?: string;
   size?: 28 | 32;
 }) {
   const brand = brandFor(name);
@@ -79,7 +38,7 @@ export function Logo({
       name={brand?.title ?? name}
       color={color}
       src={brand?.src}
-      icon={brand ? undefined : categoryIcon(category ?? "")}
+      icon={brand ? undefined : categoryIcon(category ?? "", subcategory)}
       size={size}
     />
   );

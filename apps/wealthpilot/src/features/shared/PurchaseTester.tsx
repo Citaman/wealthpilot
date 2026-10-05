@@ -78,9 +78,7 @@ export function PurchaseTester({
         : (categories[0] ?? "");
   const defaultDate = clampDate(ledger.asOf, min, max);
   const dateInRange =
-    chosenDate !== null &&
-    chosenDate >= min &&
-    (!max || chosenDate <= max);
+    chosenDate !== null && chosenDate >= min && (!max || chosenDate <= max);
   const date = dateInRange ? chosenDate : defaultDate;
   const payer =
     chosenPayer !== null &&
@@ -130,7 +128,7 @@ export function PurchaseTester({
           className="purchase-amount"
           inputMode="decimal"
           autoComplete="off"
-          placeholder="35"
+          placeholder="0,00 €"
           value={draft}
           error={amountError}
           onChange={(event) => setDraft(event.currentTarget.value)}
@@ -240,30 +238,32 @@ function Result({
   payerName: string;
   reserve: Cents;
 }) {
-  const verdict: Record<Simulation["verdict"], { icon: ReactNode; text: string }> =
-    {
-      ok: {
-        icon: <Check size={18} aria-hidden />,
-        text: !week
-          ? `Oui · il restera ${euro(s.envelope?.after ?? 0)} en ${category}`
-          : week.after >= 0
-            ? `Oui · il restera ${euro(week.after)} en ${category} cette semaine`
-            : `Oui dans le mois · semaine ${category} dépassée de ${euro(-week.after)}`,
-      },
-      outside: {
-        icon: <CircleAlert size={18} aria-hidden />,
-        text:
-          s.free.before !== null && s.free.after !== null
-            ? `Possible, hors enveloppe · libre ${euro(s.free.before)} → ${euro(s.free.after)}`
-            : "Possible, hors enveloppe",
-      },
-      risk: {
-        icon: <Ban size={18} aria-hidden />,
-        text: `Non · ${payerName} passe sous ${reserve > 0 ? "la réserve" : "0 €"}${
-          s.riskDate ? ` le ${formatDay(s.riskDate)}` : ""
-        }`,
-      },
-    };
+  const verdict: Record<
+    Simulation["verdict"],
+    { icon: ReactNode; text: string }
+  > = {
+    ok: {
+      icon: <Check size={18} aria-hidden />,
+      text: !week
+        ? `Oui · il restera ${euro(s.envelope?.after ?? 0)} en ${category}`
+        : week.after >= 0
+          ? `Oui · il restera ${euro(week.after)} en ${category} cette semaine`
+          : `Oui dans le mois · semaine ${category} dépassée de ${euro(-week.after)}`,
+    },
+    outside: {
+      icon: <CircleAlert size={18} aria-hidden />,
+      text:
+        s.free.before !== null && s.free.after !== null
+          ? `Possible, hors enveloppe · libre ${euro(s.free.before)} → ${euro(s.free.after)}`
+          : "Possible, hors enveloppe",
+    },
+    risk: {
+      icon: <Ban size={18} aria-hidden />,
+      text: `Non · ${payerName} passe sous ${reserve > 0 ? "la réserve" : "0 €"}${
+        s.riskDate ? ` le ${formatDay(s.riskDate)}` : ""
+      }`,
+    },
+  };
   // Within the month but beyond this week’s limit: not a plain yes.
   const tone =
     s.verdict === "ok" && week && week.after < 0 ? "outside" : s.verdict;
@@ -292,7 +292,11 @@ function Result({
             color={color}
           />
         )}
-        <Row label="Libre du mois" before={s.free.before} after={s.free.after} />
+        <Row
+          label="Libre du mois"
+          before={s.free.before}
+          after={s.free.after}
+        />
         <Row
           label={`Point bas · ${payerName}`}
           before={s.low.before?.value ?? null}
@@ -329,7 +333,8 @@ function Row({
   const width = (value: Cents | null) =>
     `${(Math.max(0, value ?? 0) / scale) * 100}%`;
   const under = (value: Cents | null) =>
-    value !== null && (value < 0 || (threshold !== undefined && value < threshold));
+    value !== null &&
+    (value < 0 || (threshold !== undefined && value < threshold));
   return (
     <div
       className="purchase-row"
@@ -338,13 +343,22 @@ function Row({
       <dt>{label}</dt>
       <dd className="purchase-values">
         <span className="purchase-before">
-          <Money value={before} cents="never" tone="none" unknownReason="Solde à confirmer" />
+          <Money
+            value={before}
+            cents="never"
+            tone="none"
+            unknownReason="Solde à confirmer"
+          />
         </span>
         <span aria-hidden className="purchase-arrow">
           →
         </span>
         <span className="purchase-after" data-under={under(after) || undefined}>
-          <Money value={after} cents="never" unknownReason="Solde à confirmer" />
+          <Money
+            value={after}
+            cents="never"
+            unknownReason="Solde à confirmer"
+          />
           {note && <span className="mono muted">{note}</span>}
         </span>
       </dd>

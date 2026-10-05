@@ -39,8 +39,7 @@ export const catalog: Record<CardType, CardDefinition> = {
   available: {
     type: "available",
     title: "Disponible",
-    question:
-      "Combien est vraiment libre jusqu’à la fin du mois budgétaire ?",
+    question: "Combien est vraiment libre jusqu’à la fin du mois budgétaire ?",
     widths: [4, 6],
     defaultWidth: 4,
     defaultPalette: "ink",
@@ -140,14 +139,13 @@ export const catalog: Record<CardType, CardDefinition> = {
   },
 };
 
-export const widthLabels: Record<CardWidth, { short: string; long: string }> =
-  {
-    3: { short: "¼", long: "Un quart" },
-    4: { short: "⅓", long: "Un tiers" },
-    6: { short: "½", long: "La moitié" },
-    8: { short: "⅔", long: "Deux tiers" },
-    12: { short: "1", long: "Pleine largeur" },
-  };
+export const widthLabels: Record<CardWidth, { short: string; long: string }> = {
+  3: { short: "¼", long: "Un quart" },
+  4: { short: "⅓", long: "Un tiers" },
+  6: { short: "½", long: "La moitié" },
+  8: { short: "⅔", long: "Deux tiers" },
+  12: { short: "1", long: "Pleine largeur" },
+};
 
 export const paletteNames: Record<CardPaletteId, string> = {
   paper: "Papier",

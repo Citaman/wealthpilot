@@ -110,7 +110,9 @@ export function WeekCard({ card, ledger, account, editing }: CardProps) {
               {d.charges > 0 && (
                 <span data-kind="charge" style={height(d.charges)} />
               )}
-              {d.spent > 0 && <span data-kind="spent" style={height(d.spent)} />}
+              {d.spent > 0 && (
+                <span data-kind="spent" style={height(d.spent)} />
+              )}
             </span>
             <span className="week-card-day">
               {formatWeekday(d.date).charAt(0).toUpperCase()}

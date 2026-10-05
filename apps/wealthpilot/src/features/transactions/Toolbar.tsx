@@ -46,9 +46,21 @@ const kinds: { value: Kind; label: string }[] = [
 ];
 
 const densityOptions = [
-  { value: "compact" as const, label: <Rows4 aria-hidden />, ariaLabel: "Densité compacte" },
-  { value: "standard" as const, label: <Rows3 aria-hidden />, ariaLabel: "Densité standard" },
-  { value: "comfortable" as const, label: <Rows2 aria-hidden />, ariaLabel: "Densité confortable" },
+  {
+    value: "compact" as const,
+    label: <Rows4 aria-hidden />,
+    ariaLabel: "Densité compacte",
+  },
+  {
+    value: "standard" as const,
+    label: <Rows3 aria-hidden />,
+    ariaLabel: "Densité standard",
+  },
+  {
+    value: "comfortable" as const,
+    label: <Rows2 aria-hidden />,
+    ariaLabel: "Densité confortable",
+  },
 ];
 
 export function Toolbar({

@@ -31,7 +31,8 @@ export function weekParam(value: string | null): IsoDate | null {
 /** « jeu. 9 oct. » without the trailing dot noise of short weekdays. */
 export const dayLabel = (date: IsoDate) => formatWeekday(date);
 /** « jeu. » */
-export const weekdayShort = (date: IsoDate) => formatWeekday(date).split(" ")[0];
+export const weekdayShort = (date: IsoDate) =>
+  formatWeekday(date).split(" ")[0];
 
 export const isEstimated = (o: Occurrence) =>
   o.kind === "estimate" && !o.confirmed;
@@ -57,5 +58,7 @@ export const capacityBinds = (plan: WeekPlan) => {
   const wanted = plan.envelopes
     .filter((e) => e.limit > 0)
     .reduce((n, e) => n + Math.max(0, e.limit - e.paid - e.committed), 0);
-  return capacity !== null && plan.totals.possible === capacity && wanted > capacity;
+  return (
+    capacity !== null && plan.totals.possible === capacity && wanted > capacity
+  );
 };

@@ -98,7 +98,9 @@ export function categoryPatch(
   const root = definitions.find((d) => !d.parentId && d.name === category);
   const child =
     root && subcategory
-      ? definitions.find((d) => d.parentId === root.id && d.name === subcategory)
+      ? definitions.find(
+          (d) => d.parentId === root.id && d.name === subcategory,
+        )
       : undefined;
   return {
     category,

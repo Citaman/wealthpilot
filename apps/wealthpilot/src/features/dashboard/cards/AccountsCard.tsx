@@ -131,7 +131,7 @@ function AccountRow({
           cents="never"
           unknownReason="Aucun solde observé"
         />
-        <Badge tone={badge.tone}>{badge.label}</Badge>
+        {s.freshness !== "ok" && <Badge tone={badge.tone}>{badge.label}</Badge>}
       </span>
       <span className="acc-menu">
         <Menu

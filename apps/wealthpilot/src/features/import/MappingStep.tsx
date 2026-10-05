@@ -64,7 +64,10 @@ export function MappingStep({
       return next;
     });
   const format = dateFormat(file.rows[0]?.[mapping.date]);
-  const firstDate = parseDate(file.rows[0]?.[mapping.date] ?? "", mapping.dateFormat);
+  const firstDate = parseDate(
+    file.rows[0]?.[mapping.date] ?? "",
+    mapping.dateFormat,
+  );
   const options: { value: Role; label: string }[] = [
     { value: IGNORE, label: "Ignorer" },
     ...mappingFields.map((f) => ({ value: f, label: fieldLabels[f] })),
@@ -92,14 +95,19 @@ export function MappingStep({
             value={mapping.dateFormat ?? "auto"}
             onValueChange={(v) => setMapping((m) => ({ ...m, dateFormat: v }))}
             options={[
-              { value: "auto", label: `Automatique${format ? ` (${format})` : ""}` },
+              {
+                value: "auto",
+                label: `Automatique${format ? ` (${format})` : ""}`,
+              },
               { value: "dmy", label: "JJ/MM/AAAA" },
               { value: "mdy", label: "MM/JJ/AAAA" },
               { value: "ymd", label: "AAAA-MM-JJ" },
             ]}
           />
           <span className="mono muted">
-            {firstDate ? `1re ligne : ${formatDate(firstDate)}` : "Date de la 1re ligne illisible"}
+            {firstDate
+              ? `1re ligne : ${formatDate(firstDate)}`
+              : "Date de la 1re ligne illisible"}
           </span>
         </div>
       )}

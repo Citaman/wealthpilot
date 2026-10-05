@@ -11,7 +11,7 @@ import { brandFor } from "../../domain/merchants";
 import { merchantLabel, normalize } from "../../domain/search";
 import type { IsoDate, Transaction } from "../../domain/types";
 import { Badge } from "../../ui/Badge";
-import { CategoryDot } from "../../ui/CategoryDot";
+import { categoryIcon } from "../shared/categoryIcon";
 import { MerchantLogo } from "../../ui/MerchantLogo";
 import { Money } from "../../ui/Money";
 import { CategoryMenu } from "../shared/CategoryMenu";
@@ -58,6 +58,7 @@ export const Row = memo(function Row({
   onFocusRow,
 }: RowProps) {
   const logo = logoFor(t, ledger);
+  const CatIcon = categoryIcon(t.category, t.subcategory);
   const future = t.date > asOf;
   const tab = current ? 0 : -1;
   const uncategorized = isUncategorized(t.category);
@@ -66,7 +67,8 @@ export const Row = memo(function Row({
   );
 
   const onClick = (event: MouseEvent<HTMLTableRowElement>) => {
-    if ((event.target as HTMLElement).closest("button, a, input, label")) return;
+    if ((event.target as HTMLElement).closest("button, a, input, label"))
+      return;
     onOpen(t.id);
   };
 
@@ -106,7 +108,11 @@ export const Row = memo(function Row({
             name={logo.name}
             color={logo.color}
             src={logo.src}
-            icon={t.internal ? ArrowLeftRight : undefined}
+            icon={
+              t.internal
+                ? ArrowLeftRight
+                : categoryIcon(t.category, t.subcategory)
+            }
             size={28}
           />
           <span className="tx-op-text">
@@ -167,11 +173,24 @@ export const Row = memo(function Row({
                 <span>À catégoriser</span>
               ) : (
                 <>
-                  <CategoryDot color={logo.color} />
-                  <span className="tx-cat-name">{t.category}</span>
-                  {t.subcategory && (
-                    <span className="tx-cat-sub">{t.subcategory}</span>
-                  )}
+                  <span
+                    className="tx-cat-icon"
+                    style={{
+                      background: categoryColor(
+                        t.category,
+                        ledger.prefs.categoryDefinitions,
+                      ),
+                    }}
+                    aria-hidden
+                  >
+                    <CatIcon size={13} />
+                  </span>
+                  <span className="tx-cat-text">
+                    <span className="tx-cat-name">{t.category}</span>
+                    {t.subcategory && (
+                      <span className="tx-cat-sub">{t.subcategory}</span>
+                    )}
+                  </span>
                 </>
               )}
             </button>

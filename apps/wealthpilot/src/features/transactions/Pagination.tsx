@@ -21,8 +21,11 @@ export function pageWindow(page: number, count: number): (number | null)[] {
   const current = page + 1;
   const pages = new Set([1, count, current - 1, current, current + 1]);
   if (current <= 3) [2, 3, 4].forEach((p) => pages.add(p));
-  if (current >= count - 2) [count - 3, count - 2, count - 1].forEach((p) => pages.add(p));
-  const sorted = [...pages].filter((p) => p >= 1 && p <= count).sort((a, b) => a - b);
+  if (current >= count - 2)
+    [count - 3, count - 2, count - 1].forEach((p) => pages.add(p));
+  const sorted = [...pages]
+    .filter((p) => p >= 1 && p <= count)
+    .sort((a, b) => a - b);
   const out: (number | null)[] = [];
   for (const p of sorted) {
     const prev = out.at(-1);
@@ -54,7 +57,10 @@ export function Pagination({
 
   return (
     <nav className="tx-pager" aria-label={`Pagination (${position})`}>
-      <span className="tx-pager-range" aria-live={position === "haut" ? "polite" : undefined}>
+      <span
+        className="tx-pager-range"
+        aria-live={position === "haut" ? "polite" : undefined}
+      >
         {nf.format(first)}–{nf.format(last)} <span className="muted">sur</span>{" "}
         {nf.format(total)}
       </span>
@@ -107,7 +113,9 @@ export function Pagination({
               <IconButton
                 label="Page suivante"
                 icon={<ChevronRight aria-hidden />}
-                disabledReason={page === count - 1 ? "Dernière page" : undefined}
+                disabledReason={
+                  page === count - 1 ? "Dernière page" : undefined
+                }
                 onClick={() => onPage(page + 1)}
               />
             </li>

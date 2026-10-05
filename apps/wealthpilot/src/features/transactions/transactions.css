@@ -692,7 +692,8 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-3) var(--space-6);
-  padding: var(--space-2) var(--space-5) var(--space-4) calc(48px + var(--space-3));
+  padding: var(--space-2) var(--space-5) var(--space-4)
+    calc(48px + var(--space-3));
 }
 
 .tx-detail-fields {
@@ -1127,4 +1128,23 @@
     width: 44px;
     height: 44px;
   }
+}
+
+.tx-cat-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 30%;
+  color: var(--ink);
+}
+.tx-cat-text {
+  display: grid;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.2;
+}
+.tx-cat-sub {
+  font-size: var(--fs-text-s);
 }

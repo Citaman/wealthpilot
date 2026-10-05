@@ -156,7 +156,9 @@ function DayPanel({
                 <span className="week-op-meta">
                   {o.category && (
                     <>
-                      <CategoryDot color={categoryColor(o.category, definitions)} />
+                      <CategoryDot
+                        color={categoryColor(o.category, definitions)}
+                      />
                       {o.category} ·{" "}
                     </>
                   )}

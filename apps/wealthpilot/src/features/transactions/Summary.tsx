@@ -21,7 +21,9 @@ export function Summary({
         {plural(summary.count, "opération")}
       </strong>
       {kind === "transfer" ? (
-        <span className="tx-summary-item muted">Virements internes · hors totaux</span>
+        <span className="tx-summary-item muted">
+          Virements internes · hors totaux
+        </span>
       ) : (
         <>
           {kind !== "income" && (

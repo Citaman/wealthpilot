@@ -47,6 +47,7 @@ export interface PlanSettings {
   extra?: ExtraCharge[];
   /** Budget month the recovery aims at (≥ 0 from then on). */
   target?: string;
+  view?: "calendar" | "line" | "bars" | "table";
 }
 
 export interface ExtraCharge {

@@ -280,12 +280,12 @@ function CategoryList({
           role="combobox"
           aria-expanded
           aria-controls={`${id}-list`}
-          aria-activedescendant={
-            activeOption ? optionId(current) : undefined
-          }
+          aria-activedescendant={activeOption ? optionId(current) : undefined}
           aria-autocomplete="list"
           aria-label="Rechercher ou créer une catégorie"
-          placeholder={creating ? "Nom de la catégorie" : "Rechercher ou créer…"}
+          placeholder={
+            creating ? "Nom de la catégorie" : "Rechercher ou créer…"
+          }
           value={query}
           maxLength={60}
           onChange={(event) => {

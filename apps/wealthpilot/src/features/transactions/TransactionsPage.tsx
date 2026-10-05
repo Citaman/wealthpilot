@@ -329,10 +329,15 @@ export function TransactionsPage({ ledger, params, active }: PageProps) {
     const aliases = ledger.prefs.accountAliases;
     downloadFile(
       `wealthpilot-operations-${asOf}.csv`,
-      exportTransactionsCsv(list, Object.keys(aliases).length ? aliases : undefined),
+      exportTransactionsCsv(
+        list,
+        Object.keys(aliases).length ? aliases : undefined,
+      ),
       "text/csv;charset=utf-8",
     );
-    toast.show({ message: `${plural(list.length, "opération")} exportée${list.length > 1 ? "s" : ""}` });
+    toast.show({
+      message: `${plural(list.length, "opération")} exportée${list.length > 1 ? "s" : ""}`,
+    });
   };
   const exportSelection = () =>
     exportRows(
@@ -492,7 +497,12 @@ export function TransactionsPage({ ledger, params, active }: PageProps) {
           outside={outside}
           selectable={inResult < result.length ? result.length : null}
           allInternal={selection.every((id) => byId.get(id)?.internal)}
-          onSelectAll={() => onSelect(result.map((t) => t.id), true)}
+          onSelectAll={() =>
+            onSelect(
+              result.map((t) => t.id),
+              true,
+            )
+          }
           onApply={applyToSelection}
           onExport={exportSelection}
           onClear={() => setSelected(new Set())}

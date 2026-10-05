@@ -13,11 +13,20 @@ const ledger = ledgerOf(
     accounts: [anchored("A", "2026-10-05", 100000)],
     transactions: [
       tx("old", "2026-09-01", -2000),
-      tx("lunch", "2026-10-05", -1250, { category: "Courses", merchant: "Lidl" }),
+      tx("lunch", "2026-10-05", -1250, {
+        category: "Courses",
+        merchant: "Lidl",
+      }),
     ],
     prefs: {
       weeklyPlans: [
-        { start: "2026-10-05", account: "", limits: { Courses: 8000 }, reduction: 0, reserve: 0 },
+        {
+          start: "2026-10-05",
+          account: "",
+          limits: { Courses: 8000 },
+          reduction: 0,
+          reserve: 0,
+        },
       ],
     },
   },
@@ -74,13 +83,23 @@ describe("WeekPage", () => {
 
   it("edits a week limit inline, persists it, and undoes it from the toast", async () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: "Limite Courses : modifier" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Limite Courses : modifier" }),
+    );
     const input = screen.getByRole("textbox", { name: "Limite Courses" });
     fireEvent.change(input, { target: { value: "120" } });
     fireEvent.keyDown(input, { key: "Enter" });
-    await waitFor(async () => expect(await savedLimits()).toEqual({ Courses: 12000 }));
-    fireEvent.click(await screen.findByRole("button", { name: /Limite Courses .* · Annuler/ }));
-    await waitFor(async () => expect(await savedLimits()).toEqual({ Courses: 8000 }));
+    await waitFor(async () =>
+      expect(await savedLimits()).toEqual({ Courses: 12000 }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: /Limite Courses .* · Annuler/,
+      }),
+    );
+    await waitFor(async () =>
+      expect(await savedLimits()).toEqual({ Courses: 8000 }),
+    );
   });
 
   it("resets a saved limit to the proposal", async () => {
@@ -93,8 +112,12 @@ describe("WeekPage", () => {
     renderPage();
     const monday = screen.getByRole("button", { name: /^lundi 5 octobre/ });
     fireEvent.click(monday);
-    expect(screen.getByRole("region", { name: "lundi 5 octobre" }).textContent).toContain("Lidl");
+    expect(
+      screen.getByRole("region", { name: "lundi 5 octobre" }).textContent,
+    ).toContain("Lidl");
     fireEvent.keyDown(monday, { key: "Escape" });
-    expect(screen.queryByRole("region", { name: "lundi 5 octobre" })).toBeNull();
+    expect(
+      screen.queryByRole("region", { name: "lundi 5 octobre" }),
+    ).toBeNull();
   });
 });

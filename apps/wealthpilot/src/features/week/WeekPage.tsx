@@ -49,9 +49,7 @@ export function WeekPage({ ledger, params }: PageProps) {
           <IconButton
             label="Semaine précédente"
             icon={<ChevronLeft aria-hidden />}
-            disabledReason={
-              week <= first ? "Début de l’historique" : undefined
-            }
+            disabledReason={week <= first ? "Début de l’historique" : undefined}
             onClick={() => setChosen(addDays(week, -7))}
           />
           <span className="week-dock-label" aria-live="polite">

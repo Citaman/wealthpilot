@@ -318,3 +318,42 @@
   vertical-align: middle;
   margin-left: var(--space-1);
 }
+
+/* Bill split: key and settings on the left, the transfer on the right. */
+.plan-split .ui-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  column-gap: var(--space-8);
+  align-items: start;
+}
+.plan-split .ui-card-body > :is(header, table, .plan-table, footer) {
+  grid-column: 1 / -1;
+}
+.plan-split .plan-split-head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.plan-split .plan-split-controls {
+  min-width: 0;
+}
+.plan-split .plan-split-controls input[type="range"] {
+  width: 100%;
+}
+.plan-split .plan-transfer {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.plan-split .plan-transfer-month {
+  min-width: 0;
+}
+.plan-split .plan-table td {
+  padding-block: 2px;
+}
+@media (max-width: 899px) {
+  .plan-split .ui-card-body {
+    grid-template-columns: 1fr;
+  }
+}

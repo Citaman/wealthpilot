@@ -119,7 +119,12 @@ function EnvelopeRow({
 
   const save = async (next: Cents | null) => {
     try {
-      const undo = await saveWeekLimit(plan.account, plan.start, e.category, next);
+      const undo = await saveWeekLimit(
+        plan.account,
+        plan.start,
+        e.category,
+        next,
+      );
       toast.undoable(
         next === null
           ? `${e.category} : proposition rétablie`

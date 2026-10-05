@@ -41,7 +41,10 @@
 }
 
 .cat-menu-list {
-  max-height: min(340px, calc(var(--radix-popper-available-height, 70vh) - 56px));
+  max-height: min(
+    340px,
+    calc(var(--radix-popper-available-height, 70vh) - 56px)
+  );
   margin: 0;
   padding: 0;
   overflow-y: auto;

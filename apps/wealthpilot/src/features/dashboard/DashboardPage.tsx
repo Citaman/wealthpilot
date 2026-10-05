@@ -47,19 +47,16 @@ export function DashboardPage({ ledger, active }: PageProps) {
   const latest = useRef({ shown, stored, draft });
   latest.current = { shown, stored, draft };
 
-  const write = useCallback(
-    async (layout: DashboardLayout) => {
-      setWritten({ over: latest.current.stored, layout });
-      latest.current.shown = layout;
-      try {
-        await saveDashboard(layout);
-      } catch (error) {
-        setWritten(null);
-        throw error;
-      }
-    },
-    [],
-  );
+  const write = useCallback(async (layout: DashboardLayout) => {
+    setWritten({ over: latest.current.stored, layout });
+    latest.current.shown = layout;
+    try {
+      await saveDashboard(layout);
+    } catch (error) {
+      setWritten(null);
+      throw error;
+    }
+  }, []);
 
   // Presentation options (forecast toggle…) are saved at once, even outside organize mode.
   const onOption = useCallback(

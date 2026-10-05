@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { ReadingProvider } from "../../app/context";
@@ -71,8 +78,9 @@ const renderPage = async (params?: string) => {
   await screen.findByRole("table", { name: "Opérations" });
 };
 
-const rows = () =>
-  [...document.querySelectorAll<HTMLElement>("tbody tr[data-row]")];
+const rows = () => [
+  ...document.querySelectorAll<HTMLElement>("tbody tr[data-row]"),
+];
 
 describe("Pagination", () => {
   it("garde la première et la dernière page avec des ellipses", () => {
@@ -87,7 +95,10 @@ describe("Pagination", () => {
     await renderPage();
     const top = screen.getByRole("navigation", { name: "Pagination (haut)" });
     const total = Number(
-      within(top).getByText(/sur/).parentElement!.textContent!.match(/sur\s*([\d\s ]+)/)![1].replace(/\D/g, ""),
+      within(top)
+        .getByText(/sur/)
+        .parentElement!.textContent!.match(/sur\s*([\d\s ]+)/)![1]
+        .replace(/\D/g, ""),
     );
     expect(total).toBeGreaterThan(100);
     await userEvent.click(within(top).getByRole("button", { name: "Page 2" }));
@@ -126,8 +137,12 @@ describe("Catégorie", () => {
   it("crée une catégorie depuis le menu puis annule", async () => {
     await renderPage();
     const row = rows().find((r) => r.textContent?.includes("PAYPAL"))!;
-    await userEvent.click(within(row).getByRole("button", { name: /Catégorie/ }));
-    const input = await screen.findByRole("combobox", { name: "Rechercher ou créer une catégorie" });
+    await userEvent.click(
+      within(row).getByRole("button", { name: /Catégorie/ }),
+    );
+    const input = await screen.findByRole("combobox", {
+      name: "Rechercher ou créer une catégorie",
+    });
     await userEvent.type(input, "Jeux vidéo{Enter}");
     const stored = () =>
       db.transactions
@@ -135,7 +150,9 @@ describe("Catégorie", () => {
         .first()
         .then((t) => t?.category);
     await waitFor(async () => expect(await stored()).toBe("Jeux vidéo"));
-    const toast = await screen.findByRole("button", { name: "Catégorie changée" });
+    const toast = await screen.findByRole("button", {
+      name: "Catégorie changée",
+    });
     await userEvent.click(toast);
     await waitFor(async () => expect(await stored()).toBe("À catégoriser"));
   });
@@ -143,8 +160,8 @@ describe("Catégorie", () => {
   it("filtre les opérations à catégoriser depuis un drilldown", async () => {
     await renderPage("filter=uncategorized");
     expect(rows().length).toBe(2);
-    expect(screen.getByRole("list", { name: "Filtres actifs" }).textContent).toContain(
-      "Sans catégorie",
-    );
+    expect(
+      screen.getByRole("list", { name: "Filtres actifs" }).textContent,
+    ).toContain("Sans catégorie");
   });
 });

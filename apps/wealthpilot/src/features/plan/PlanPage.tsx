@@ -1,4 +1,13 @@
-import { Ban, Copy, Plus, X } from "lucide-react";
+import {
+  Ban,
+  CalendarDays,
+  ChartColumn,
+  ChartSpline,
+  Copy,
+  Plus,
+  Table2,
+  X,
+} from "lucide-react";
 import { Fragment, useState, type FormEvent } from "react";
 import type { PageProps } from "../../app/App";
 import { useToast } from "../../app/toast";
@@ -23,6 +32,8 @@ import {
 } from "../../domain/plan";
 import { categoryColor } from "../../domain/categories";
 import { Badge } from "../../ui/Badge";
+import { DivergingBars } from "../../ui/charts/DivergingBars";
+import { LineChart } from "../../ui/charts/LineChart";
 import { IconButton } from "../../ui/IconButton";
 import { Logo } from "../dashboard/cards/cardParts";
 import { Button } from "../../ui/Button";
@@ -106,6 +117,143 @@ function Recovery({
   const firstPositive = path.months.find((m) => m.withEffort >= 0);
   const now = path.months[0];
   const options = scenarios(path);
+  const view = settings.view ?? "calendar";
+  const date = (key: string) => `${key}-01`;
+  const calendar = (
+    <ol className="plan-calendar">
+      {path.months.map((m, i) => {
+        const s = options[i];
+        const [label, tone] = pressureLabel[s.pressure];
+        return (
+          <li key={m.key}>
+            <button
+              type="button"
+              className="plan-month"
+              aria-pressed={settings.target === m.key}
+              disabled={s.pressure === "impossible"}
+              title={
+                s.pressure === "impossible"
+                  ? "Plus de la moitié des dépenses variables"
+                  : `Être au-dessus de zéro dès fin ${month(m.key)}`
+              }
+              onClick={() => void choose(s)}
+            >
+              <span className="plan-month-name">
+                {month(m.key)}
+                {m.key.slice(0, 4) !== path.months[0].key.slice(0, 4) &&
+                  ` ${m.key.slice(0, 4)}`}
+              </span>
+              <Money value={m.withEffort} size="s" tone="auto" cents="never" />
+              {effort > 0 && (
+                <span className="plan-muted">
+                  sans effort {formatEuro(m.end, { cents: "never" })}
+                </span>
+              )}
+              <span className="plan-month-need">
+                {s.weekly ? `${formatEuro(s.weekly)} / sem.` : "sans effort"}
+              </span>
+              <span className="plan-month-badges">
+                <Badge tone={tone}>{label}</Badge>
+                {s.recommended && <Badge tone="new">Recommandé</Badge>}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+  const line = (
+    <LineChart
+      label="Solde du foyer en fin de mois"
+      height={260}
+      threshold={{ value: 0, label: "Zéro" }}
+      series={[
+        {
+          id: "effort",
+          label: "Avec effort",
+          kind: "observed",
+          points: path.months.map((m) => ({
+            date: date(m.key),
+            value: m.withEffort,
+          })),
+        },
+        ...(effort > 0
+          ? [
+              {
+                id: "base",
+                label: "Sans effort",
+                kind: "context" as const,
+                points: path.months.map((m) => ({
+                  date: date(m.key),
+                  value: m.end,
+                })),
+              },
+            ]
+          : []),
+      ]}
+      describe={(d) => `Fin ${month(d.slice(0, 7))}`}
+    />
+  );
+  const bars = (
+    <DivergingBars
+      label="Solde du foyer en fin de mois"
+      data={path.months.map((m) => ({
+        key: m.key,
+        label: month(m.key).slice(0, 3),
+        title: month(m.key),
+        income: Math.max(0, m.withEffort),
+        spending: Math.max(0, -m.withEffort),
+      }))}
+      onSelect={(key) => {
+        const s = options.find((o) => o.key === key);
+        if (s) void choose(s);
+      }}
+    />
+  );
+  const table = (
+    <div className="plan-table-wrap">
+      <table className="plan-table plan-money">
+        <thead>
+          <tr>
+            <th>Fin de mois</th>
+            <th className="plan-num">Sans effort</th>
+            <th className="plan-num">Avec effort</th>
+            <th className="plan-num">Effort pour y être ≥ 0</th>
+            <th>Pression</th>
+          </tr>
+        </thead>
+        <tbody>
+          {path.months.map((m, i) => (
+            <tr
+              key={m.key}
+              data-selected={settings.target === m.key || undefined}
+            >
+              <td>
+                {month(m.key)} {m.key.slice(0, 4)}
+              </td>
+              <td className="plan-num">
+                <Money value={m.end} tone="auto" cents="never" />
+              </td>
+              <td className="plan-num">
+                <Money value={m.withEffort} tone="auto" cents="never" />
+              </td>
+              <td className="plan-num">
+                {options[i].weekly
+                  ? `${formatEuro(options[i].weekly)} / sem.`
+                  : "—"}
+              </td>
+              <td>
+                <Badge tone={pressureLabel[options[i].pressure][1]}>
+                  {pressureLabel[options[i].pressure][0]}
+                </Badge>
+                {options[i].recommended && <Badge tone="new">Recommandé</Badge>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
   const sliderMax = Math.max(5000, Math.ceil(path.weeklyVariable / 500) * 500);
   const choose = (s: Scenario) =>
     save(
@@ -161,78 +309,67 @@ function Recovery({
         title="Mois par mois"
         className="plan-months"
         actions={
-          <Picker
-            label="Objectif"
-            size="compact"
-            value={settings.target ?? "none"}
-            valueLabel={
-              settings.target
-                ? `Objectif : fin ${month(settings.target)}`
-                : "Choisir un objectif"
-            }
-            onValueChange={(v) => {
-              const s = options.find((o) => o.key === v);
-              if (s) void choose(s);
-            }}
-            options={options.map((o) => ({
-              value: o.key,
-              label: `Fin ${month(o.key)}`,
-              meta: `${formatEuro(o.weekly)} / sem.`,
-              description:
-                pressureLabel[o.pressure][0] +
-                (o.recommended ? " · recommandé" : ""),
-            }))}
-          />
+          <>
+            <Segmented
+              label="Vue"
+              size="compact"
+              value={view}
+              onChange={(v) => void save({ view: v })}
+              options={[
+                {
+                  value: "calendar",
+                  label: <CalendarDays size={16} aria-hidden />,
+                  ariaLabel: "Calendrier",
+                },
+                {
+                  value: "line",
+                  label: <ChartSpline size={16} aria-hidden />,
+                  ariaLabel: "Courbe",
+                },
+                {
+                  value: "bars",
+                  label: <ChartColumn size={16} aria-hidden />,
+                  ariaLabel: "Barres",
+                },
+                {
+                  value: "table",
+                  label: <Table2 size={16} aria-hidden />,
+                  ariaLabel: "Tableau",
+                },
+              ]}
+            />
+            <Picker
+              label="Objectif"
+              size="compact"
+              value={settings.target ?? "none"}
+              valueLabel={
+                settings.target
+                  ? `Objectif : fin ${month(settings.target)}`
+                  : "Choisir un objectif"
+              }
+              onValueChange={(v) => {
+                const s = options.find((o) => o.key === v);
+                if (s) void choose(s);
+              }}
+              options={options.map((o) => ({
+                value: o.key,
+                label: `Fin ${month(o.key)}`,
+                meta: `${formatEuro(o.weekly)} / sem.`,
+                description:
+                  pressureLabel[o.pressure][0] +
+                  (o.recommended ? " · recommandé" : ""),
+              }))}
+            />
+          </>
         }
       >
-        <ol className="plan-calendar">
-          {path.months.map((m, i) => {
-            const s = options[i];
-            const [label, tone] = pressureLabel[s.pressure];
-            return (
-              <li key={m.key}>
-                <button
-                  type="button"
-                  className="plan-month"
-                  aria-pressed={settings.target === m.key}
-                  disabled={s.pressure === "impossible"}
-                  title={
-                    s.pressure === "impossible"
-                      ? "Plus de la moitié des dépenses variables"
-                      : `Être au-dessus de zéro dès fin ${month(m.key)}`
-                  }
-                  onClick={() => void choose(s)}
-                >
-                  <span className="plan-month-name">
-                    {month(m.key)}
-                    {m.key.slice(0, 4) !== path.months[0].key.slice(0, 4) &&
-                      ` ${m.key.slice(0, 4)}`}
-                  </span>
-                  <Money
-                    value={m.withEffort}
-                    size="s"
-                    tone="auto"
-                    cents="never"
-                  />
-                  {effort > 0 && (
-                    <span className="plan-muted">
-                      sans effort {formatEuro(m.end, { cents: "never" })}
-                    </span>
-                  )}
-                  <span className="plan-month-need">
-                    {s.weekly
-                      ? `${formatEuro(s.weekly)} / sem.`
-                      : "sans effort"}
-                  </span>
-                  <span className="plan-month-badges">
-                    <Badge tone={tone}>{label}</Badge>
-                    {s.recommended && <Badge tone="new">Recommandé</Badge>}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+        {view === "calendar"
+          ? calendar
+          : view === "line"
+            ? line
+            : view === "bars"
+              ? bars
+              : table}
         <p className="plan-muted">
           Fin de mois = veille du salaire. Cliquer un mois règle l’effort pour
           être au-dessus de zéro dès ce mois-là.

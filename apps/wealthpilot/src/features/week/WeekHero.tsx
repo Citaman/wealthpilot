@@ -163,7 +163,11 @@ function Facts({
   }
   const low = plan.lowPoint;
   // A lower point after Sunday (next charges before the next income) also caps the week.
-  const later = forecast(ledger, plan.account, planningEnd(ledger, plan.end)).lowPoint;
+  const later = forecast(
+    ledger,
+    plan.account,
+    planningEnd(ledger, plan.end),
+  ).lowPoint;
   const after =
     later && later.date > plan.end && (!low || later.value < low.value)
       ? later
@@ -174,10 +178,18 @@ function Facts({
   const next = incomes.length ? null : nextIncome(ledger, plan.account);
   return (
     <dl className="week-facts">
-      <div className="week-fact" data-alert={low && low.value < reserve ? true : undefined}>
+      <div
+        className="week-fact"
+        data-alert={low && low.value < reserve ? true : undefined}
+      >
         <dt>Point bas{low ? ` · ${dayLabel(low.date)}` : ""}</dt>
         <dd>
-          <Money value={low?.value ?? null} size="m" cents="never" unknownReason="Solde à confirmer" />
+          <Money
+            value={low?.value ?? null}
+            size="m"
+            cents="never"
+            unknownReason="Solde à confirmer"
+          />
           <span className="week-fact-meta">
             réserve <Money value={reserve} cents="never" tone="none" />
             {low && low.value < reserve && (
@@ -193,7 +205,10 @@ function Facts({
             <Money value={o.amount} size="m" cents="never" tone="none" signed />
             <span className="week-fact-meta">
               {o.overdue ? (
-                <Badge tone="warning" title="Revenu daté avant aujourd’hui, pas encore sur le compte : jamais compté">
+                <Badge
+                  tone="warning"
+                  title="Revenu daté avant aujourd’hui, pas encore sur le compte : jamais compté"
+                >
                   attendu, pas encore reçu
                 </Badge>
               ) : (
@@ -212,13 +227,18 @@ function Facts({
         </div>
       ))}
       {after && (
-        <div className="week-fact" data-alert={after.value < reserve ? true : undefined}>
+        <div
+          className="week-fact"
+          data-alert={after.value < reserve ? true : undefined}
+        >
           <dt>Point bas suivant · {dayLabel(after.date)}</dt>
           <dd>
             <Money value={after.value} size="m" cents="never" />
             <span className="week-fact-meta">
               après dimanche
-              {after.value < reserve && <Badge tone="negative">sous la réserve</Badge>}
+              {after.value < reserve && (
+                <Badge tone="negative">sous la réserve</Badge>
+              )}
             </span>
           </dd>
         </div>
@@ -227,7 +247,13 @@ function Facts({
         <div className="week-fact">
           <dt>Prochain revenu</dt>
           <dd>
-            <Money value={next.amount} size="m" cents="never" tone="none" signed />
+            <Money
+              value={next.amount}
+              size="m"
+              cents="never"
+              tone="none"
+              signed
+            />
             <span className="week-fact-meta">
               {next.label} · {dayLabel(next.date)}
             </span>
@@ -284,8 +310,8 @@ function Calculation({
             <div>
               <dt>Engagements datés</dt>
               <dd>
-                <Money value={plan.totals.committed} tone="none" /> comptés
-                une fois, à leur date
+                <Money value={plan.totals.committed} tone="none" /> comptés une
+                fois, à leur date
               </dd>
             </div>
             <div>

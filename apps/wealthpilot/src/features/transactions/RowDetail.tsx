@@ -92,7 +92,11 @@ export function RowDetail({
                     onCategory(t, category, subcategory)
                   }
                   trigger={
-                    <button type="button" className="tx-cat" data-empty={uncategorized || undefined}>
+                    <button
+                      type="button"
+                      className="tx-cat"
+                      data-empty={uncategorized || undefined}
+                    >
                       {!uncategorized && (
                         <CategoryDot
                           color={categoryColor(
