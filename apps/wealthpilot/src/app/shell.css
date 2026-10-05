@@ -57,6 +57,7 @@ html {
   left: 50%;
   bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
   transform: translateX(-50%);
+  width: max-content;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -182,4 +183,11 @@ html {
   .first-load > * {
     grid-column: 1 / -1;
   }
+}
+
+.dock .dock-step {
+  color: var(--on-dark);
+}
+.dock .dock-step:hover {
+  background: var(--hairline-dark);
 }
