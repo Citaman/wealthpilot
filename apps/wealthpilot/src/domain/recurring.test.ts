@@ -24,6 +24,25 @@ const dates = (w: World, end: string, asOf: string) =>
   estimates(ledgerOf(w, asOf), end).map((e) => e.date);
 
 describe("recurrence detection", () => {
+  it("keeps a rent paid by hand whose date drifts (one 38-day gap)", () => {
+    const rent = [
+      "2026-05-07",
+      "2026-06-05",
+      "2026-07-13",
+      "2026-08-10",
+      "2026-09-08",
+    ].map((d) =>
+      tx(d, d, -119394, {
+        merchant: "Loyer ORPI",
+        label: "VIR INSTANTANE EMIS",
+        category: "Logement",
+      }),
+    );
+    expect(detectRecurrences(rent, "2026-10-05").map((r) => r.name)).toEqual([
+      "Loyer ORPI",
+    ]);
+  });
+
   it("detects a monthly cadence with signed amount and confidence", () => {
     const [r] = detectRecurrences(monthly(), "2026-10-03");
     expect(r).toMatchObject({

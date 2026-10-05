@@ -83,7 +83,10 @@ function detect(transactions: Transaction[], asOf: IsoDate): Recurrence[] {
     const gaps = recent
       .slice(1)
       .map((p, i) => daysBetween(recent[i].date, p.date));
-    const monthly = gaps.every((g) => g >= 25 && g <= 35);
+    // Rent or bills paid by hand drift by a few days; one late month must not drop the series.
+    const usualGap = gaps.length ? upperMedian(gaps) : 0;
+    const monthly =
+      usualGap >= 25 && usualGap <= 35 && gaps.every((g) => g >= 20 && g <= 42);
     const weekly = gaps.every((g) => g >= 5 && g <= 9);
     if (!monthly && !weekly) continue;
     const lastDay = recent.at(-1)!;

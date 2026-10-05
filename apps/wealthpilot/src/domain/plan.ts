@@ -14,6 +14,7 @@ import type { Ledger } from "./ledger";
 import { median, sumBy } from "./money";
 import { currentMonthEnd, currentMonthKey, monthRange } from "./periods";
 import { activeRecurrences } from "./recurring";
+import { isUncategorized } from "./categories";
 import { normalizedText } from "./text";
 import type { Cents, IsoDate, Transaction } from "./types";
 
@@ -40,6 +41,19 @@ export interface PlanSettings {
   /** Last budget month of a temporary charge (e.g. taxes), by recurrence key. */
   ends?: Record<string, string>;
   allowances?: Record<string, Record<string, Cents>>;
+  /** Reference net salary per account when the bank export lacks the latest one. */
+  incomes?: Record<string, Cents>;
+  /** Charges typed by hand (e.g. a tax not yet seen three times). */
+  extra?: ExtraCharge[];
+  /** Budget month the recovery aims at (≥ 0 from then on). */
+  target?: string;
+}
+
+export interface ExtraCharge {
+  id: string;
+  name: string;
+  monthly: Cents;
+  end?: string;
 }
 
 const WEEKS_PER_MONTH = 52 / 12;
@@ -78,6 +92,8 @@ function latestSalary(ledger: Ledger, account: string): Cents {
   );
 }
 
+export const detectedSalary = latestSalary;
+
 export interface People {
   me: string;
   partner: string;
@@ -96,8 +112,8 @@ export function people(ledger: Ledger, s: PlanSettings): People | null {
   const me = s.me ?? byIncome[0]?.id;
   const partner = s.partner ?? byIncome.find((a) => a.id !== me)?.id;
   if (!me || !partner) return null;
-  const meIncome = latestSalary(ledger, me);
-  const partnerIncome = latestSalary(ledger, partner);
+  const meIncome = s.incomes?.[me] ?? latestSalary(ledger, me);
+  const partnerIncome = s.incomes?.[partner] ?? latestSalary(ledger, partner);
   const incomeShare =
     meIncome + partnerIncome ? meIncome / (meIncome + partnerIncome) : 0.5;
   return {
@@ -243,14 +259,29 @@ export function settlement(
 export interface FixedCharge {
   key: string;
   name: string;
+  /** Merchant name, for the logo. */
+  merchant: string;
   account: string;
+  day: number;
   monthly: Cents;
   end?: string;
+  manual?: boolean;
+}
+
+/** Bank wording (« Prélèvement européen… DGFIP ») replaced by what it is. */
+function chargeName(ledger: Ledger, name: string, sourceIds: string[]) {
+  const source = ledger.transactions.find((t) => t.id === sourceIds.at(-1));
+  const all = normalizedText(
+    `${name} ${source ? text(source) : ""} ${Object.values(source?.raw ?? {}).join(" ")}`,
+  );
+  if (/dgfip|impot/.test(all)) return "Impôt sur le revenu";
+  return source?.merchantName || name;
 }
 
 export interface Trajectory {
   months: { key: string; end: Cents; withEffort: Cents }[];
   income: Cents;
+  incomes: FixedCharge[];
   fixed: FixedCharge[];
   variable: Cents;
   weeklyVariable: Cents;
@@ -260,27 +291,40 @@ export interface Trajectory {
 export function trajectory(
   ledger: Ledger,
   s: PlanSettings,
-  count = 6,
+  count = 18,
 ): Trajectory {
   const monthly = (r: { amount: number; frequency: string }) =>
     Math.round(
       r.frequency === "weekly" ? r.amount * WEEKS_PER_MONTH : r.amount,
     );
   const recurrences = activeRecurrences(ledger).filter((r) => !r.paused);
-  const income = sumBy(
-    recurrences.filter((r) => r.amount > 0),
-    monthly,
-  );
-  const fixed = recurrences
-    .filter((r) => r.amount < 0)
-    .map((r) => ({
-      key: r.key,
-      name: r.name,
-      account: r.account,
-      monthly: -monthly(r),
-      end: s.ends?.[r.key],
-    }))
+  const line = (r: (typeof recurrences)[number]): FixedCharge => ({
+    key: r.key,
+    name: chargeName(ledger, r.name, r.sourceIds),
+    merchant: r.name,
+    account: r.account,
+    day: r.day,
+    monthly: Math.abs(monthly(r)),
+    end: s.ends?.[r.key],
+  });
+  const incomes = recurrences
+    .filter((r) => r.amount > 0)
+    .map(line)
     .sort((a, b) => b.monthly - a.monthly);
+  const income = sumBy(incomes, (i) => i.monthly);
+  const fixed = [
+    ...recurrences.filter((r) => r.amount < 0).map(line),
+    ...(s.extra ?? []).map((e) => ({
+      key: e.id,
+      name: e.name,
+      merchant: e.name,
+      account: "",
+      day: 0,
+      monthly: e.monthly,
+      end: e.end,
+      manual: true,
+    })),
+  ].sort((a, b) => b.monthly - a.monthly);
   const totals = completeMonths(ledger, 3).map(
     (r) => -sumBy(rowsBetween(ledger, r).filter(spent), (t) => t.amount),
   );
@@ -312,6 +356,7 @@ export function trajectory(
   return {
     months,
     income,
+    incomes,
     fixed,
     variable,
     weeklyVariable,
@@ -324,12 +369,14 @@ export interface Scenario {
   key: string;
   weekly: Cents;
   pressure: Pressure;
+  /** Earliest month reachable without high pressure. */
+  recommended: boolean;
 }
 
 /** Weekly saving needed so that every month from `key` on ends ≥ 0. */
 export function scenarios(t: Trajectory): Scenario[] {
   const weeksUntil = (i: number) => Math.max(1, (i + 0.5) * WEEKS_PER_MONTH);
-  return t.months.map((m, i) => {
+  const list: Scenario[] = t.months.map((m, i) => {
     const weekly = Math.max(
       0,
       ...t.months
@@ -351,8 +398,11 @@ export function scenarios(t: Trajectory): Scenario[] {
             : ratio < 0.5
               ? "high"
               : "impossible";
-    return { key: m.key, weekly, pressure };
+    return { key: m.key, weekly, pressure, recommended: false };
   });
+  const best = list.find((x) => ["none", "low", "medium"].includes(x.pressure));
+  if (best) best.recommended = true;
+  return list;
 }
 
 export interface Allowance {
@@ -379,6 +429,7 @@ export function allowances(
   const byCategory = new Map<string, Transaction[]>();
   for (const t of ledger.byAccount.get(account) ?? []) {
     if (!spent(t) || t.date < from || t.date > ledger.asOf) continue;
+    if (isUncategorized(t.category)) continue;
     if ((s.modes?.[groupOf(t)] ?? defaultMode(groupOf(t))) !== "personal")
       continue;
     byCategory.set(t.category, [...(byCategory.get(t.category) ?? []), t]);

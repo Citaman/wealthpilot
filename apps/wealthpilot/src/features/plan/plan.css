@@ -6,14 +6,6 @@
 .plan > * {
   grid-column: 1 / -1;
 }
-.plan-months,
-.plan-split {
-  grid-column: span 8;
-}
-.plan-scenarios,
-.plan-fixed {
-  grid-column: span 4;
-}
 .plan-people {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -21,12 +13,6 @@
 }
 @media (max-width: 1099px) {
   .plan > *,
-  .plan-months,
-  .plan-split,
-  .plan-scenarios,
-  .plan-fixed {
-    grid-column: 1 / -1;
-  }
   .plan-people {
     grid-template-columns: 1fr;
   }
@@ -67,54 +53,6 @@
   .plan-hero-grid {
     grid-template-columns: 1fr;
   }
-}
-
-.plan-bars {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-}
-.plan-bar {
-  display: grid;
-  gap: var(--space-2);
-  justify-items: center;
-  text-align: center;
-}
-.plan-bar-track {
-  position: relative;
-  width: 100%;
-  height: 180px;
-  border-radius: var(--r-bar);
-  background: linear-gradient(var(--card-hairline), var(--card-hairline))
-    center / 100% 1px no-repeat;
-}
-.plan-bar-fill {
-  position: absolute;
-  left: 20%;
-  right: 20%;
-  bottom: 50%;
-  height: var(--h);
-  border-radius: var(--r-bar) var(--r-bar) 0 0;
-  background: var(--yellow);
-}
-.plan-bar-fill[data-negative] {
-  bottom: auto;
-  top: 50%;
-  border-radius: 0 0 var(--r-bar) var(--r-bar);
-  background: var(--pink);
-}
-.plan-bar-base {
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  top: var(--y);
-  border-top: 2px dashed var(--card-text);
-}
-.plan-bar-label {
-  font: var(--fs-mono) / var(--lh-mono) var(--font-mono);
-  color: var(--card-muted);
 }
 
 .plan-list {
@@ -185,6 +123,8 @@
 }
 .plan-split-controls {
   display: grid;
+  align-content: start;
+  justify-items: start;
   gap: var(--space-2);
   min-width: 260px;
 }
@@ -231,20 +171,127 @@
     display: none;
   }
 }
-.plan-short {
-  display: none;
+
+.plan-calendar {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
 }
-@container card (max-width: 560px) {
-  .plan-bars {
-    gap: var(--space-1);
-  }
-  .plan-bar .ui-money {
-    font-size: 13px;
-  }
-  .plan-long {
-    display: none;
-  }
-  .plan-short {
-    display: inline;
-  }
+.plan-month {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  width: 100%;
+  height: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-pill) solid var(--card-hairline);
+  border-radius: var(--r-tile);
+  background: var(--card-sunk);
+  color: var(--card-text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.plan-month:hover:not(:disabled) {
+  border-color: var(--card-text);
+}
+.plan-month[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--on-dark);
+  border-color: var(--ink);
+}
+.plan-month[aria-pressed="true"] .plan-muted {
+  color: var(--on-dark-muted);
+}
+.plan-month:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.plan-month-name {
+  font: 500 var(--fs-mono) / var(--lh-mono) var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+}
+.plan-month-need {
+  font-weight: 600;
+  font-size: var(--fs-text-s);
+}
+.plan-month-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.plan-table-wrap {
+  overflow-x: auto;
+}
+.plan-money {
+  min-width: 560px;
+}
+.plan-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.plan-table th.plan-num {
+  text-align: right;
+}
+.plan-cell-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: 600;
+}
+.plan-cell-name small {
+  font-weight: 400;
+  color: var(--card-muted);
+}
+.plan-money td {
+  padding-block: var(--space-2);
+}
+.plan-section th {
+  padding: var(--space-4) var(--space-2) var(--space-2);
+  background: none;
+  font: 500 var(--fs-mono) / var(--lh-mono) var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--card-muted);
+}
+.plan-subtotal td {
+  background: var(--card-sunk);
+  font-weight: 600;
+}
+.plan-money tfoot th,
+.plan-money tfoot td {
+  padding: var(--space-4) var(--space-2);
+  border-top: var(--border-pill) solid var(--card-text);
+  text-align: left;
+  font: 700 var(--fs-s) / 1 var(--font-display);
+}
+.plan-money tfoot td {
+  text-align: right;
+}
+.plan-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.plan-add input {
+  height: var(--h-field);
+  padding: 0 var(--space-3);
+  border: var(--border-pill) solid var(--card-border);
+  border-radius: var(--r-field);
+  background: var(--card-field, var(--surface));
+  color: var(--card-text);
+  font: inherit;
+}
+.plan-salaries {
+  margin-top: var(--space-3);
+}
+.plan-salaries dt {
+  display: grid;
+  gap: 0;
 }

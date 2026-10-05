@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { demoSnapshot } from "../dev/demo";
 import { buildLedger, financePrefs } from "./ledger";
-import { allowances, myShare, people, settlement, trajectory } from "./plan";
+import {
+  allowances,
+  myShare,
+  people,
+  scenarios,
+  settlement,
+  trajectory,
+} from "./plan";
 
 const asOf = "2026-10-05";
 const s = demoSnapshot(asOf);
@@ -47,6 +54,17 @@ describe("plan", () => {
       ends: { [rent.key]: base.months[1].key },
     });
     expect(ended.months[3].end - base.months[3].end).toBe(2 * rent.monthly);
+  });
+
+  it("a typed reference salary replaces the detected one in the key", () => {
+    const p = people(ledger, { incomes: { Sam: 189248 } })!;
+    expect(p.partnerIncome).toBe(189248);
+    expect(p.share).toBeCloseTo(265000 / (265000 + 189248), 5);
+  });
+
+  it("recommends the earliest month reachable without high pressure", () => {
+    const list = scenarios(trajectory(ledger, {}));
+    expect(list.filter((s) => s.recommended)).toHaveLength(1);
   });
 
   it("weekly allowances only cover personal spending", () => {

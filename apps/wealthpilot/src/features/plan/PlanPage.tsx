@@ -1,13 +1,15 @@
-import { Copy } from "lucide-react";
+import { Copy, Plus, X } from "lucide-react";
+import { Fragment, useState, type FormEvent } from "react";
 import type { PageProps } from "../../app/App";
 import { useToast } from "../../app/toast";
 import { patchPreferences } from "../../data/commands";
 import { usePreferences } from "../../data/hooks";
 import { formatMonth } from "../../domain/dates";
 import { accountName, type Ledger } from "../../domain/ledger";
-import { formatEuro } from "../../domain/money";
+import { formatEuro, parseMoney } from "../../domain/money";
 import {
   allowances,
+  detectedSalary,
   people,
   scenarios,
   settlement,
@@ -15,10 +17,13 @@ import {
   type People,
   type PlanSettings,
   type Pressure,
+  type Scenario,
   type ShareMode,
   type Trajectory,
 } from "../../domain/plan";
 import { Badge } from "../../ui/Badge";
+import { IconButton } from "../../ui/IconButton";
+import { Logo } from "../dashboard/cards/cardParts";
 import { Button } from "../../ui/Button";
 import { CardShell } from "../../ui/CardShell";
 import { EditableMoney } from "../../ui/Editable";
@@ -59,7 +64,7 @@ export function PlanPage({ ledger }: PageProps) {
   const path = trajectory(ledger, settings);
   return (
     <div className="plan">
-      <Recovery path={path} settings={settings} save={save} />
+      <Recovery ledger={ledger} path={path} settings={settings} save={save} />
       <Split ledger={ledger} who={who} settings={settings} save={save} />
       <Allowances
         ledger={ledger}
@@ -86,10 +91,12 @@ const pressureLabel: Record<
 };
 
 function Recovery({
+  ledger,
   path,
   settings,
   save,
 }: {
+  ledger: Ledger;
   path: Trajectory;
   settings: PlanSettings;
   save: Save;
@@ -97,11 +104,13 @@ function Recovery({
   const effort = settings.effort ?? 0;
   const firstPositive = path.months.find((m) => m.withEffort >= 0);
   const now = path.months[0];
-  const max = Math.max(
-    1,
-    ...path.months.flatMap((m) => [Math.abs(m.end), Math.abs(m.withEffort)]),
-  );
+  const options = scenarios(path);
   const sliderMax = Math.max(5000, Math.ceil(path.weeklyVariable / 500) * 500);
+  const choose = (s: Scenario) =>
+    save(
+      { effort: s.weekly, target: s.key },
+      `Objectif fin ${month(s.key)} : ${formatEuro(s.weekly)} / semaine`,
+    );
   return (
     <>
       <CardShell
@@ -121,7 +130,7 @@ function Recovery({
                 ? firstPositive === now
                   ? "Au-dessus de zéro dès ce mois"
                   : `Au-dessus de zéro fin ${month(firstPositive.key)}`
-                : "Encore sous zéro dans 6 mois"}
+                : `Encore sous zéro dans ${path.months.length} mois`}
             </p>
           </div>
           <label className="plan-effort">
@@ -133,7 +142,9 @@ function Recovery({
               max={sliderMax}
               step={500}
               value={effort}
-              onChange={(e) => void save({ effort: Number(e.target.value) })}
+              onChange={(e) =>
+                void save({ effort: Number(e.target.value), target: undefined })
+              }
               aria-valuetext={`${formatEuro(effort)} par semaine`}
             />
             <span className="plan-muted">
@@ -145,151 +156,316 @@ function Recovery({
         </div>
       </CardShell>
 
-      <CardShell title="Mois par mois" className="plan-months">
-        <div
-          className="plan-bars"
-          role="img"
-          aria-label="Solde du foyer en fin de mois, avec et sans effort"
-        >
-          {path.months.map((m) => (
-            <div key={m.key} className="plan-bar">
-              <Money value={m.withEffort} size="s" tone="auto" cents="never" />
-              <div className="plan-bar-track">
-                <span
-                  className="plan-bar-fill"
-                  data-negative={m.withEffort < 0 || undefined}
-                  style={
-                    {
-                      "--h": `${(Math.abs(m.withEffort) / max) * 50}%`,
-                    } as React.CSSProperties
-                  }
-                />
-                {effort > 0 && (
-                  <span
-                    className="plan-bar-base"
-                    style={
-                      {
-                        "--y": `${50 - (m.end / max) * 50}%`,
-                      } as React.CSSProperties
-                    }
-                    title={`Sans effort : ${formatEuro(m.end)}`}
-                  />
-                )}
-              </div>
-              <span className="plan-bar-label">
-                <span className="plan-long">{month(m.key)}</span>
-                <span className="plan-short">{month(m.key).slice(0, 3)}</span>
-              </span>
-            </div>
-          ))}
-        </div>
-        <p className="plan-muted">
-          Fin de mois = veille du salaire. Le trait montre le solde sans effort.
-        </p>
-      </CardShell>
-
-      <CardShell title="Scénarios" className="plan-scenarios">
-        <ul className="plan-list">
-          {scenarios(path).map((s) => {
+      <CardShell
+        title="Mois par mois"
+        className="plan-months"
+        actions={
+          <Picker
+            label="Objectif"
+            size="compact"
+            value={settings.target ?? "none"}
+            valueLabel={
+              settings.target
+                ? `Objectif : fin ${month(settings.target)}`
+                : "Choisir un objectif"
+            }
+            onValueChange={(v) => {
+              const s = options.find((o) => o.key === v);
+              if (s) void choose(s);
+            }}
+            options={options.map((o) => ({
+              value: o.key,
+              label: `Fin ${month(o.key)}`,
+              meta: `${formatEuro(o.weekly)} / sem.`,
+              description:
+                pressureLabel[o.pressure][0] +
+                (o.recommended ? " · recommandé" : ""),
+            }))}
+          />
+        }
+      >
+        <ol className="plan-calendar">
+          {path.months.map((m, i) => {
+            const s = options[i];
             const [label, tone] = pressureLabel[s.pressure];
             return (
-              <li key={s.key}>
-                <span>
-                  ≥ 0 fin {month(s.key)}
-                  <small>
-                    {s.weekly
-                      ? `${formatEuro(s.weekly)} / semaine`
-                      : "sans effort"}
-                  </small>
-                </span>
-                <Badge tone={tone}>{label}</Badge>
-                <Button
-                  size="s"
-                  variant={s.weekly === settings.effort ? "primary" : "outline"}
-                  disabledReason={
+              <li key={m.key}>
+                <button
+                  type="button"
+                  className="plan-month"
+                  aria-pressed={settings.target === m.key}
+                  disabled={s.pressure === "impossible"}
+                  title={
                     s.pressure === "impossible"
                       ? "Plus de la moitié des dépenses variables"
-                      : undefined
+                      : `Être au-dessus de zéro dès fin ${month(m.key)}`
                   }
-                  onClick={() =>
-                    void save(
-                      { effort: s.weekly },
-                      `Effort réglé à ${formatEuro(s.weekly)} / semaine`,
-                    )
-                  }
+                  onClick={() => void choose(s)}
                 >
-                  Choisir
-                </Button>
+                  <span className="plan-month-name">
+                    {month(m.key)}
+                    {m.key.slice(0, 4) !== path.months[0].key.slice(0, 4) &&
+                      ` ${m.key.slice(0, 4)}`}
+                  </span>
+                  <Money
+                    value={m.withEffort}
+                    size="s"
+                    tone="auto"
+                    cents="never"
+                  />
+                  {effort > 0 && (
+                    <span className="plan-muted">
+                      sans effort {formatEuro(m.end, { cents: "never" })}
+                    </span>
+                  )}
+                  <span className="plan-month-need">
+                    {s.weekly
+                      ? `${formatEuro(s.weekly)} / sem.`
+                      : "sans effort"}
+                  </span>
+                  <span className="plan-month-badges">
+                    <Badge tone={tone}>{label}</Badge>
+                    {s.recommended && <Badge tone="new">Recommandé</Badge>}
+                  </span>
+                </button>
               </li>
             );
           })}
-        </ul>
+        </ol>
+        <p className="plan-muted">
+          Fin de mois = veille du salaire. Cliquer un mois règle l’effort pour
+          être au-dessus de zéro dès ce mois-là.
+        </p>
       </CardShell>
 
-      <CardShell
-        title="Ce qui entre et sort chaque mois"
-        className="plan-fixed"
-      >
-        <dl className="plan-rows">
-          <dt>Revenus réguliers</dt>
-          <dd>
-            <Money value={path.income} signed tone="auto" />
-          </dd>
-          {path.fixed.map((f) => (
-            <FixedRow
-              key={f.key}
-              charge={f}
-              months={path.months.map((m) => m.key)}
-              settings={settings}
-              save={save}
-            />
-          ))}
-          <dt>Dépenses variables (médiane 3 mois)</dt>
-          <dd>
-            <Money value={-path.variable} tone="auto" />
-          </dd>
-        </dl>
-      </CardShell>
+      <MoneyTable ledger={ledger} path={path} settings={settings} save={save} />
     </>
   );
 }
 
-function FixedRow({
-  charge,
-  months,
+function MoneyTable({
+  ledger,
+  path,
   settings,
   save,
 }: {
-  charge: Trajectory["fixed"][number];
-  months: string[];
+  ledger: Ledger;
+  path: Trajectory;
   settings: PlanSettings;
   save: Save;
 }) {
+  const [adding, setAdding] = useState(false);
+  const months = path.months.map((m) => m.key);
+  const fixedTotal = path.fixed.reduce((n, f) => n + f.monthly, 0);
+  const setEnd = (key: string, v: string) => {
+    const ends = { ...settings.ends };
+    if (v === "always") delete ends[key];
+    else ends[key] = v;
+    void save({ ends });
+  };
+  const row = (line: Trajectory["fixed"][number], sign: 1 | -1) => (
+    <tr key={line.key}>
+      <td>
+        <span className="plan-cell-name">
+          <Logo ledger={ledger} name={line.merchant} />
+          <span>
+            {line.name}
+            {line.manual && <small> · ajoutée à la main</small>}
+          </span>
+        </span>
+      </td>
+      <td>{line.account ? accountName(ledger, line.account) : "—"}</td>
+      <td className="plan-num">{line.day ? `le ${line.day}` : "—"}</td>
+      <td>
+        {sign < 0 ? (
+          <Picker
+            label={`Fin de ${line.name}`}
+            size="compact"
+            variant="ghost"
+            value={line.end ?? "always"}
+            onValueChange={(v) =>
+              line.manual
+                ? void save({
+                    extra: (settings.extra ?? []).map((e) =>
+                      e.id === line.key
+                        ? { ...e, end: v === "always" ? undefined : v }
+                        : e,
+                    ),
+                  })
+                : setEnd(line.key, v)
+            }
+            options={[
+              { value: "always", label: "Chaque mois" },
+              ...months.map((m) => ({
+                value: m,
+                label: `Jusqu’à ${month(m)}`,
+              })),
+            ]}
+          />
+        ) : (
+          "Chaque mois"
+        )}
+      </td>
+      <td className="plan-num">
+        <Money value={sign * line.monthly} tone="auto" />
+        {line.manual && (
+          <IconButton
+            label={`Retirer ${line.name}`}
+            icon={<X size={14} aria-hidden />}
+            onClick={() =>
+              void save(
+                {
+                  extra: (settings.extra ?? []).filter(
+                    (e) => e.id !== line.key,
+                  ),
+                },
+                `${line.name} retirée`,
+              )
+            }
+          />
+        )}
+      </td>
+    </tr>
+  );
+  const subtotal = (label: string, value: number) => (
+    <tr className="plan-subtotal">
+      <td colSpan={4}>{label}</td>
+      <td className="plan-num">
+        <Money value={value} tone="auto" />
+      </td>
+    </tr>
+  );
+  const rest = path.income - fixedTotal - path.variable;
   return (
-    <>
-      <dt>
-        {charge.name}
-        <Picker
-          label={`Fin de ${charge.name}`}
-          size="compact"
-          variant="ghost"
-          value={charge.end ?? "always"}
-          onValueChange={(v) => {
-            const ends = { ...settings.ends };
-            if (v === "always") delete ends[charge.key];
-            else ends[charge.key] = v;
-            void save({ ends });
-          }}
-          options={[
-            { value: "always", label: "Chaque mois" },
-            ...months.map((m) => ({ value: m, label: `Jusqu’à ${month(m)}` })),
-          ]}
-        />
-      </dt>
-      <dd>
-        <Money value={-charge.monthly} tone="auto" />
-      </dd>
-    </>
+    <CardShell
+      title="Ce qui entre et sort chaque mois"
+      className="plan-fixed"
+      actions={
+        <Button
+          size="s"
+          icon={<Plus size={16} aria-hidden />}
+          onClick={() => setAdding(true)}
+        >
+          Charge
+        </Button>
+      }
+    >
+      <div className="plan-table-wrap">
+        <table className="plan-table plan-money">
+          <thead>
+            <tr>
+              <th>Libellé</th>
+              <th>Compte</th>
+              <th className="plan-num">Jour</th>
+              <th>Durée</th>
+              <th className="plan-num">Par mois</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="plan-section">
+              <th colSpan={5}>Revenus réguliers</th>
+            </tr>
+            {path.incomes.map((i) => row(i, 1))}
+            {subtotal("Total des revenus", path.income)}
+            <tr className="plan-section">
+              <th colSpan={5}>Charges fixes</th>
+            </tr>
+            {path.fixed.map((f) => row(f, -1))}
+            {adding && (
+              <AddCharge
+                settings={settings}
+                save={save}
+                onDone={() => setAdding(false)}
+              />
+            )}
+            {subtotal("Total des charges fixes", -fixedTotal)}
+            <tr className="plan-section">
+              <th colSpan={5}>Vie courante</th>
+            </tr>
+            <tr>
+              <td colSpan={4}>
+                Courses, restaurants, achats… (médiane des 3 derniers mois)
+              </td>
+              <td className="plan-num">
+                <Money value={-path.variable} tone="auto" />
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colSpan={4}>Reste chaque mois</th>
+              <td className="plan-num">
+                <Money value={rest} tone="auto" size="m" />
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </CardShell>
+  );
+}
+
+function AddCharge({
+  settings,
+  save,
+  onDone,
+}: {
+  settings: PlanSettings;
+  save: Save;
+  onDone(): void;
+}) {
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const cents = parseMoney(amount);
+    if (!name.trim() || !cents) return;
+    await save(
+      {
+        extra: [
+          ...(settings.extra ?? []),
+          {
+            id: `extra:${crypto.randomUUID()}`,
+            name: name.trim(),
+            monthly: Math.abs(cents),
+          },
+        ],
+      },
+      `${name.trim()} ajoutée`,
+    );
+    onDone();
+  };
+  return (
+    <tr>
+      <td colSpan={5}>
+        <form
+          className="plan-add"
+          onSubmit={submit}
+          onKeyDown={(e) => e.key === "Escape" && onDone()}
+        >
+          <input
+            autoFocus
+            aria-label="Libellé de la charge"
+            placeholder="Impôt sur le revenu"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            aria-label="Montant par mois"
+            placeholder="854"
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <Button type="submit" size="s" variant="primary">
+            Ajouter
+          </Button>
+          <Button size="s" variant="ghost" onClick={onDone}>
+            Annuler
+          </Button>
+        </form>
+      </td>
+    </tr>
   );
 }
 
@@ -330,10 +506,44 @@ function Split({
           <p className="plan-split-key">
             {me} {pct(who.share)} · {partner} {pct(1 - who.share)}
           </p>
-          <span className="plan-muted">
-            Salaires : {formatEuro(who.meIncome)} et{" "}
-            {formatEuro(who.partnerIncome)}
-          </span>
+          <dl className="plan-rows plan-salaries">
+            {[
+              [who.me, who.meIncome],
+              [who.partner, who.partnerIncome],
+            ].map(([account, income]) => {
+              const id = String(account);
+              const detected = detectedSalary(ledger, id);
+              const manual = settings.incomes?.[id] !== undefined;
+              return (
+                <Fragment key={id}>
+                  <dt>
+                    Salaire de {accountName(ledger, id)}
+                    <small className="plan-muted">
+                      {manual
+                        ? `saisi · détecté ${formatEuro(detected)}`
+                        : "détecté sur le dernier relevé"}
+                    </small>
+                  </dt>
+                  <dd>
+                    <EditableMoney
+                      label={`Salaire de référence de ${accountName(ledger, id)}`}
+                      value={Number(income)}
+                      allowEmpty
+                      onCommit={(v) => {
+                        const incomes = { ...settings.incomes };
+                        if (v === null) delete incomes[id];
+                        else incomes[id] = Math.abs(v);
+                        return save(
+                          { incomes },
+                          "Salaire de référence enregistré",
+                        );
+                      }}
+                    />
+                  </dd>
+                </Fragment>
+              );
+            })}
+          </dl>
         </div>
         <div className="plan-split-controls">
           <Segmented
@@ -531,7 +741,7 @@ function Allowances({
                     >
                       <span
                         style={{
-                          width: `${Math.min(100, r.limit ? (r.spent / r.limit) * 100 : 100)}%`,
+                          width: `${Math.min(100, r.limit ? (r.spent / r.limit) * 100 : r.spent ? 100 : 0)}%`,
                         }}
                       />
                     </span>
