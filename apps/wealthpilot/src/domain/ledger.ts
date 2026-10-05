@@ -1,4 +1,5 @@
 import type { DateRange } from "./dates";
+import { withSubcategories } from "./subcategories";
 import { budgetCalendar, type BudgetCalendar } from "./periods";
 import type {
   Account,
@@ -79,8 +80,9 @@ export function buildLedger(
   },
   asOf: IsoDate,
 ): Ledger {
+  const transactions = withSubcategories(input.transactions);
   const byAccount = new Map<string, Transaction[]>();
-  for (const t of input.transactions) {
+  for (const t of transactions) {
     const rows = byAccount.get(t.account);
     if (rows) rows.push(t);
     else byAccount.set(t.account, [t]);
@@ -89,9 +91,10 @@ export function buildLedger(
     rows.sort((a, b) => a.date.localeCompare(b.date));
   return {
     ...input,
+    transactions,
     asOf,
     byAccount,
-    calendar: budgetCalendar(input.transactions, asOf),
+    calendar: budgetCalendar(transactions, asOf),
   };
 }
 

@@ -31,13 +31,13 @@ describe("plan", () => {
       expect(g.balance).toBe(
         g.share === null ? 0 : Math.round(g.paidMe - g.total * g.share),
       );
-    const rent = usual.find((g) => g.group === "Logement")!;
+    const rent = usual.find((g) => g.group === "Housing · Rent")!;
     expect(rent.mode).toBe("income");
     const personal = settlement(
       ledger,
-      { modes: { Logement: "me" } },
+      { modes: { "Housing · Rent": "me" } },
       p,
-    ).usual.find((g) => g.group === "Logement")!;
+    ).usual.find((g) => g.group === "Housing · Rent")!;
     expect(personal.balance).toBe(0);
   });
 

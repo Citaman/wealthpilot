@@ -73,10 +73,10 @@ export const groupOf = (t: Transaction) =>
 // Household-type costs are shared by default; car loan, taxes and personal
 // spending stay with whoever pays them.
 const SHARED =
-  /loyer|logement|electric|energie|\beau\b|internet|box|habitation|creche|garde|cantine|ecole|enfant|courses|supermarche|carburant|essence|assurance auto/;
+  /loyer|logement|electric|energie|\beau\b|internet|box|habitation|creche|garde|cantine|ecole|enfant|courses|supermarche|carburant|essence|assurance auto|rent|housing|utilit|grocer|childcare|daycare|school|family|fuel/;
 export function defaultMode(group: string): ShareMode {
   const g = normalizedText(group);
-  return /credit|pret|impot/.test(g)
+  return /credit|pret|impot|loan|tax/.test(g)
     ? "personal"
     : SHARED.test(g)
       ? "income"

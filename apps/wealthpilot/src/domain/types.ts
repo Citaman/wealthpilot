@@ -27,6 +27,8 @@ export interface Transaction {
   reviewed?: boolean;
   /** JSON of the editable fields at import time; guards batch undo. */
   importedState?: string;
+  /** Derived in the ledger only, never stored: where a missing subcategory came from. */
+  subcategorySource?: "raw" | "merchant" | "known";
 }
 
 export interface BalanceCheckpoint {

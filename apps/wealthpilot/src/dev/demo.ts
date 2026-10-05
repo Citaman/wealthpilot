@@ -20,6 +20,7 @@ interface Draft {
   merchant: string;
   category: string;
   internal?: boolean;
+  sub?: string;
 }
 
 export function demoSnapshot(asOf = today()): Snapshot {
@@ -35,32 +36,32 @@ export function demoSnapshot(asOf = today()): Snapshot {
     const day = (n: number) => `${month}-${String(n).padStart(2, "0")}`;
     const salaryAlex = day([25, 27, 26, 24, 27, 25, 26, 25, 27, 26][m]);
     const salarySam = day([27, 28, 27, 26, 28, 27, 28, 27, 28, 27][m]);
-    add({ date: salaryAlex, account: "Alex", amount: 265000 + (m === 5 ? 40000 : 0), merchant: "Salaire Atelier Nord", category: "Salaire" });
-    add({ date: salarySam, account: "Sam", amount: 218000, merchant: "Salaire Studio Ouest", category: "Salaire" });
-    add({ date: day(5), account: "Commun", amount: 32000, merchant: "CAF", category: "Allocations" });
+    add({ date: salaryAlex, account: "Alex", amount: 265000 + (m === 5 ? 40000 : 0), merchant: "Salaire Atelier Nord", category: "Income", sub: "Salary" });
+    add({ date: salarySam, account: "Sam", amount: 218000, merchant: "Salaire Studio Ouest", category: "Income", sub: "Salary" });
+    add({ date: day(5), account: "Commun", amount: 32000, merchant: "CAF", category: "Income", sub: "Benefits" });
     for (const [who, amount] of [["Alex", 90000], ["Sam", 70000]] as const) {
-      add({ date: addDays(salaryAlex, 1), account: who, amount: -amount, merchant: "Virement vers Commun", category: "Virements", internal: true });
-      add({ date: addDays(salaryAlex, 1), account: "Commun", amount, merchant: `Virement de ${who}`, category: "Virements", internal: true });
+      add({ date: addDays(salaryAlex, 1), account: who, amount: -amount, merchant: "Virement vers Commun", category: "Transfers", sub: "To Joint", internal: true });
+      add({ date: addDays(salaryAlex, 1), account: "Commun", amount, merchant: `Virement de ${who}`, category: "Transfers", sub: "To Joint", internal: true });
     }
-    add({ date: day(1), account: "Commun", amount: -92000, merchant: "Loyer Foncia", category: "Logement" });
-    add({ date: day(4), account: "Commun", amount: -7800, merchant: "Assurance MAIF", category: "Assurances" });
-    add({ date: day(8), account: "Commun", amount: cents(55, 95), merchant: "EDF", category: "Énergie" });
-    add({ date: day(10), account: "Commun", amount: -2999, merchant: "Free Mobile", category: "Abonnements" });
-    add({ date: day(12), account: "Alex", amount: -1349, merchant: "Netflix", category: "Abonnements" });
-    add({ date: day(15), account: "Sam", amount: -1099, merchant: "Spotify", category: "Abonnements" });
-    add({ date: day(18), account: "Commun", amount: -8000, merchant: "Cantine École", category: "Enfants" });
+    add({ date: day(1), account: "Commun", amount: -92000, merchant: "Loyer Foncia", category: "Housing", sub: "Rent" });
+    add({ date: day(4), account: "Commun", amount: -7800, merchant: "Assurance MAIF", category: "Bills", sub: "Insurance" });
+    add({ date: day(8), account: "Commun", amount: cents(55, 95), merchant: "EDF", category: "Housing", sub: "Utilities" });
+    add({ date: day(10), account: "Commun", amount: -2999, merchant: "Free Mobile", category: "Bills", sub: "Mobile" });
+    add({ date: day(12), account: "Alex", amount: -1349, merchant: "Netflix", category: "Entertainment", sub: "Streaming" });
+    add({ date: day(15), account: "Sam", amount: -1099, merchant: "Spotify", category: "Entertainment", sub: "Streaming" });
+    add({ date: day(18), account: "Commun", amount: -8000, merchant: "Cantine École", category: "Family", sub: "School" });
     for (let d = 1; d <= 28; d++) {
       const date = day(d);
       if (weekday(date) === 5 || rand() < 0.12)
-        add({ date, account: "Commun", amount: cents(35, 130), merchant: pick(["Carrefour Market", "Lidl", "Monoprix", "Biocoop"]), category: "Courses" });
+        add({ date, account: "Commun", amount: cents(35, 130), merchant: pick(["Carrefour Market", "Lidl", "Monoprix", "Biocoop"]), category: "Food", sub: "Groceries" });
       if (rand() < 0.16)
-        add({ date, account: pick(["Alex", "Sam"]), amount: cents(9, 48), merchant: pick(["McDonald's", "Big Fernand", "Pizza Hut", "Boulangerie Paul"]), category: "Restaurants" });
+        add({ date, account: pick(["Alex", "Sam"]), amount: cents(9, 48), merchant: pick(["McDonald's", "Big Fernand", "Pizza Hut", "Boulangerie Paul"]), category: "Food" });
       if (rand() < 0.1)
         add({ date, account: pick(["Alex", "Sam"]), amount: cents(25, 70), merchant: pick(["Total Énergies", "SNCF", "RATP"]), category: "Transport" });
       if (rand() < 0.05)
-        add({ date, account: pick(["Alex", "Sam", "Commun"]), amount: cents(20, 160), merchant: pick(["Amazon", "Decathlon", "Kiabi", "Fnac"]), category: "Shopping" });
+        add({ date, account: pick(["Alex", "Sam", "Commun"]), amount: cents(20, 160), merchant: pick(["Amazon", "Decathlon", "Kiabi", "Fnac"]), category: "Shopping", sub: "General" });
     }
-    if (m === 6) add({ date: day(14), account: "Commun", amount: -64000, merchant: "Garage Midas", category: "Transport" });
+    if (m === 6) add({ date: day(14), account: "Commun", amount: -64000, merchant: "Garage Midas", category: "Transport", sub: "Car Care" });
   }
   add({ date: addDays(asOf, -2), account: "Sam", amount: -2380, merchant: "CB LECLERC DRIVE 0412", category: "À catégoriser" });
   add({ date: addDays(asOf, -1), account: "Alex", amount: -1590, merchant: "PAYPAL *STEAM", category: "À catégoriser" });
@@ -76,6 +77,7 @@ export function demoSnapshot(asOf = today()): Snapshot {
         merchant: d.merchant,
         label: d.merchant.toUpperCase(),
         category: d.category,
+        ...(d.sub && { subcategory: d.sub }),
         internal: Boolean(d.internal),
         raw: {},
       };
@@ -92,16 +94,16 @@ export function demoSnapshot(asOf = today()): Snapshot {
 
   const month = asOf.slice(0, 7);
   const budgets: Budget[] = [
-    ["Courses", 60000],
-    ["Restaurants", 18000],
+    ["Food", 78000],
     ["Transport", 15000],
     ["Shopping", 12000],
-    ["Abonnements", 6000],
+    ["Bills", 12000],
+    ["Entertainment", 3000],
   ].flatMap(([category, amount]) =>
     [shiftMonth(month, -1), month].map((m) => ({ id: `budget-${m}-${category}`, category: String(category), amount: Number(amount), month: m })),
   );
   const dues: Due[] = [
-    { id: "due-school", label: "Sortie scolaire", amount: -4500, date: addDays(asOf, 4), account: "Commun", category: "Enfants" },
+    { id: "due-school", label: "Sortie scolaire", amount: -4500, date: addDays(asOf, 4), account: "Commun", category: "Family" },
   ];
 
   return {
