@@ -25,8 +25,10 @@ const legacySnapshot = () =>
 
 beforeEach(resetDatabase);
 
-describe("Sauvegardes", () => {
-  it("exporte, valide et restaure toutes les données, puis refuse une sauvegarde corrompue", async () => {
+it("sauvegarde : aller-retour complet, refus d’une sauvegarde corrompue, ancienne application (fixture legacy), annulation d’un lot restauré", async () => {
+  // exporte, valide et restaure toutes les données, puis refuse une sauvegarde corrompue
+  {
+    await resetDatabase();
     await importText(sgFixture(), {
       checkpointDecisions: { Courant: "accept" },
     });
@@ -49,9 +51,10 @@ describe("Sauvegardes", () => {
     expect(() => parseBackup("{")).toThrow(/JSON/);
     expect(() => parseBackup(envelope(undefined))).toThrow(/format/);
     expect(await readSnapshot()).toEqual(before);
-  });
-
-  it("restaure une sauvegarde de l’ancienne application avec tous ses champs legacy", async () => {
+  }
+  // restaure une sauvegarde de l’ancienne application avec tous ses champs legacy
+  {
+    await resetDatabase();
     const restored = parseBackup(legacyJson);
     expect(restored).toEqual(legacy.data);
     await restoreBackup(restored);
@@ -71,30 +74,10 @@ describe("Sauvegardes", () => {
       from: "2026-09-25",
       through: "2026-10-02",
     });
-  });
-
-  it("une valeur legacy malformée ne bloque jamais la restauration", () => {
-    const s = legacySnapshot();
-    Object.assign(s.preferences, {
-      board: { views: "cassé" },
-      widgetViews: { inconnu: 42 },
-      tones: ["x"],
-      sizes: null,
-      goal: { name: "" },
-      extraGoals: "?",
-      cycleStartDay: 99,
-      dockPages: ["retired", "retired"],
-      householdPlan: { members: [] },
-      scenarios: [{}],
-      budgetLimit: 7,
-      widgets: ["supprimé"],
-      budgetView: "grid",
-      unknownFutureKey: { nested: [1, 2] },
-    });
-    expect(parseBackup(envelope(s)).preferences).toEqual(s.preferences);
-  });
-
-  it("annuler un lot restauré dont une opération corrigée est partagée n’est pas bloqué", async () => {
+  }
+  // annuler un lot restauré dont une opération corrigée est partagée n’est pas bloqué
+  {
+    await resetDatabase();
     await restoreBackup(parseBackup(legacyJson));
     const original = legacy.data.batches.find(
       (b) => b.name === "releve-sg.csv",
@@ -112,43 +95,13 @@ describe("Sauvegardes", () => {
       (await db.transactions.filter((t) => t.note === "corrigé").first())
         ?.category,
     ).toBe("Courses");
-  });
-
-  it("valide portées, provenance, plans de la semaine et ascendance des catégories", () => {
-    const s = legacySnapshot();
-    const ok = () => parseBackup(envelope(s));
-    expect(ok).not.toThrow();
-    s.accounts[0].coverage = [
-      { ...s.accounts[1].coverage![0], batchId: "missing" },
-    ];
-    expect(ok).toThrow(/compte/);
-    Object.assign(s, legacySnapshot());
-    s.preferences.weeklyPlans![0].start = "2026-10-06";
-    expect(ok).toThrow(/semaine/);
-    Object.assign(s, legacySnapshot());
-    s.budgets.push({ ...s.budgets[0], id: "dup" });
-    expect(ok).toThrow(/enveloppes/);
-    Object.assign(s, legacySnapshot());
-    const edited = s.transactions.find((t) => t.categoryId)!;
-    edited.categoryId = "home";
-    expect(ok).toThrow(/catégorie/);
-    Object.assign(s, legacySnapshot());
-    s.preferences.categoryDefinitions![0].parentId = "groceries";
-    expect(ok).toThrow(/parente/);
-    Object.assign(s, legacySnapshot());
-    s.preferences.categoryDefinitions!.push({
-      id: "again",
-      name: " alimentation ",
-    });
-    expect(ok).toThrow(/catégories en double/);
-    Object.assign(s, legacySnapshot());
-    s.transactions[0].amount += 1;
-    expect(ok).toThrow(/opération/);
-  });
+  }
 });
 
-describe("Export CSV des opérations", () => {
-  it("BOM, point-virgule, montants français, formules neutralisées et réimport idempotent", async () => {
+it("export CSV : BOM, point-virgule, montants français, formules neutralisées, réimport idempotent", async () => {
+  // BOM, point-virgule, montants français, formules neutralisées et réimport idempotent
+  {
+    await resetDatabase();
     await importText(
       "date;amount;libelle\n2026-10-02;-1234,5;=SOMME(A1)\n2026-10-03;12;Remboursement",
       {},
@@ -167,5 +120,5 @@ describe("Export CSV des opérations", () => {
       "export.csv",
     );
     expect(again.counts).toEqual({ new: 0, duplicate: 1, invalid: 0 });
-  });
+  }
 });

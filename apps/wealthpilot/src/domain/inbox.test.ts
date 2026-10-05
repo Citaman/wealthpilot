@@ -25,8 +25,9 @@ const row = (
   raw: {},
 });
 
-describe("unmarked transfers", () => {
-  it("pairs an outflow and an inflow of the same amount on two accounts within 3 days", () => {
+it("virements non marqués : un débit et un crédit identiques sur deux comptes à 3 jours près sont appariés", () => {
+  // pairs an outflow and an inflow of the same amount on two accounts within 3 days
+  {
     const transactions = [
       ...s.transactions,
       row("out", "Alex", "2026-10-01", -50522),
@@ -42,5 +43,5 @@ describe("unmarked transfers", () => {
     expect(inbox(ledger, "").find((i) => i.kind === "transfers")).toMatchObject(
       { pairs: 1 },
     );
-  });
+  }
 });

@@ -12,8 +12,9 @@ import type { Account } from "./types";
 
 const range = (from: string, to: string) => ({ from, to });
 
-describe("anchored balances", () => {
-  it("reconstructs both directions from an anchor and stays unknown without one", () => {
+it("anchored balances: both directions, unknown without anchor, merged anchors, coverage status, window-independent series with neutral internal transfers", () => {
+  // reconstructs both directions from an anchor and stays unknown without one
+  {
     const rows = [
       tx("debit", "2026-10-02", -2000),
       tx("credit", "2026-10-03", 500),
@@ -25,9 +26,9 @@ describe("anchored balances", () => {
         balanceAt(account, rows, d),
       ),
     ).toEqual([12000, 10000, 10500]);
-  });
-
-  it("refuses an incomplete household but answers for the anchored account", () => {
+  }
+  // refuses an incomplete household but answers for the anchored account
+  {
     const ledger = ledgerOf(
       {
         accounts: [anchored("A", "2026-10-02", 10000), { id: "B" }],
@@ -37,9 +38,9 @@ describe("anchored balances", () => {
     );
     expect(householdBalance(ledger, "", "2026-10-03")).toBeNull();
     expect(householdBalance(ledger, "A", "2026-10-03")).toBe(10500);
-  });
-
-  it("merges anchors: observations beat derived ones, the legacy anchor wins date ties, rejected ones are ignored", () => {
+  }
+  // merges anchors: observations beat derived ones, the legacy anchor wins date ties, rejected ones are ignored
+  {
     const account: Account = {
       id: "A",
       checkpoint: { date: "2026-10-01", amount: 300 },
@@ -60,9 +61,9 @@ describe("anchored balances", () => {
         "2026-10-09",
       )?.amount,
     ).toBe(7);
-  });
-
-  it("calls a day covered only when complete statements join it to the anchor", () => {
+  }
+  // calls a day covered only when complete statements join it to the anchor
+  {
     const account: Account = {
       ...anchored("A", "2026-10-10", 0),
       coverage: [
@@ -86,29 +87,9 @@ describe("anchored balances", () => {
     expect(coverageStatus(account, "2026-09-25")).toBe("covered");
     expect(coverageStatus(account, "2026-09-05")).toBe("incomplete");
     expect(coverageStatus({ id: "B" }, "2026-09-05")).toBe("unknown");
-  });
-});
-
-describe("balance series", () => {
-  const ledger = ledgerOf(
-    {
-      accounts: [
-        anchored("A", "2026-10-05", 200000),
-        anchored("Y", "2026-10-05", 100000),
-      ],
-      transactions: [
-        tx("Loyer", "2026-10-01", -90000),
-        tx("Courses", "2026-10-03", -10000),
-        tx("Virement A", "2026-10-04", -1000, { internal: true }),
-        tx("Virement Y", "2026-10-04", 1000, { account: "Y", internal: true }),
-        tx("CAF", "2026-10-05", 20000, { account: "Y" }),
-        tx("Futur", "2026-10-26", 250000),
-      ],
-    },
-    "2026-10-05",
-  );
-
-  it("gives the same closing balance for a date whatever the window, and stops at asOf", () => {
+  }
+  // gives the same closing balance for a date whatever the window, and stops at asOf
+  {
     const scope = (from: string) => ({
       account: "",
       range: range(from, "2026-10-25"),
@@ -128,9 +109,9 @@ describe("balance series", () => {
       net: 0,
     });
     expect(short[0].gap).toBe(true);
-  });
-
-  it("aggregates long windows to closing balances, never sums, keeping the first anchor", () => {
+  }
+  // aggregates long windows to closing balances, never sums, keeping the first anchor
+  {
     const series = balanceSeries(ledger, {
       account: "A",
       range: range("2026-01-01", "2026-10-05"),
@@ -145,11 +126,9 @@ describe("balance series", () => {
     expect(series.perAccount[0].values).toHaveLength(series.points.length);
     const week = series.points.find((p) => p.date === "2026-10-04")!;
     expect(week).toMatchObject({ value: 200000, count: 3, net: -101000 });
-  });
-});
-
-describe("account status", () => {
-  it("reports today's balance, anchor age, freshness and the last import", () => {
+  }
+  // reports today's balance, anchor age, freshness and the last import
+  {
     const ledger = ledgerOf(
       {
         accounts: [
@@ -187,11 +166,30 @@ describe("account status", () => {
       freshness: "unknown",
       checkpoint: null,
     });
-  });
+  }
 });
 
-describe("coverage gaps", () => {
-  it("treats an account without coverage metadata as covered between its first and last data", () => {
+const ledger = ledgerOf(
+  {
+    accounts: [
+      anchored("A", "2026-10-05", 200000),
+      anchored("Y", "2026-10-05", 100000),
+    ],
+    transactions: [
+      tx("Loyer", "2026-10-01", -90000),
+      tx("Courses", "2026-10-03", -10000),
+      tx("Virement A", "2026-10-04", -1000, { internal: true }),
+      tx("Virement Y", "2026-10-04", 1000, { account: "Y", internal: true }),
+      tx("CAF", "2026-10-05", 20000, { account: "Y" }),
+      tx("Futur", "2026-10-26", 250000),
+    ],
+  },
+  "2026-10-05",
+);
+
+it("coverage gaps: no metadata means covered between first and last data, a hole between statements is a gap", () => {
+  // treats an account without coverage metadata as covered between its first and last data
+  {
     const ledger = ledgerOf(
       {
         accounts: [anchored("A", "2026-10-05", 1000)],
@@ -212,9 +210,9 @@ describe("coverage gaps", () => {
       "2026-09-30",
       "2026-10-06",
     ]);
-  });
-
-  it("marks a hole between declared statements, and the days it cuts off from the anchor, as gaps", () => {
+  }
+  // marks a hole between declared statements, and the days it cuts off from the anchor, as gaps
+  {
     const ledger = ledgerOf(
       {
         accounts: [
@@ -253,5 +251,5 @@ describe("coverage gaps", () => {
       "2026-10-04",
       "2026-10-05",
     ]);
-  });
+  }
 });

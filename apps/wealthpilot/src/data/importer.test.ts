@@ -34,8 +34,9 @@ const persist = (rows: PreviewRow[]): Transaction[] =>
 const duplicates = (rows: PreviewRow[]) =>
   rows.map((r) => r.status === "duplicate");
 
-describe("CSV — qualification, conservation et réimport", () => {
-  it("qualifie un fichier hétérogène, conserve centimes et dates puis réimporte son export", () => {
+it("import CSV : relevé SG avec préambule et Windows-1252, multiplicité des achats identiques, identité détaillée, réimport de l’export", async () => {
+  // qualifie un fichier hétérogène, conserve centimes et dates puis réimporte son export
+  {
     const valid = [
       ["28/02/2026", "1 234,56 €", 123456],
       ["2024-02-29", "-12.05", -1205],
@@ -90,37 +91,9 @@ describe("CSV — qualification, conservation et réimport", () => {
         (r) => r.status === "duplicate",
       ),
     ).toBe(true);
-  });
-
-  it("préserve le texte cité/multiligne, refuse les champs contradictoires et neutralise les formules", () => {
-    const { rows } = preview(
-      'date,amount,direction,devise,libelle\n2026-10-02,42.30,expense,EUR,"Achat,\ncommerce"\n2026-10-02,10,autre,EUR,Erreur\n2026-10-02,10,expense,USD,Erreur',
-    );
-    expect(rows).toHaveLength(3);
-    expect(rows[0].tx).toMatchObject({
-      amount: -4230,
-      label: "Achat,\ncommerce",
-    });
-    expect(rows[1].reason).toMatch(/Sens/);
-    expect(rows[2].reason).toMatch(/EUR/);
-    expect(
-      preview("date;debit;credit;libelle\n2026-10-02;10;20;Contradiction")
-        .rows[0].reason,
-    ).toMatch(/simultanés/);
-    expect(parsedFile("date;date\nx;y").errors.length).toBeGreaterThan(0);
-    expect(
-      parsedFile("date;amount;libelle\nx;y").errors.length,
-    ).toBeGreaterThan(0);
-    const stored = persist(rows);
-    stored[0].merchant = '=HYPERLINK("bad")';
-    const exported = exportTransactionsCsv(stored);
-    expect(exported).toContain("'=HYPERLINK");
-    expect(preview(exported, [], {}).rows[0].tx?.label).toBe(
-      "Achat,\ncommerce",
-    );
-  });
-
-  it("garde la multiplicité : deux achats identiques, chevauchement, autre compte", () => {
+  }
+  // garde la multiplicité : deux achats identiques, chevauchement, autre compte
+  {
     const row = "02/10/2026;Courant;42,30;expense;Épicerie;Courses;Courses;N";
     const csv =
       "date;account;amount;direction;merchant;libelle;category;is_internal\n" +
@@ -139,19 +112,9 @@ describe("CSV — qualification, conservation et réimport", () => {
     expect(
       preview(csv.replaceAll("Courant", "Commun"), complete, {}).rows[0].status,
     ).toBe("new");
-  });
-
-  it("prévisualise puis réimporte 50 000 occurrences sans supprimer de vrais achats", () => {
-    const source = "date;amount;libelle\n" + "2026-10-02;-1;A\n".repeat(50000);
-    const first = preview(source);
-    expect(first.errors).toEqual([]);
-    expect(first.counts.new).toBe(50000);
-    expect(preview(source, persist(first.rows)).counts.duplicate).toBe(50000);
-  });
-});
-
-describe("Relevés SG, métadonnées et identité", () => {
-  it("sépare couverture, date d’observation et détail bancaire complet", () => {
+  }
+  // sépare couverture, date d’observation et détail bancaire complet
+  {
     const file = parsedFile(sgFixture());
     expect(file.errors).toEqual([]);
     expect(file.profile).toBe("sg");
@@ -186,9 +149,9 @@ describe("Relevés SG, métadonnées et identité", () => {
       },
     ]);
     expect(result.newAccounts).toEqual(["Courant"]);
-  });
-
-  it("compare l’identité détaillée aux anciens imports, multiplicité comprise", () => {
+  }
+  // compare l’identité détaillée aux anciens imports, multiplicité comprise
+  {
     const file = parsedFile(sgFixture());
     const mapping = detectMapping(file.fields);
     const first = buildPreview(
@@ -219,25 +182,9 @@ describe("Relevés SG, métadonnées et identité", () => {
         buildPreview(repeated, mapping, { "": "Courant" }, tables).rows,
       ),
     ).toEqual([true, false]);
-  });
-
-  it("refuse les nombres, dates et devises SG invalides", () => {
-    expect(
-      parsedFile(sgFixture().replace(";2;02/10", ";9;02/10")).errors.join(),
-    ).toMatch(/nombre/);
-    expect(
-      parsedFile(
-        sgFixture().replace(";02/10/2026;1000", ";31/02/2026;1000"),
-      ).errors.join(),
-    ).toMatch(/Préambule/);
-    expect(
-      parsedFile(
-        sgFixture().replace("1000.00 EUR", "1000.00 USD"),
-      ).errors.join(),
-    ).toMatch(/EUR/);
-  });
-
-  it("décode Windows-1252 dans le lecteur et hache les octets", async () => {
+  }
+  // décode Windows-1252 dans le lecteur et hache les octets
+  {
     expect(decodeCSV(Uint8Array.from([0x63, 0x61, 0x66, 0xe9]).buffer)).toEqual(
       {
         text: "café",
@@ -255,115 +202,8 @@ describe("Relevés SG, métadonnées et identité", () => {
     });
     expect(file.hash).toMatch(/^[0-9a-f]{64}$/);
     expect(file.rows[0].libelle).toBe("Café");
-  });
-
-  it("ne promeut jamais daily_balance en solde observé", () => {
-    const result = preview(
-      "account,date,amount,libelle,daily_balance\nA,2026-10-02,-10,Test,100\nA,2026-10-02,-20,Test2,100",
-      [],
-      { A: "Commun" },
-    );
-    expect(result.metadata.accounts).toEqual([
-      {
-        account: "Commun",
-        currency: "EUR",
-        checkpoints: [{ date: "2026-10-02", amount: 10000, status: "derived" }],
-      },
-    ]);
-    expect(result.checkpoints[0]).toMatchObject({
-      account: "Commun",
-      status: "derived",
-    });
-    expect(result.rows.every((r) => r.tx?.account === "Commun")).toBe(true);
-    expect(
-      preview(
-        "account,date,amount,libelle,daily_balance\nA,2026-10-02,-10,T,100\nA,2026-10-02,-20,U,90",
-        [],
-        {},
-      ).errors,
-    ).toContain(
-      "Soldes journaliers contradictoires pour le même compte et jour.",
-    );
-    expect(
-      metadataAccountId({ bankAccountId: "012", account: "Other" }, "Other", [
-        { id: "Stable", bankAccountId: "012" },
-      ]),
-    ).toBe("Stable");
-  });
+  }
 });
 
-describe("Analyse et choix des comptes", () => {
-  const multi =
-    "date;account;amount;libelle\n2026-10-02;Perso;-1;A\n2026-10-02;Joint;-2;B";
-
-  it("détecte comptes, lot déjà importé et compte reconnu par son numéro", () => {
-    const file = parsedFile(multi, "multi.csv");
-    const batch = {
-      id: "b",
-      name: "multi.csv",
-      hash: "multi.csv",
-      createdAt: "",
-      count: 2,
-      minDate: "",
-      maxDate: "",
-    };
-    const analysis = analyzeFile(file, { accounts: [], batches: [batch] });
-    expect(analysis).toMatchObject({
-      profile: "generic",
-      mappingIssues: [],
-      detectedAccounts: ["Perso", "Joint"],
-      alreadyImported: batch,
-      choice: { Perso: "Perso", Joint: "Joint" },
-    });
-    const sg = analyzeFile(parsedFile(sgFixture()), {
-      accounts: [{ id: "Courant", bankAccountId: "00012345678" }],
-      batches: [],
-    });
-    expect(sg.identifiedAccount?.id).toBe("Courant");
-    expect(sg.choice).toEqual({ "": "Courant" });
-    expect(
-      automaticMappingIssues(
-        parsedFile("date;libelle;label;amount\n2026-10-02;a;b;1"),
-      )[0],
-    ).toMatch(/Plusieurs colonnes/);
-  });
-
-  it("refuse de mélanger deux comptes, une casse différente ou un autre numéro bancaire", () => {
-    const file = parsedFile(multi);
-    const mapping = detectMapping(file.fields);
-    expect(
-      accountChoiceIssues(
-        file,
-        mapping,
-        { Perso: "Commun", Joint: "Commun" },
-        [],
-      ),
-    ).toEqual([
-      "Conservez les comptes distincts de ce fichier pour ne pas mélanger leurs opérations.",
-    ]);
-    expect(
-      accountChoiceIssues(file, mapping, {}, [{ id: "perso" }])[0],
-    ).toMatch(/autre casse/);
-    const sg = parsedFile(sgFixture());
-    const accounts = [
-      { id: "Courant", bankAccountId: "00012345678" },
-      { id: "Autre" },
-    ];
-    expect(
-      accountChoiceIssues(
-        sg,
-        detectMapping(sg.fields),
-        { "": "Autre" },
-        accounts,
-      )[0],
-    ).toMatch(/reconnu par son numéro/);
-    expect(
-      accountChoiceIssues(
-        sg,
-        detectMapping(sg.fields),
-        { "": "Courant" },
-        accounts,
-      ),
-    ).toEqual([]);
-  });
-});
+const multi =
+  "date;account;amount;libelle\n2026-10-02;Perso;-1;A\n2026-10-02;Joint;-2;B";

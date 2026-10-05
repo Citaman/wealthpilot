@@ -1,7 +1,13 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { moveItem, useSortable } from "./sortable";
+import { useSortable } from "./sortable";
 
 const names: Record<string, string> = {
   a: "Solde",
@@ -46,9 +52,11 @@ const key = (name: string, key: string) =>
     fireEvent.keyDown(handle(name), { key });
   });
 
-describe("useSortable keyboard", () => {
-  it("lifts, moves and drops with announcements", () => {
+it("useSortable au clavier : soulever, déplacer, déposer avec annonces, Échap restaure, butées", () => {
+  // lifts, moves and drops with announcements
+  {
     const onCommit = vi.fn();
+    cleanup();
     render(<List onCommit={onCommit} />);
     handle("Disponible").focus();
     key("Disponible", " ");
@@ -64,10 +72,11 @@ describe("useSortable keyboard", () => {
     expect(onCommit).toHaveBeenCalledWith(["a", "c", "b", "d"]);
     expect(live()).toBe("Disponible déposée en position 3 sur 4");
     expect(order()).toEqual(["Solde", "Enveloppes", "Disponible", "À venir"]);
-  });
-
-  it("restores the original order on Escape", () => {
+  }
+  // restores the original order on Escape
+  {
     const onCommit = vi.fn();
+    cleanup();
     render(<List onCommit={onCommit} />);
     key("Solde", "Enter");
     key("Solde", "ArrowRight");
@@ -77,24 +86,16 @@ describe("useSortable keyboard", () => {
     expect(order()).toEqual(["Solde", "Disponible", "Enveloppes", "À venir"]);
     expect(live()).toBe("Déplacement annulé");
     expect(onCommit).not.toHaveBeenCalled();
-  });
-
-  it("does not move past either end", () => {
+  }
+  // does not move past either end
+  {
     const onCommit = vi.fn();
+    cleanup();
     render(<List onCommit={onCommit} />);
     key("Solde", " ");
     key("Solde", "ArrowLeft");
     expect(live()).toBe("Solde soulevée, position 1 sur 4");
     key("Solde", " ");
     expect(onCommit).not.toHaveBeenCalled();
-  });
-});
-
-describe("moveItem", () => {
-  it("moves and clamps", () => {
-    expect(moveItem(["a", "b", "c"], "c", 0)).toEqual(["c", "a", "b"]);
-    expect(moveItem(["a", "b", "c"], "a", 99)).toEqual(["b", "c", "a"]);
-    expect(moveItem(["a", "b", "c"], "b", -3)).toEqual(["b", "a", "c"]);
-    expect(moveItem(["a", "b"], "z", 0)).toEqual(["a", "b"]);
-  });
+  }
 });

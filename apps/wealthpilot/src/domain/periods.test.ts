@@ -14,8 +14,9 @@ import { tx } from "./test-fixtures";
 const pay = (date: string, label = "Salaire", amount = 250000) =>
   tx(date, date, amount, { merchant: "Employeur", label });
 
-describe("income-anchored budget months", () => {
-  it("opens October on the first household salary, whatever the account or later income", () => {
+it("income-anchored budget months: first salary, variable paydays, late or missing pay, no income", () => {
+  // opens October on the first household salary, whatever the account or later income
+  {
     const rows = [
       tx("Avant cycle", "2026-09-25", -5000),
       tx("Salaire Anthony", "2026-09-26", 250000),
@@ -40,9 +41,9 @@ describe("income-anchored budget months", () => {
       estimated: true,
     });
     expect(currentMonthEnd(calendar, "2026-10-05")).toBe("2026-10-25");
-  });
-
-  it("follows real variable paydays, the household's first income and year changes", () => {
+  }
+  // follows real variable paydays, the household's first income and year changes
+  {
     const rows = [
       tx("Salaire A", "2025-12-26", 250000),
       tx("Salaire B", "2025-12-24", 150000, { account: "Y" }),
@@ -73,9 +74,9 @@ describe("income-anchored budget months", () => {
       const range = monthRange(monthOf(date, calendar), calendar);
       expect(date >= range.from && date <= range.to, date).toBe(true);
     }
-  });
-
-  it("ignores refunds, bonuses and transfers, keeps the CAF, never opens a month on a future salary", () => {
+  }
+  // ignores refunds, bonuses and transfers, keeps the CAF, never opens a month on a future salary
+  {
     const rows = [
       tx("Salaire A", "2026-08-25", 250000),
       tx("Salaire A", "2026-09-27", 250000),
@@ -99,9 +100,9 @@ describe("income-anchored budget months", () => {
     const updated = budgetCalendar(rows, "2026-10-29");
     expect(monthRange("2026-10", updated).to).toBe("2026-10-28");
     expect(monthOf("2026-10-29", updated)).toBe("2026-11");
-  });
-
-  it("keeps a month open when a salary is missing; vague transfers do not prove a payday", () => {
+  }
+  // keeps a month open when a salary is missing; vague transfers do not prove a payday
+  {
     const calendar = budgetCalendar(
       [pay("2026-06-25"), pay("2026-08-27")],
       "2026-09-05",
@@ -120,9 +121,9 @@ describe("income-anchored budget months", () => {
       from: "2026-10-01",
       to: "2026-10-31",
     });
-  });
-
-  it("keeps history stable and attaches a delayed pay to its wave without skipping the next", () => {
+  }
+  // keeps history stable and attaches a delayed pay to its wave without skipping the next
+  {
     const early = [pay("2026-06-14")];
     expect(budgetCalendar(early, "2026-06-30").observed[0]).toEqual(
       budgetCalendar([...early, pay("2026-07-16")], "2026-07-31").observed[0],
@@ -158,9 +159,9 @@ describe("income-anchored budget months", () => {
       merchant: "Boutique",
     }));
     expect(budgetCalendar(refunds, "2026-10-05").observed).toEqual([]);
-  });
-
-  it("loses no day before the first pay and caps an open month at 35 days of horizon", () => {
+  }
+  // loses no day before the first pay and caps an open month at 35 days of horizon
+  {
     const rows = [tx("CAF", "2026-10-05", 20000)];
     const calendar = budgetCalendar(rows, "2026-11-05");
     expect(calendar.projected).toEqual([]);
@@ -174,19 +175,20 @@ describe("income-anchored budget months", () => {
       expect(date >= range.from && date <= range.to, date).toBe(true);
     }
     expect(currentMonthEnd(calendar, "2026-11-05")).toBe("2026-12-10");
-  });
+  }
 });
 
-describe("period menu", () => {
-  const rows = [
-    tx("old", "2026-07-10", -1000),
-    pay("2026-08-26"),
-    pay("2026-09-25"),
-    tx("now", "2026-10-04", -1000),
-  ];
-  const calendar = budgetCalendar(rows, "2026-10-05");
+const rows = [
+  tx("old", "2026-07-10", -1000),
+  pay("2026-08-26"),
+  pay("2026-09-25"),
+  tx("now", "2026-10-04", -1000),
+];
+const calendar = budgetCalendar(rows, "2026-10-05");
 
-  it("lists budget months newest first with real ranges, then rolling choices", () => {
+it("period menu: budget months newest first, rolling and multi-month resolution", () => {
+  // lists budget months newest first with real ranges, then rolling choices
+  {
     const options = periodOptions(calendar, "2026-10-05");
     expect(options.map((o) => o.label)).toEqual([
       "Octobre",
@@ -209,9 +211,9 @@ describe("period menu", () => {
       to: "2026-08-25",
       partial: true,
     });
-  });
-
-  it("resolves rolling and multi-month periods against the budget calendar", () => {
+  }
+  // resolves rolling and multi-month periods against the budget calendar
+  {
     expect(
       resolvePeriod({ kind: "rolling", days: 30 }, calendar, "2026-10-05"),
     ).toEqual({
@@ -231,5 +233,5 @@ describe("period menu", () => {
       from: "2026-07-10",
       to: "2026-10-25",
     });
-  });
+  }
 });

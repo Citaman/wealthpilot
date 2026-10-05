@@ -23,8 +23,9 @@ const monthly = () => [
 const dates = (w: World, end: string, asOf: string) =>
   estimates(ledgerOf(w, asOf), end).map((e) => e.date);
 
-describe("recurrence detection", () => {
-  it("keeps a rent paid by hand whose date drifts (one 38-day gap)", () => {
+it("détection : loyer à date dérivante (38 jours), cadence mensuelle, refus des séries instables, paiement fractionné le même jour, format figé des identifiants", () => {
+  // keeps a rent paid by hand whose date drifts (one 38-day gap)
+  {
     const rent = [
       "2026-05-07",
       "2026-06-05",
@@ -41,9 +42,9 @@ describe("recurrence detection", () => {
     expect(detectRecurrences(rent, "2026-10-05").map((r) => r.name)).toEqual([
       "Loyer ORPI",
     ]);
-  });
-
-  it("detects a monthly cadence with signed amount and confidence", () => {
+  }
+  // detects a monthly cadence with signed amount and confidence
+  {
     const [r] = detectRecurrences(monthly(), "2026-10-03");
     expect(r).toMatchObject({
       next: "2026-10-15",
@@ -53,9 +54,9 @@ describe("recurrence detection", () => {
       confidence: 70,
     });
     expect(r.key).toBe(JSON.stringify(["A", "spotify", -1]));
-  });
-
-  it("refuses irregular dates, transfers, two payments, mixed accounts or signs, stale or unstable series", () => {
+  }
+  // refuses irregular dates, transfers, two payments, mixed accounts or signs, stale or unstable series
+  {
     const none = (rows: Transaction[], asOf = "2026-10-03") =>
       expect(detectRecurrences(rows, asOf)).toEqual([]);
     none([spotify("2026-07-02"), spotify("2026-08-15"), spotify("2026-09-22")]);
@@ -72,9 +73,9 @@ describe("recurrence detection", () => {
       spotify("2026-08-15", -25000),
       spotify("2026-09-15"),
     ]);
-  });
-
-  it("keeps a series with two payments on the same day as one occurrence", () => {
+  }
+  // keeps a series with two payments on the same day as one occurrence
+  {
     const split = [
       spotify("2026-07-15"),
       spotify("2026-08-15", -2500),
@@ -85,11 +86,29 @@ describe("recurrence detection", () => {
       amount: -5000,
       count: 3,
     });
-  });
+  }
+  // is replaced by the real payment, with the frozen id format
+  {
+    const [first] = estimates(
+      ledgerOf({ transactions: monthly() }, "2026-10-03"),
+      "2026-10-31",
+    );
+    expect(first.id).toBe(
+      `estimate:${JSON.stringify(["A", "spotify", -1])}:2026-10-15`,
+    );
+    expect(
+      dates(
+        { transactions: [...monthly(), spotify("2026-10-15")] },
+        "2026-10-31",
+        "2026-10-16",
+      ),
+    ).toEqual([]);
+  }
 });
 
-describe("estimated occurrences", () => {
-  it("clamps month ends and unrolls several future occurrences", () => {
+it("occurrences estimées : fins de mois, hebdomadaire, jamais de doublon avec une échéance, règles confirmées (remplacement, pause, fin, override, ancienne règle mensuelle)", () => {
+  // clamps month ends and unrolls several future occurrences
+  {
     const transactions = [
       spotify("2026-07-31"),
       spotify("2026-08-31"),
@@ -100,9 +119,9 @@ describe("estimated occurrences", () => {
       "2026-11-30",
       "2026-12-31",
     ]);
-  });
-
-  it("unrolls a weekly cadence", () => {
+  }
+  // unrolls a weekly cadence
+  {
     const transactions = [
       spotify("2026-09-17"),
       spotify("2026-09-24"),
@@ -113,9 +132,9 @@ describe("estimated occurrences", () => {
       "2026-10-15",
       "2026-10-22",
     ]);
-  });
-
-  it("never doubles a manual due and keeps a dismissal", () => {
+  }
+  // never doubles a manual due and keeps a dismissal
+  {
     const transactions = monthly();
     expect(
       dates(
@@ -135,26 +154,9 @@ describe("estimated occurrences", () => {
         "2026-10-03",
       ),
     ).toEqual([]);
-  });
-
-  it("is replaced by the real payment, with the frozen id format", () => {
-    const [first] = estimates(
-      ledgerOf({ transactions: monthly() }, "2026-10-03"),
-      "2026-10-31",
-    );
-    expect(first.id).toBe(
-      `estimate:${JSON.stringify(["A", "spotify", -1])}:2026-10-15`,
-    );
-    expect(
-      dates(
-        { transactions: [...monthly(), spotify("2026-10-15")] },
-        "2026-10-31",
-        "2026-10-16",
-      ),
-    ).toEqual([]);
-  });
-
-  it("lets one manual weekly bill cover only its nearest occurrence", () => {
+  }
+  // lets one manual weekly bill cover only its nearest occurrence
+  {
     const transactions = ["2026-09-14", "2026-09-21", "2026-09-28"].map((d) =>
       spotify(d, -1000),
     );
@@ -175,30 +177,9 @@ describe("estimated occurrences", () => {
         "2026-10-03",
       ),
     ).toEqual(["2026-10-05"]);
-  });
-});
-
-describe("confirmed recurrence rules", () => {
-  const water = () =>
-    ["07", "08", "09"].map((m, i) =>
-      tx(String(i), `2026-${m}-06`, -1000, {
-        merchant: "Water",
-        label: "Water",
-        category: "Bills",
-      }),
-    );
-  const rule = (patch: Partial<RecurrenceRule> = {}): RecurrenceRule => ({
-    id: "r",
-    name: "Water",
-    account: "A",
-    amount: -1200,
-    category: "Bills",
-    frequency: "weekly",
-    next: "2026-10-06",
-    ...patch,
-  });
-
-  it("replaces the suggestion and changes only future occurrences", () => {
+  }
+  // replaces the suggestion and changes only future occurrences
+  {
     const detected = activeRecurrences(
       ledgerOf({ transactions: water() }, "2026-10-04"),
     )[0];
@@ -229,9 +210,9 @@ describe("confirmed recurrence rules", () => {
       ["2026-11-08", -1200, true, 0],
     ]);
     expect(activeRecurrences(ledger)).toHaveLength(1);
-  });
-
-  it("scopes pause, end date and ignored occurrence", () => {
+  }
+  // scopes pause, end date and ignored occurrence
+  {
     const run = (r: RecurrenceRule, ignored: string[] = []) =>
       estimates(
         ledgerOf(
@@ -250,9 +231,9 @@ describe("confirmed recurrence rules", () => {
       run(rule({ end: "2026-10-20" }), [first[0].id]).map((d) => d.date),
     ).toEqual(["2026-10-13", "2026-10-20"]);
     expect(run(rule({ paused: true }))).toEqual([]);
-  });
-
-  it("does not let a moved override swallow the next occurrence, nor duplicate it when re-enabled", () => {
+  }
+  // does not let a moved override swallow the next occurrence, nor duplicate it when re-enabled
+  {
     const original = estimates(
       ledgerOf({ prefs: { recurrenceRules: [rule()] } }, "2026-10-04"),
       "2026-10-20",
@@ -276,9 +257,9 @@ describe("confirmed recurrence rules", () => {
         "2026-10-20",
       ]);
     }
-  });
-
-  it("advances an old monthly rule without losing its month-end day", () => {
+  }
+  // advances an old monthly rule without losing its month-end day
+  {
     const old = rule({
       frequency: "monthly",
       next: "2020-01-31",
@@ -287,5 +268,24 @@ describe("confirmed recurrence rules", () => {
     expect(
       dates({ prefs: { recurrenceRules: [old] } }, "2026-03-31", "2026-02-01"),
     ).toEqual(["2026-01-31", "2026-02-28", "2026-03-31"]);
-  });
+  }
+});
+
+const water = () =>
+  ["07", "08", "09"].map((m, i) =>
+    tx(String(i), `2026-${m}-06`, -1000, {
+      merchant: "Water",
+      label: "Water",
+      category: "Bills",
+    }),
+  );
+const rule = (patch: Partial<RecurrenceRule> = {}): RecurrenceRule => ({
+  id: "r",
+  name: "Water",
+  account: "A",
+  amount: -1200,
+  category: "Bills",
+  frequency: "weekly",
+  next: "2026-10-06",
+  ...patch,
 });
